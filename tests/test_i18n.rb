@@ -58,5 +58,17 @@ ok(missing_en.empty?, "i #{used.size} testi usati da codice e pannello esistono 
 end
 ok(true, "tutte le #{files.size - 1} lingue hanno le #{en.size} chiavi di en.json") if $fail.zero?
 
+# Lingue da destra a sinistra: un testo tecnico che comincia con un simbolo
+# neutro (%APPDATA%\…, #ffd166) viene riordinato e diventa «APPDATA%\…%».
+# Va chiuso fra U+2066 (LRI) e U+2069 (PDI), che lo tengono da sinistra a destra.
+rtl = JSON.parse(read(File.join(LANG, 'index.json')))['languages'].select { |l| l['rtl'] }.map { |l| l['code'] }
+ok(rtl.sort == %w[ar he], "lingue da destra a sinistra: #{rtl.join(', ')}")
+rtl.each do |c|
+  storti = (parsed[c] || {}).select do |_, v|
+    v.is_a?(String) && v.gsub(/%\{\w+\}/, '').gsub(/⁦[^⁩]*⁩/, '') =~ /[%#][A-Za-z]/
+  end
+  ok(storti.empty?, "#{c}: percorsi e codici isolati da sinistra a destra#{storti.empty? ? '' : ": #{storti.keys.join(', ')}"}")
+end
+
 puts "\n#{$fail.zero? ? 'TUTTI I TEST PASSATI' : "#{$fail} TEST FALLITI"}"
 exit($fail.zero? ? 0 : 1)

@@ -151,7 +151,7 @@ body.ti-icons .tabs2 button{padding-inline:11px}
   font:1rem var(--font);text-align:right;outline:none;
 }
 .nbox:focus{border-color:var(--acc);background:var(--s4)}
-.unit{flex:0 0 44px;font-size:.867rem;color:var(--m2);white-space:nowrap}
+.unit{flex:0 0 44px;font-size:.867rem;color:var(--m2);white-space:nowrap;unicode-bidi:plaintext}  /* in arabo «°/s» resta °/s, non s/° */
 
 /* ══ COLORE E SCELTA ══ */
 .cpick{
@@ -161,7 +161,7 @@ body.ti-icons .tabs2 button{padding-inline:11px}
 .cpick:focus{border-color:var(--acc)}
 .cpick::-webkit-color-swatch-wrapper{padding:0}
 .cpick::-webkit-color-swatch{border:none;border-radius:calc(3px*var(--rk))}
-.nbox.hex{text-align:left;font-family:Consolas,'Cascadia Mono',monospace;font-size:.933rem;user-select:text}
+.nbox.hex{text-align:left;direction:ltr;font-family:Consolas,'Cascadia Mono',monospace;font-size:.933rem;user-select:text}
 .nbox.hex.bad{border-color:var(--dg-edge)}
 .sel{
   flex:1 1 auto;min-width:0;max-width:320px;margin-inline-start:auto;
@@ -1306,13 +1306,13 @@ function renderMaterials(){
   tb.innerHTML = MATS.map((r, i) => {
     const nm = isBuiltin(r)
       ? `<span class="bname">${esc(T('mat.' + r.id))}</span>`
-      : `<input value="${escA(r.name)}" oninput="mset(${i},'name',this.value)">`;
+      : `<input dir="auto" value="${escA(r.name)}" oninput="mset(${i},'name',this.value)">`;
     const numCell = k => `<td><input class="mnum" value="${(+r[k]).toFixed(MLIM[k][2])}"
         onchange="mnum(${i},'${k}',this)" onblur="mnum(${i},'${k}',this)"></td>`;
     return `<tr>
       <td><button class="mico" title="${escA(T('mt.icon'))}" onclick="micon(${i})">${micoSVG(r.icon)}</button></td>
       <td>${nm}</td>
-      <td><input value="${escA(r.keywords)}" oninput="mset(${i},'keywords',this.value)"></td>
+      <td><input dir="auto" value="${escA(r.keywords)}" oninput="mset(${i},'keywords',this.value)"></td>
       ${numCell('density')}${numCell('restitution')}${numCell('friction')}
       <td><button class="mdel" title="${escA(T('mt.del'))}" onclick="mdel(${i})">✕</button></td>
     </tr>`;

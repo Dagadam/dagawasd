@@ -44,6 +44,12 @@ ricostruite a posteriori dalle date dei file e dalle sessioni di lavoro.
   quelli che DagaWASD inietta da sé.
 - Descrizione nel Gestore estensioni aggiornata a tutto quello che fa.
 
+### Corretto
+- Arabo ed ebraico: i codici colore non perdono più il `#` in fondo
+  («ffd166#»), le parole chiave dei materiali si leggono dall'inizio, le
+  unità come °/s non diventano s/°, il percorso del file del ponte resta
+  intero.
+
 ### Rimosso
 - `settings.json` dai file distribuiti: i valori predefiniti stanno nel
   codice (`lib/config.rb`).
