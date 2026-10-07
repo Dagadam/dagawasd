@@ -1,0 +1,11 @@
+{
+  "name": "dagawasd-panel-tests",
+  "private": true,
+  "description": "Test del pannello (panel.html) in un browser simulato",
+  "scripts": {
+    "test": "node test_panel.js"
+  },
+  "devDependencies": {
+    "jsdom": "^24.1.3"
+  }
+}

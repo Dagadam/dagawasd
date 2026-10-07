@@ -1,0 +1,75 @@
+🇬🇧 ENGLISH
+
+DagaWASD – Explore your SketchUp models in first person, like a video game 🎮
+
+DagaWASD is a SketchUp extension that turns your model into a world you can walk through. Move with WASD and the mouse, climb stairs, jump, and interact with objects thanks to real physics.
+
+▶ HOW TO USE IT
+Start it with one click on the toolbar button (or Ctrl+PgUp) and exit at any time with ESC. Once you exit, Ctrl+Z puts back everything you moved.
+
+🚶 MOVEMENT
+• WASD + mouse to walk and look around
+• Shift to run, C to crouch, Space to jump
+• Stairs and slopes are climbed automatically
+• Smooth movement with inertia and a subtle head bob
+• Fall into the void and you're brought back to where you were just before
+
+📦 OBJECT PHYSICS
+Groups and components become real objects as soon as you touch them: they fall, bounce, slide and tip over.
+Weight, friction and bounciness depend on the material: wood doesn't behave like metal, glass or rubber.
+
+✋ INTERACTIONS
+• Alt – shows the name, weight and material of the object you're looking at
+• K – kick (hold to charge the shot)
+• G – grab, drop or throw objects
+• Walk into lighter objects to push them
+
+⚙ CUSTOMIZATION
+A settings panel (Ctrl+Home) lets you tweak almost everything: speed, jump, field of view, mouse sensitivity, object behavior, keys, visual theme and crosshair.
+Settings can be exported and shared, and the interface is available in over 35 languages.
+
+🤖 BONUS: THE CLAUDE BRIDGE
+DagaWASD also includes an optional link with Claude Code, which can draw directly in the open model, showing the construction step by step.
+
+Great for presenting architectural projects, experiencing spaces "live", or simply having fun inside your own models.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🇮🇹 ITALIANO
+
+DagaWASD – Esplora i tuoi modelli SketchUp in prima persona, come in un videogioco 🎮
+
+DagaWASD è un'estensione per SketchUp che trasforma il tuo modello in un mondo da percorrere a piedi. Ti muovi con WASD e il mouse, sali le scale, salti, e puoi interagire con gli oggetti grazie a una vera fisica.
+
+▶ COME SI USA
+Si avvia con un clic sul pulsante della barra degli strumenti (o con Ctrl+PagSu) e si esce in qualsiasi momento con ESC. Quando esci, Ctrl+Z rimette a posto tutto quello che hai spostato.
+
+🚶 MOVIMENTO
+• WASD + mouse per camminare e guardarti intorno
+• Shift per correre, C per accovacciarti, Spazio per saltare
+• Scale e pendenze si salgono da sole, senza sforzo
+• Movimento fluido, con inerzia e leggero dondolio del passo
+• Se cadi nel vuoto, torni dove eri poco prima
+
+📦 FISICA DEGLI OGGETTI
+Gruppi e componenti diventano oggetti reali appena li tocchi: cadono, rimbalzano, scivolano e si ribaltano.
+Peso, attrito e rimbalzo dipendono dal materiale: il legno non si comporta come il metallo, il vetro o la gomma.
+
+✋ INTERAZIONI
+• Alt – mostra nome, peso e materiale dell'oggetto che stai guardando
+• K – calcia (tieni premuto per caricare il colpo)
+• G – afferra, posa o lancia gli oggetti
+• Camminando puoi spingere gli oggetti più leggeri
+
+⚙ PERSONALIZZAZIONE
+Un pannello di impostazioni (Ctrl+Home) permette di regolare quasi tutto: velocità, salto, campo visivo, sensibilità del mouse, comportamento degli oggetti, tasti, tema grafico e mirino.
+Le impostazioni si possono esportare e condividere, e l'interfaccia è disponibile in oltre 35 lingue.
+
+🤖 BONUS: IL PONTE CON CLAUDE
+DagaWASD include anche un collegamento opzionale con Claude Code, che può così disegnare direttamente nel modello aperto, mostrando la costruzione passo passo.
+
+Ideale per presentare progetti architettonici, provare gli spazi "dal vivo", o semplicemente divertirsi dentro i propri modelli.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+#SketchUp #DagaWASD #3D #Architecture #Architettura #FirstPerson #PrimaPersona #Physics #Plugin

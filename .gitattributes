@@ -1,0 +1,2 @@
+# File salvati byte per byte: niente conversione dei fine riga (i .bat restano CRLF, il resto LF)
+* -text

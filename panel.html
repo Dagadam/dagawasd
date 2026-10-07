@@ -1,0 +1,2268 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>DagaWASD</title>
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   COLORI E MISURE — tutto passa da queste variabili, che applyLook()
+   ricalcola da Sistema › Aspetto (tema, accento, carattere…). I valori
+   qui sotto sono il tema scuro predefinito: valgono finché Ruby non
+   manda le impostazioni. Neutri: --bg sfondo … --hi testo più chiaro;
+   --s* superfici, --l* bordi, --m* testi smorzati, --t* testi.
+═══════════════════════════════════════════════════════════════ */
+:root{
+  --bg:#151515;--sunk:#111;--s1:#1a1a1a;--s2:#1e1e1e;--s3:#232323;--s4:#2a2a2a;--s5:#333;
+  --l1:#262626;--l2:#333;--l3:#3a3a3a;--l4:#4d4d4d;
+  --m3:#5d5d5d;--m2:#6a6a6a;--m1:#8a8a8a;--m0:#9a9a9a;--t2:#bbb;--t1:#d0d0d0;--t0:#dcdcdc;--hi:#f0f0f0;
+  --edge:rgba(255,255,255,.14);
+  --acc:#00c9a7;--acc-hi:#00dbb8;--acc-ink:#0d0d0d;--acc-bg:#10352f;--acc-deep:#0b7f6c;--acc-tx:#00c9a7;--acc-tx2:#00a88c;--knob:#fff;
+  --hl:#ffd166;--hl-tx:#ffd166;--hl-ink:#111;--hl-soft:rgba(255,209,102,.09);--hl-line:rgba(255,209,102,.45);
+  --hl-bg:#2d2717;--hl-bg2:#3a3218;--hl-edge:#6b5520;
+  --dg:#c04747;--dg-hi:#d15656;--dg-ink:#fff;--dg-bg:#3a1f1f;--dg-tx:#ff8080;--dg-edge:#8a3a3a;
+  --font:'Segoe UI',system-ui,sans-serif;--fs:15px;--lh:1.55;
+  --rk:1;--sp:1;--lblw:230px;--sbw:9px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{font-size:var(--fs)}
+html,body{height:100%}
+body{
+  background:var(--bg);color:var(--t0);
+  font:1rem/var(--lh) var(--font);
+  user-select:none;
+  display:flex;flex-direction:column;
+  overflow:hidden;
+}
+::-webkit-scrollbar{width:var(--sbw);height:var(--sbw)}
+::-webkit-scrollbar-track{background:var(--sunk)}
+::-webkit-scrollbar-thumb{background:var(--l3);border-radius:calc(5px*var(--rk))}
+::-webkit-scrollbar-thumb:hover{background:var(--l4)}
+/* Animazioni spente (Aspetto › Animazioni) */
+body.noanim *,body.noanim *::before,body.noanim *::after{transition:none!important}
+body.noanim .btn:active{transform:none}
+/* Descrizioni brevi nascoste (Aspetto › Mostra le descrizioni) */
+body.nohints .row .lbl .hint{display:none}
+
+/* ══ TOP BAR ══ */
+.bar{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:12px 16px;border-bottom:1px solid var(--l1);background:var(--s1);flex:0 0 auto;
+  flex-wrap:wrap;
+}
+.bar h1{font-size:1.133rem;font-weight:700;color:var(--acc-tx);letter-spacing:.3px;white-space:nowrap}
+.bar h1 .logo:empty{display:none}
+.bar .right{display:flex;align-items:center;gap:12px}
+.dot{font-size:.933rem;color:var(--m3);white-space:nowrap}
+.dot.on{color:var(--acc-tx);font-weight:600}
+
+/* ══ BUTTONS ══ */
+.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:9px 20px;border:none;border-radius:calc(6px*var(--rk));
+  cursor:pointer;font:600 1rem var(--font);
+  transition:background .12s,transform .06s;outline:none;
+}
+.btn:active{transform:scale(.97)}
+.btn-go  {background:var(--acc);color:var(--acc-ink)}
+.btn-go:hover{background:var(--acc-hi)}
+.btn-stop{background:var(--dg);color:var(--dg-ink)}
+.btn-stop:hover{background:var(--dg-hi)}
+.btn-sm  {background:var(--s4);color:var(--t2);font-size:.933rem;padding:8px 16px}
+.btn-sm:hover{background:var(--s5)}
+
+/* ══ TAB LIVELLO 1 ══ */
+.tabs1{
+  display:flex;gap:4px;padding:8px 12px 0;background:var(--s1);
+  border-bottom:1px solid var(--l1);flex:0 0 auto;flex-wrap:wrap;
+}
+.tabs1 button{
+  background:transparent;border:none;border-bottom:3px solid transparent;
+  color:var(--m1);cursor:pointer;outline:none;
+  font:600 1.067rem var(--font);
+  padding:10px 18px 9px;border-radius:calc(6px*var(--rk)) calc(6px*var(--rk)) 0 0;
+  transition:color .12s,background .12s,border-color .12s;
+}
+.tabs1 button:hover{color:var(--t1);background:var(--s3)}
+.tabs1 button.act{color:var(--acc-tx);border-bottom-color:var(--acc);background:var(--s3)}
+
+/* ══ TAB LIVELLO 2 (sotto-TAB) ══ */
+.tabs2{
+  display:flex;gap:6px;padding:10px 16px;background:var(--s1);
+  border-bottom:1px solid var(--l1);flex:0 0 auto;flex-wrap:wrap;
+}
+.tabs2 button{
+  background:var(--s3);border:1px solid var(--l2);color:var(--m0);
+  cursor:pointer;outline:none;border-radius:calc(20px*var(--rk));
+  font:600 .933rem var(--font);padding:6px 16px;
+  transition:all .12s;
+}
+.tabs2 button:hover{background:var(--s4);color:var(--t1)}
+.tabs2 button.act{background:var(--acc);border-color:var(--acc);color:var(--acc-ink)}
+
+/* ══ ICONE DEI TAB (Aspetto › Icone dei tab) ══ */
+.ti svg{width:1.15em;height:1.15em;vertical-align:-.2em;fill:none;stroke:currentColor;
+  stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+body.ti-text .ti{display:none}
+body.ti-both .ti{margin-inline-end:7px}
+body.ti-icons .tl{display:none}
+body.ti-icons .tabs1 button{padding-inline:14px}
+body.ti-icons .tabs2 button{padding-inline:11px}
+
+/* ══ CONTENUTO ══ */
+.content{flex:1 1 auto;overflow-y:auto;padding:calc(16px*var(--sp)) 18px calc(20px*var(--sp))}
+.pane{display:none}
+.pane.act{display:block}
+
+.grp{margin-bottom:calc(22px*var(--sp))}
+.grp > h3{
+  font-size:.867rem;text-transform:uppercase;letter-spacing:1.4px;
+  color:var(--m3);margin:0 0 10px;padding-bottom:6px;border-bottom:1px solid var(--l1);
+}
+
+/* ══ RIGA IMPOSTAZIONE ══ */
+.row{
+  display:flex;align-items:center;gap:12px;
+  padding:calc(7px*var(--sp)) 10px;border-radius:calc(6px*var(--rk));
+}
+.row:hover{background:var(--s2)}
+.row.off{opacity:.45}
+.row .lbl{flex:0 0 var(--lblw);min-width:0}
+.row .lbl .name{
+  font-size:1rem;color:var(--t1);display:block;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.row .lbl .hint{font-size:.833rem;color:var(--m2);display:block;line-height:1.35;margin-top:1px}
+.row input[type=range]{
+  flex:1 1 auto;min-width:80px;height:6px;
+  accent-color:var(--acc);cursor:pointer;
+  -webkit-appearance:none;background:transparent;
+}
+.row input[type=range]::-webkit-slider-runnable-track{
+  height:6px;background:var(--s5);border-radius:calc(3px*var(--rk));
+}
+.row input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:18px;height:18px;
+  background:var(--acc);border-radius:50%;margin-top:-6px;cursor:pointer;
+  box-shadow:0 0 0 1px var(--sunk);
+}
+.nbox{
+  flex:0 0 86px;width:86px;background:var(--s3);border:1px solid var(--l2);
+  color:var(--hi);padding:6px 8px;border-radius:calc(5px*var(--rk));
+  font:1rem var(--font);text-align:right;outline:none;
+}
+.nbox:focus{border-color:var(--acc);background:var(--s4)}
+.unit{flex:0 0 44px;font-size:.867rem;color:var(--m2);white-space:nowrap}
+
+/* ══ COLORE E SCELTA ══ */
+.cpick{
+  flex:0 0 46px;width:46px;height:32px;padding:2px;margin-inline-start:auto;cursor:pointer;
+  background:var(--s3);border:1px solid var(--l2);border-radius:calc(5px*var(--rk));outline:none;
+}
+.cpick:focus{border-color:var(--acc)}
+.cpick::-webkit-color-swatch-wrapper{padding:0}
+.cpick::-webkit-color-swatch{border:none;border-radius:calc(3px*var(--rk))}
+.nbox.hex{text-align:left;font-family:Consolas,'Cascadia Mono',monospace;font-size:.933rem;user-select:text}
+.nbox.hex.bad{border-color:var(--dg-edge)}
+.sel{
+  flex:1 1 auto;min-width:0;max-width:320px;margin-inline-start:auto;
+  background:var(--s3);border:1px solid var(--l2);color:var(--hi);
+  padding:6px 8px;border-radius:calc(5px*var(--rk));font:1rem var(--font);outline:none;cursor:pointer;
+}
+.sel:focus{border-color:var(--acc)}
+.sel option{background:var(--s2);color:var(--t0)}
+
+/* ══ ANTEPRIMA MIRINO ══ */
+.hudprev{
+  position:relative;height:120px;margin:4px 10px 14px;border-radius:calc(8px*var(--rk));overflow:hidden;
+  background:linear-gradient(100deg,#e9edf2 0%,#c9d2dc 34%,#6d7885 58%,#2b3139 100%);
+  box-shadow:inset 0 0 0 1px var(--l2);
+}
+.hudprev svg{position:absolute;inset:0;width:100%;height:100%}
+.hudprev .cap{
+  position:absolute;inset-inline-start:10px;bottom:7px;font-size:.767rem;color:#222;
+  background:rgba(255,255,255,.6);padding:1px 7px;border-radius:calc(8px*var(--rk));
+}
+
+/* ══ STATO DEL PONTE PER CLAUDE ══ */
+.bstat{margin:4px 10px;font-size:.933rem;color:var(--m1)}
+.bstat.on{color:var(--acc-tx);font-weight:600}
+.bstat .smeta{display:block;font-weight:400;color:var(--m1);margin-top:2px}
+.wpgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;margin:4px 10px 10px}
+.wp{display:flex;flex-direction:column;gap:3px;text-align:left;padding:10px 12px;cursor:pointer;
+  background:var(--s2);border:1px solid var(--l2);border-radius:calc(6px*var(--rk));color:var(--t1);font:inherit}
+.wp:hover{border-color:var(--acc);background:var(--s3)}
+.wp b{font-weight:600}
+.wp span{font-size:.867rem;color:var(--m1);line-height:1.35}
+
+/* ══ PERCORSI ══ */
+.plist{margin:4px 10px 12px;display:flex;flex-direction:column;gap:6px}
+.prow{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--s2);
+  border:1px solid var(--l2);border-radius:calc(6px*var(--rk))}
+.prow .pn{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.prow .pd{font-size:.867rem;color:var(--m1);white-space:nowrap}
+.prow button{background:var(--s4);color:var(--t2);border:none;border-radius:calc(5px*var(--rk));
+  padding:5px 9px;cursor:pointer;font:inherit;font-size:.933rem}
+.prow button:hover{background:var(--s5)}
+.prow button.pgo{background:var(--acc);color:var(--acc-ink)}
+.pempty{margin:4px 10px 12px;color:var(--m1);font-size:.933rem}
+
+/* ══ TOGGLE ══ */
+.sw{position:relative;width:50px;height:27px;flex:0 0 auto;margin-left:auto}
+.sw input{opacity:0;width:0;height:0}
+.knob{position:absolute;cursor:pointer;inset:0;background:var(--s5);border-radius:27px;transition:.18s}
+.knob::before{
+  content:'';position:absolute;width:20px;height:20px;left:4px;top:3.5px;
+  background:var(--m2);border-radius:50%;transition:.18s;
+}
+input:checked+.knob{background:var(--acc)}
+input:checked+.knob::before{transform:translateX(22px);background:var(--knob)}
+
+/* ══ LEGENDA COMANDI ══ */
+table.keys{width:100%;border-collapse:collapse;font-size:1rem}
+table.keys td{padding:calc(8px*var(--sp)) 10px;border-bottom:1px solid var(--l1)}
+table.keys td:first-child{width:180px}
+table.keys kbd{
+  display:inline-block;background:var(--s4);border:1px solid var(--l3);
+  border-bottom-width:2px;border-radius:calc(5px*var(--rk));padding:3px 10px;
+  font:600 .933rem var(--font);color:var(--acc-tx);
+}
+table.keys td:last-child{color:var(--t2)}
+
+.note{
+  font-size:.9rem;color:var(--m1);line-height:1.6;
+  background:var(--s2);border-left:3px solid var(--acc);
+  padding:10px 14px;border-radius:0 calc(5px*var(--rk)) calc(5px*var(--rk)) 0;margin-bottom:18px;
+}
+.note b{color:var(--t2)}
+
+/* ══ SELEZIONE LINGUA ══ */
+.langgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}
+.langgrid button{
+  display:flex;align-items:center;gap:11px;text-align:left;
+  background:var(--s2);border:1px solid var(--l2);color:var(--t1);
+  border-radius:calc(7px*var(--rk));padding:9px 12px;cursor:pointer;outline:none;
+  font:1rem var(--font);transition:all .12s;
+}
+.langgrid button:hover{background:var(--s4);border-color:var(--l3);color:var(--hi)}
+.langgrid button.act{background:var(--acc-bg);border-color:var(--acc);color:var(--hi);font-weight:600}
+.langgrid svg{flex:0 0 auto;display:block;border-radius:2px;box-shadow:0 0 0 1px var(--edge)}
+.langgrid .nm{flex:1 1 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.langgrid .chk{color:var(--acc-tx);font-weight:700}
+.auto-ico{
+  flex:0 0 auto;width:24px;height:16px;border-radius:2px;
+  background:linear-gradient(135deg,var(--acc),var(--acc-deep));
+  box-shadow:0 0 0 1px var(--edge);
+}
+
+/* ══ TABELLA MATERIALI ══ */
+.mwrap{overflow-x:auto}
+table.mat{width:100%;border-collapse:collapse;font-size:.933rem}
+table.mat th{
+  font-size:.767rem;text-transform:uppercase;letter-spacing:.8px;color:var(--m3);
+  font-weight:600;text-align:left;padding:4px 5px 8px;border-bottom:1px solid var(--l1);white-space:nowrap;
+}
+table.mat td{padding:5px;border-bottom:1px solid var(--l1);vertical-align:middle}
+table.mat tr:hover td{background:var(--s2)}
+table.mat input{
+  width:100%;background:var(--s3);border:1px solid var(--l2);color:var(--hi);
+  padding:5px 7px;border-radius:calc(5px*var(--rk));font:.933rem var(--font);outline:none;
+}
+table.mat input:focus{border-color:var(--acc);background:var(--s4)}
+table.mat input.mnum{width:62px;text-align:right}
+table.mat .bname{color:var(--t1);white-space:nowrap}
+.mico,.mdel{
+  background:var(--s2);border:1px solid var(--l2);border-radius:calc(6px*var(--rk));cursor:pointer;
+  width:30px;height:30px;display:flex;align-items:center;justify-content:center;outline:none;
+}
+.mico:hover{border-color:var(--acc)}
+.mdel{color:var(--m1);font-size:.933rem}
+.mdel:hover{background:var(--dg-bg);border-color:var(--dg);color:var(--dg-tx)}
+.mbtns{display:flex;gap:10px;margin-top:12px}
+body.rtl table.mat th{text-align:right}
+
+/* ══ RICERCA ══ */
+.srch{
+  margin-inline-start:auto;align-self:center;position:relative;
+  display:flex;align-items:center;margin-bottom:6px;
+}
+.srch .ico{position:absolute;inset-inline-start:10px;color:var(--m2);font-size:1.067rem;pointer-events:none}
+.srch input{
+  width:210px;background:var(--s3);border:1px solid var(--l2);color:var(--hi);
+  padding:6px 44px 6px 30px;border-radius:calc(16px*var(--rk));font:.933rem var(--font);outline:none;
+  user-select:text;
+}
+body.rtl .srch input{padding:6px 30px 6px 44px}
+.srch input:focus{border-color:var(--acc);background:var(--s4)}
+.srch input.none{border-color:var(--dg-edge)}
+.srch .cnt{position:absolute;inset-inline-end:12px;font-size:.8rem;color:var(--hl-tx);pointer-events:none}
+.tabs1 button.hit,.tabs2 button.hit{color:var(--hl-tx);box-shadow:inset 0 0 0 1px var(--hl-line)}
+.tabs1 button.hit.act{border-bottom-color:var(--hl)}
+.tabs2 button.hit.act{background:var(--hl);border-color:var(--hl);color:var(--hl-ink)}
+.tabs1 button[data-n]::after,.tabs2 button[data-n]::after{
+  content:attr(data-n);margin-inline-start:7px;font-size:.733rem;font-weight:700;
+  background:var(--hl);color:var(--hl-ink);border-radius:9px;padding:1px 6px;vertical-align:1px;
+}
+.row.hit,table.keys tr.hit td,table.mat tr.hit td,.langgrid button.hit{
+  background:var(--hl-soft);
+}
+.row.hit{box-shadow:inset 3px 0 0 var(--hl)}
+body.rtl .row.hit{box-shadow:inset -3px 0 0 var(--hl)}
+.langgrid button.hit{border-color:var(--hl)}
+mark{background:var(--hl);color:var(--hl-ink);border-radius:2px;padding:0 1px}
+
+/* ══ VALORI MODIFICATI ══ */
+.row.mod .lbl .name::before{
+  content:'';display:inline-block;width:7px;height:7px;border-radius:50%;
+  background:var(--acc);margin-inline-end:7px;vertical-align:1px;
+}
+.rst{
+  flex:0 0 26px;width:26px;height:26px;border-radius:calc(5px*var(--rk));border:1px solid transparent;
+  background:transparent;color:var(--acc-tx);font-size:1rem;cursor:pointer;outline:none;
+  visibility:hidden;
+}
+.row.mod .rst{visibility:visible}
+.rst:hover,.rst:focus-visible{background:var(--acc-bg);border-color:var(--acc)}
+.lvsw button.mod::after{
+  content:'';display:inline-block;width:6px;height:6px;border-radius:50%;
+  background:var(--acc);margin-inline-start:6px;vertical-align:2px;
+}
+.lvsw button.act.mod::after{background:var(--acc-ink)}
+
+/* ══ TASTI PERSONALIZZABILI ══ */
+.kb{
+  display:inline-block;min-width:34px;background:var(--s4);border:1px solid var(--l3);
+  border-bottom-width:2px;border-radius:calc(5px*var(--rk));padding:3px 10px;cursor:pointer;outline:none;
+  font:600 .933rem var(--font);color:var(--acc-tx);transition:border-color .12s,background .12s;
+}
+.kb:hover,.kb:focus-visible{border-color:var(--acc);background:var(--s5)}
+.kb.mod{background:var(--acc-bg)}
+.kb.wait{color:var(--hl-tx);border-color:var(--hl);background:var(--hl-bg)}
+
+/* ══ LIVELLO DI DETTAGLIO ══ */
+.lvsw{
+  display:flex;background:var(--s3);border:1px solid var(--l2);border-radius:calc(18px*var(--rk));padding:3px;gap:2px;
+  min-width:0;
+}
+.lvsw button{
+  background:transparent;border:none;color:var(--m1);cursor:pointer;outline:none;
+  font:600 .9rem var(--font);padding:5px 13px;border-radius:calc(15px*var(--rk));white-space:nowrap;
+  transition:background .12s,color .12s;
+}
+.lvsw button:hover{color:var(--t1);background:var(--s4)}
+.lvsw button.act{background:var(--acc);color:var(--acc-ink)}
+/* elementi sopra il livello scelto: nascosti (e ignorati dalla ricerca) */
+body[data-lv="1"] [data-lv="2"],body[data-lv="1"] [data-lv="3"],
+body[data-lv="2"] [data-lv="3"]{display:none!important}
+
+/* ══ GUIDA ("?") ══ */
+.btn-help{
+  width:32px;height:32px;border-radius:50%;border:1px solid var(--l3);background:var(--s3);
+  color:var(--t2);font:700 1.067rem var(--font);cursor:pointer;outline:none;flex:0 0 auto;
+  transition:all .12s;
+}
+.btn-help:hover,.btn-help:focus-visible{border-color:var(--acc);color:var(--acc-tx)}
+.modal{
+  position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.6);
+  display:none;align-items:center;justify-content:center;padding:16px;
+}
+.modal.open{display:flex}
+.modal .card{
+  position:relative;background:var(--s2);border:1px solid var(--l2);border-radius:calc(10px*var(--rk));
+  max-width:540px;width:100%;max-height:100%;overflow-y:auto;padding:20px 22px 18px;
+  box-shadow:0 12px 40px rgba(0,0,0,.5);user-select:text;
+}
+.modal h2{font-size:1.2rem;color:var(--acc-tx);margin:0 30px 8px 0}
+.modal p{color:var(--t2);margin-bottom:12px}
+.modal ul{list-style:none;display:flex;flex-direction:column;gap:9px}
+.modal li{color:var(--t2);font-size:.933rem;padding-inline-start:16px;position:relative}
+.modal li::before{content:'';position:absolute;inset-inline-start:2px;top:.62em;width:5px;height:5px;border-radius:50%;background:var(--acc)}
+.modal kbd{
+  display:inline-block;background:var(--s4);border:1px solid var(--l3);border-bottom-width:2px;
+  border-radius:calc(4px*var(--rk));padding:0 6px;margin:0 1px;font:600 .833rem var(--font);color:var(--acc-tx);
+}
+.modal .x{
+  position:absolute;top:12px;inset-inline-end:12px;width:30px;height:30px;border-radius:calc(6px*var(--rk));
+  background:transparent;border:none;color:var(--m1);font-size:1.2rem;cursor:pointer;outline:none;
+}
+.modal .x:hover,.modal .x:focus-visible{background:var(--s4);color:var(--hi)}
+body.rtl .modal h2{margin:0 0 8px 30px}
+
+/* ══ REGISTRO ERRORI ══ */
+.btn-warn{
+  height:32px;border-radius:calc(16px*var(--rk));border:1px solid var(--hl-edge);background:var(--hl-bg);
+  color:var(--hl-tx);font:700 .9rem var(--font);padding:0 12px;cursor:pointer;outline:none;
+  flex:0 0 auto;
+}
+.btn-warn:hover,.btn-warn:focus-visible{border-color:var(--hl);background:var(--hl-bg2)}
+.btn-warn[hidden]{display:none}
+.modal .card.wide{max-width:780px}
+.logpath{font-size:.8rem;color:var(--m2);margin-bottom:8px;word-break:break-all;user-select:text}
+.logpre{
+  background:var(--sunk);border:1px solid var(--l1);border-radius:calc(6px*var(--rk));padding:10px 12px;
+  font:.833rem/1.45 Consolas,'Cascadia Mono',monospace;color:var(--t1);
+  white-space:pre-wrap;word-break:break-word;max-height:55vh;min-height:120px;overflow:auto;
+  user-select:text;
+}
+.logpre.empty{color:var(--m2);font-family:var(--font);font-size:.933rem}
+.logpre .ts{color:var(--hl-tx)}
+.modal .mbtns{flex-wrap:wrap}
+
+/* ══ FOOTER ══ */
+.foot{
+  display:flex;gap:10px;justify-content:flex-end;align-items:center;
+  padding:11px 16px;border-top:1px solid var(--l1);background:var(--s1);flex:0 0 auto;
+}
+.foot .status{
+  margin-inline-end:auto;flex:1 1 auto;min-width:0;
+  font-size:.833rem;line-height:1.35;color:var(--m3);
+  height:4.05em;overflow:hidden;display:flex;flex-direction:column;justify-content:center;
+}
+/* spiegazione dell'impostazione sotto il mouse (altezza fissa: niente salti) */
+.foot .status.info{color:var(--m0);display:block;overflow-y:auto}
+.foot .status b{color:var(--t1);font-weight:600}
+.foot .status .meta{display:block;color:var(--acc-tx2);margin-top:2px}
+.foot .status.flash{color:var(--hl-tx)}
+
+/* ══ RTL ══ */
+body.rtl{direction:rtl}
+body.rtl .row .lbl .name,body.rtl .row .lbl .hint{text-align:right}
+body.rtl .langgrid button{text-align:right}
+body.rtl table.keys td{text-align:right}
+body.rtl .note{border-left:none;border-right:3px solid var(--acc);border-radius:calc(5px*var(--rk)) 0 0 calc(5px*var(--rk))}
+</style>
+</head>
+<body data-lv="1">
+
+<div class="bar">
+  <h1><span class="logo" id="logo">⚡</span> DagaWASD</h1>
+  <div class="lvsw" id="lvsw"></div>
+  <div class="right">
+    <button class="btn-warn" id="btnLog" hidden onclick="openLog()"></button>
+    <button class="btn-help" id="btnHelp" onclick="openHelp()">?</button>
+    <span class="dot" id="dot">● —</span>
+    <button class="btn btn-go" id="btnT" onclick="sketchup.toggle()">▶</button>
+  </div>
+</div>
+
+<div class="tabs1" id="tabs1"></div>
+<div class="tabs2" id="tabs2"></div>
+<div class="content" id="content"></div>
+
+<div class="modal" id="logm" onclick="if(event.target === this) closeLog()">
+  <div class="card wide" role="dialog" aria-modal="true" aria-labelledby="logTitle">
+    <button class="x" id="logX" onclick="closeLog()">✕</button>
+    <h2 id="logTitle"></h2>
+    <div class="logpath" id="logPath"></div>
+    <div class="logpre" id="logPre"></div>
+    <div class="mbtns">
+      <button class="btn btn-sm" id="logRefresh" onclick="sketchup.read_log()"></button>
+      <button class="btn btn-sm" id="logCopy" onclick="copyLog()"></button>
+      <button class="btn btn-sm" id="logClear" onclick="sketchup.clear_log()"></button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="help" onclick="if(event.target === this) closeHelp()">
+  <div class="card" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <button class="x" id="helpX" onclick="closeHelp()">✕</button>
+    <div id="helpBody"></div>
+  </div>
+</div>
+
+<div class="foot">
+  <span class="status" id="status"></span>
+  <button class="btn btn-sm" id="btnReset" onclick="resetAll()">—</button>
+  <button class="btn btn-go" id="btnSave" onclick="saveNow()">—</button>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   STRUTTURA — solo id e intervalli numerici.
+   Tutti i testi vivono nei file lang/<codice>.json e arrivano da
+   Ruby: etichetta = "f.<chiave>", descrizione = "h.<chiave>"
+   (se la chiave h.* manca, la riga non ha descrizione).
+   lv = livello di dettaglio: 1 base (predefinito), 2 avanzate,
+   3 molto avanzate. Gruppi, sotto-tab e tab ereditano il livello
+   più basso fra quelli che contengono.
+═══════════════════════════════════════════════════════════════ */
+/* ═══ Aspetto: tabelle ═══
+   Caratteri (nome mostrato → pila CSS), icona del titolo, temi (sfondo e
+   testo da cui si ricavano tutti i neutri; contrast alza i grigi smorzati
+   per leggibilità) e icone di tab e sotto-tab (tracciati SVG 24×24). */
+const FONT_NAMES = {segoe:'Segoe UI', tahoma:'Tahoma', verdana:'Verdana', trebuchet:'Trebuchet MS',
+                    georgia:'Georgia', calibri:'Calibri', consolas:'Consolas', comic:'Comic Sans MS'};
+const FONT_STACK = {
+  segoe:"'Segoe UI',system-ui,sans-serif", tahoma:'Tahoma,Geneva,sans-serif',
+  verdana:'Verdana,Geneva,sans-serif', trebuchet:"'Trebuchet MS',sans-serif",
+  georgia:"Georgia,'Times New Roman',serif", calibri:'Calibri,Carlito,sans-serif',
+  consolas:"Consolas,'Cascadia Mono',monospace", comic:"'Comic Sans MS','Comic Neue',cursive",
+  system:"system-ui,-apple-system,'Segoe UI',sans-serif",
+};
+const LOGOS = {bolt:'⚡', game:'🎮', target:'🎯', boot:'👟', cube:'🧊'};
+const THEMES = {
+  dark:     {bg:'#151515', fg:'#dcdcdc'},
+  light:    {bg:'#f5f6f8', fg:'#1e2227'},
+  midnight: {bg:'#0f1522', fg:'#d5deec'},
+  warm:     {bg:'#1d1915', fg:'#eadfcc'},
+  contrast: {bg:'#000000', fg:'#ffffff', boost:true},
+};
+/* posizione di ogni neutro fra sfondo (0) e testo (1) */
+const NEUTRALS = {bg:0, sunk:-.025, s1:.025, s2:.045, s3:.07, s4:.1, s5:.15,
+                  l1:.085, l2:.15, l3:.19, l4:.28, m3:.36, m2:.45, m1:.6, m0:.67,
+                  t2:.8, t1:.93, t0:1, hi:1.08};
+const BOOST = {l1:.3, l2:.45, l3:.55, l4:.65, m3:.62, m2:.72, m1:.8, m0:.85, t2:.92};
+const ICONS = {
+  player: '<circle cx="12" cy="5" r="2.6"/><path d="M12 8v7m0 0l-4 6m4-6l4 6M6 11h12"/>',
+  camera: '<rect x="3" y="7" width="18" height="13" rx="2"/><circle cx="12" cy="13.5" r="3.5"/><path d="M8.5 7l1.8-3h3.4l1.8 3"/>',
+  objects:'<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/>',
+  actions:'<path d="M9 11V5.5a1.5 1.5 0 013 0V11m0-1V4.5a1.5 1.5 0 013 0V11m0-4.5a1.5 1.5 0 013 0V15a6 6 0 01-6 6h-.5a6 6 0 01-5.2-3L4 13.6a1.5 1.5 0 012.6-1.5L9 15"/>',
+  system: '<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3m0 13v3M2.5 12h3m13 0h3M5.3 5.3l2.1 2.1m9.2 9.2l2.1 2.1M5.3 18.7l2.1-2.1m9.2-9.2l2.1-2.1"/>',
+  mov:    '<path d="M12 3v18M3 12h18M12 3l-3 3m3-3l3 3m-3 15l-3-3m3 3l3-3M3 12l3-3m-3 3l3 3m15-3l-3-3m3 3l-3 3"/>',
+  jump:   '<path d="M12 18V5m-5 5l5-5 5 5M5 21h14"/>',
+  body:   '<rect x="8" y="3" width="8" height="15" rx="4"/><path d="M4 21h16"/>',
+  view:   '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  bob:    '<path d="M2 13c2.5-5 5-5 7.5 0s5 5 7.5 0c1.2-2.4 2.7-3 5-2"/>',
+  rb:     '<circle cx="14" cy="12" r="6"/><path d="M2 9h5M3 13h4M2 17h6"/>',
+  mat:    '<path d="M5 20l2.2-11h9.6L19 20z"/><circle cx="12" cy="5.5" r="2.5"/>',
+  mattab: '<rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M3 9h18M3 14.5h18M9 4v16"/>',
+  inter:  '<circle cx="7" cy="4.5" r="2"/><path d="M7 7v6l-3 7m3-7l3 3v4M7 9.5l5 1.5"/><rect x="13" y="9" width="8" height="11" rx="1"/>',
+  use:    '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.2"/>',
+  grab:   '<path d="M7 12V6a1.8 1.8 0 013.6 0v5m0-6.5a1.8 1.8 0 013.6 0V11m0-5a1.8 1.8 0 013.6 0v8a7 7 0 01-7 7H11a6 6 0 01-5.6-3.8L4 13.5a1.7 1.7 0 013-1.5"/>',
+  perf:   '<path d="M4 17a8 8 0 1116 0"/><path d="M12 17l4-6"/>',
+  keys:   '<rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/>',
+  lang:   '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/>',
+  look:   '<path d="M12 3a9 9 0 100 18c1.6 0 2.1-1.1 2.1-2 0-1.2-1-1.6-1-2.6 0-1.1.9-1.9 2.2-1.9H18a3 3 0 003-3c0-4.6-4-8.5-9-8.5z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10" cy="7" r="1"/><circle cx="15" cy="7.5" r="1"/>',
+  backup: '<path d="M12 3v12m-4-4l4 4 4-4M4 17v3h16v-3"/>',
+  log:    '<path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.2"/>',
+  bridge: '<path d="M2 18h20M4 18v-4a8 8 0 0116 0v4M8 18v-3M12 18v-4M16 18v-3"/>',
+  weather:'<circle cx="8" cy="8" r="3.2"/><path d="M8 1.5v1.6M8 12.9v1.6M1.5 8h1.6M3.4 3.4l1.1 1.1M12.6 3.4l-1.1 1.1"/><path d="M9 20h9a3.5 3.5 0 000-7 5 5 0 00-9.6 1.5A2.8 2.8 0 009 20z"/>',
+  time:   '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>',
+  paths:  '<circle cx="5" cy="18.5" r="2.2"/><circle cx="19" cy="5.5" r="2.2"/><path d="M7.2 18.5H14a3.2 3.2 0 000-6.4h-4a3.2 3.2 0 010-6.4h6.8"/>',
+  presets:'<rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/>',
+  clouds: '<path d="M6.5 18h11a4 4 0 000-8 5.5 5.5 0 00-10.6 1.6A3.2 3.2 0 006.5 18z"/><path d="M14 6.5a4 4 0 016.5 3.2"/>',
+  precip: '<path d="M7 14h10a3.5 3.5 0 000-7 5 5 0 00-9.6 1.5A2.8 2.8 0 007 14z"/><path d="M8 17l-1 3M12 17l-1 3M16 17l-1 3"/>',
+};
+function tabLabel(prefix, id){
+  return `<span class="ti"><svg viewBox="0 0 24 24">${ICONS[id] || ''}</svg></span><span class="tl">${esc(T(prefix + id))}</span>`;
+}
+
+/* Luoghi pronti per Meteo › Luogo: [latitudine, longitudine, fuso senza
+   ora legale]. Scelti per vedere cieli diversi: sole di mezzanotte e notte
+   polare (Tromsø, Svalbard, poli), equatore, emisfero sud. */
+const PLACES = {
+  roma:[41.9, 12.5, 1], milano:[45.46, 9.19, 1], palermo:[38.12, 13.36, 1], london:[51.51, -0.13, 0],
+  reykjavik:[64.15, -21.94, 0], tromso:[69.65, 18.96, 1], svalbard:[78.22, 15.65, 1], np:[90, 0, 0],
+  newyork:[40.71, -74.01, -5], quito:[-0.18, -78.47, -5], rio:[-22.91, -43.17, -3], capetown:[-33.92, 18.42, 2],
+  ushuaia:[-54.8, -68.3, -3], sydney:[-33.87, 151.21, 10], tokyo:[35.68, 139.69, 9], mcmurdo:[-77.85, 166.67, 12],
+  sp:[-90, 0, 0],
+};
+const PLACE_NAMES = {roma:'Roma', milano:'Milano', palermo:'Palermo', london:'London', reykjavik:'Reykjavík',
+  tromso:'Tromsø', svalbard:'Longyearbyen (Svalbard)', newyork:'New York', quito:'Quito', rio:'Rio de Janeiro',
+  capetown:'Cape Town', ushuaia:'Ushuaia', sydney:'Sydney', tokyo:'東京 Tokyo', mcmurdo:'McMurdo'};
+
+const SPEC = [
+{ id:'player', subs:[
+  { id:'mov', groups:[
+    { id:'speed', fields:[
+      {k:'move_speed',        u:'m/s', min:0.5, max:12, step:0.1},
+      {k:'sprint_multiplier', u:'×',   min:1,   max:4,  step:0.05},
+      {k:'crouch_speed_mul',  u:'×',   min:0.1, max:1,  step:0.05, lv:2},
+      {k:'back_speed_mul',    u:'×',   min:0.2, max:1,  step:0.05, lv:2},
+      {k:'strafe_speed_mul',  u:'×',   min:0.2, max:1,  step:0.05, lv:2},
+    ]},
+    { id:'inertia', fields:[
+      {k:'accel_time',  u:'s',   min:0.01, max:1, step:0.01, lv:2},
+      {k:'decel_time',  u:'s',   min:0.01, max:1, step:0.01, lv:2},
+      {k:'air_control', u:'0–1', min:0,    max:1, step:0.05, lv:2},
+    ]},
+  ]},
+  { id:'jump', groups:[
+    { id:'jump', fields:[
+      {k:'jump_force',      u:'m/s', min:1,   max:14, step:0.1},
+      {k:'max_jumps',       u:'n',   min:1,   max:3,  step:1, int:true},
+      {k:'jump_cut_factor', u:'×',   min:0.1, max:1,  step:0.05, lv:2},
+    ]},
+    { id:'tol', fields:[
+      {k:'coyote_time', u:'s', min:0, max:0.5, step:0.01, lv:3},
+      {k:'jump_buffer', u:'s', min:0, max:0.5, step:0.01, lv:3},
+    ]},
+    { id:'grav', fields:[
+      {k:'gravity',        u:'m/s²', min:0.5, max:25, step:0.1},
+      {k:'max_fall_speed', u:'m/s',  min:5,   max:60, step:0.5, lv:2},
+    ]},
+    { id:'respawn', fields:[
+      {k:'respawn_enabled', type:'bool'},
+      {k:'respawn_fall_time', u:'s', min:1, max:30, step:0.5},
+      {k:'respawn_exit_count', u:'n', min:0,   max:5,  step:1, int:true, lv:3, dep:'respawn_enabled'},
+      {k:'respawn_calm_time',  u:'s', min:0.5, max:10, step:0.5, lv:3, dep:'respawn_enabled'},
+    ]},
+  ]},
+  { id:'body', groups:[
+    { id:'dims', fields:[
+      {k:'eye_height',        u:'m', min:0.5, max:3,  step:0.05},
+      {k:'crouch_height',     u:'m', min:0.3, max:2,  step:0.05},
+      {k:'crouch_transition', u:'',  min:1,   max:25, step:0.5, lv:2},
+      {k:'body_radius',       u:'m', min:0.05,max:1,  step:0.05, lv:2},
+    ]},
+    { id:'terrain', fields:[
+      {k:'step_height',         u:'m',    min:0,    max:1.2, step:0.05, lv:2},
+      {k:'max_slope_deg',       u:'°',    min:5,    max:85,  step:1, lv:2},
+      {k:'slide_accel',         u:'m/s²', min:0,    max:20,  step:0.5, lv:3},
+      {k:'floor_snap_distance', u:'m',    min:0.02, max:0.6, step:0.01, lv:3},
+      {k:'collision_quality',   u:'1–3',  min:1,    max:3,   step:1, int:true, lv:3},
+    ]},
+  ]},
+]},
+
+{ id:'camera', subs:[
+  { id:'view', groups:[
+    { id:'mouse', fields:[
+      {k:'mouse_sensitivity', u:'', min:0.0003, max:0.005, step:0.0001},
+      {k:'invert_y', type:'bool'},
+    ]},
+    { id:'padlook', fields:[
+      {k:'pad_look', type:'bool'},
+      {k:'pad_look_speed',   u:'°/s', min:10, max:360, step:5, dep:'pad_look'},
+      {k:'pad_look_speed_v', u:'°/s', min:10, max:360, step:5, lv:2, dep:'pad_look'},
+      {k:'pad_look_accel',   u:'s',   min:0,  max:2,   step:0.05, lv:2, dep:'pad_look'},
+    ]},
+    { id:'gamepad', fields:[
+      {k:'gamepad_enabled', type:'bool'},
+      {k:'gamepad_look_speed', u:'°/s', min:30,  max:400, step:5,    dep:'gamepad_enabled'},
+      {k:'gamepad_deadzone',   u:'0–1', min:0.02, max:0.4, step:0.01, lv:2, dep:'gamepad_enabled'},
+      {k:'gamepad_curve',      u:'×',   min:1,   max:3,   step:0.1,  lv:3, dep:'gamepad_enabled'},
+      {k:'gamepad_rumble', type:'bool', lv:2, dep:'gamepad_enabled'},
+    ]},
+    { id:'lens', fields:[
+      {k:'fov',      u:'°', min:0, max:120, step:1},
+      {k:'cam_roll', u:'°', min:0, max:10,  step:0.1, lv:2},
+      {k:'crosshair', type:'bool'},
+      {k:'charge_bar', type:'bool', lv:2},
+    ]},
+    { id:'zoom', fields:[
+      {k:'wheel_zoom',   type:'bool'},
+      {k:'zoom_min_fov', u:'°', min:5, max:60, step:1, lv:2},
+    ]},
+  ]},
+  { id:'bob', groups:[
+    { id:'bobstep', fields:[
+      {k:'head_bob_enabled', type:'bool'},
+      {k:'head_bob_freq', u:'Hz', min:0.5,   max:6,    step:0.1, lv:2},
+      {k:'head_bob_amp',  u:'m',  min:0.003, max:0.15, step:0.003, lv:2},
+      {k:'head_bob_side', u:'m',  min:0,     max:0.12, step:0.002, lv:2},
+    ]},
+    { id:'landing', fields:[
+      {k:'land_dip', u:'', min:0, max:0.5, step:0.01, lv:2},
+    ]},
+    { id:'steps', fields:[
+      {k:'steps_enabled', type:'bool'},
+      {k:'steps_volume', u:'%', min:0, max:100, step:5, int:true, dep:'steps_enabled'},
+    ]},
+  ]},
+  /* Percorsi registrati col tasto R (lib/path.rb): elenco con i comandi, poi le impostazioni */
+  { id:'paths', special:'paths', groups:[
+    { id:'pathplay', fields:[
+      {k:'path_smooth', u:'s', min:0,    max:3, step:0.1},
+      {k:'path_speed',  u:'×', min:0.25, max:4, step:0.05},
+    ]},
+    { id:'pathscenes', fields:[
+      {k:'path_scene_step', u:'s', min:0.25, max:10, step:0.25, lv:2},
+    ]},
+    { id:'pathvideo', fields:[
+      {k:'path_video_format', type:'choice', opts:['avi','png']},
+      {k:'path_video_size', type:'choice', opts:['view','hd','fhd','uhd']},
+      {k:'path_video_fps',  u:'Hz', min:10, max:60, step:1, int:true, lv:2},
+    ]},
+  ]},
+]},
+
+{ id:'objects', subs:[
+  { id:'rb', groups:[
+    { id:'sim', fields:[
+      {k:'obj_walls',   type:'bool', lv:2},
+      {k:'obj_tipping', type:'bool', lv:2},
+      {k:'obj_bounce',   u:'0–1',   min:0, max:1,   step:0.05, lv:2},
+      {k:'obj_friction', u:'0–1.5', min:0, max:1.5, step:0.05, lv:2},
+    ]},
+    { id:'damp', fields:[
+      {k:'obj_lin_damping', u:'1/s', min:0, max:3,   step:0.02, lv:3},
+      {k:'obj_ang_damping', u:'1/s', min:0, max:3,   step:0.02, lv:3},
+      {k:'obj_air_drag',    u:'',    min:0, max:0.5, step:0.01, lv:3},
+    ]},
+    { id:'rest', fields:[
+      {k:'obj_sleep_lin',  u:'m/s',   min:0.01, max:1, step:0.01, lv:3},
+      {k:'obj_sleep_ang',  u:'rad/s', min:0.01, max:2, step:0.01, lv:3},
+      {k:'obj_sleep_time', u:'s',     min:0,    max:2, step:0.05, lv:3},
+    ]},
+  ]},
+  { id:'mat', groups:[
+    { id:'matdet', fields:[
+      {k:'obj_use_materials', type:'bool'},
+      {k:'obj_density',    u:'kg/m³', min:20,   max:8000, step:10, lv:2},
+      {k:'obj_fill_ratio', u:'0–1',   min:0.05, max:1,    step:0.05, lv:3},
+    ]},
+    { id:'perf', fields:[
+      {k:'max_phys_entities', u:'n', min:4, max:80, step:1, int:true, lv:2},
+    ]},
+  ]},
+  { id:'mattab', special:'materials', lv:2 },
+  { id:'inter', groups:[
+    { id:'pushkb', fields:[
+      {k:'player_mass',   u:'kg', min:20, max:200, step:1, lv:2},
+      {k:'push_enabled',  type:'bool'},
+      {k:'push_max_mass', u:'kg', min:1,  max:500, step:1, lv:2},
+      {k:'knockback_enabled', type:'bool'},
+    ]},
+  ]},
+]},
+
+{ id:'actions', subs:[
+  { id:'use', groups:[
+    { id:'use',  fields:[ {k:'use_range', u:'m', min:0.5, max:10, step:0.1} ]},
+    { id:'kick', fields:[
+      {k:'kick_range',       u:'m',   min:0.5, max:10,  step:0.1, lv:2},
+      {k:'kick_force_min',   u:'m/s', min:0.5, max:20,  step:0.5, lv:2},
+      {k:'kick_force',       u:'m/s', min:1,   max:30,  step:0.5},
+      {k:'kick_charge_time', u:'s',   min:0,   max:3,   step:0.1, lv:2},
+      {k:'impulse_ref_mass', u:'kg',  min:1,   max:200, step:1, lv:3},
+    ]},
+  ]},
+  { id:'grab', groups:[
+    { id:'grab', fields:[
+      {k:'grab_range',    u:'m',   min:0.5, max:10,  step:0.1},
+      {k:'grab_distance', u:'m',   min:0.5, max:5,   step:0.1},
+      {k:'grab_max_mass', u:'kg',  min:1,   max:300, step:1},
+      {k:'grab_spring',   u:'1/s', min:2,   max:40,  step:0.5, lv:3},
+    ]},
+    { id:'throw', fields:[
+      {k:'throw_force_min',   u:'m/s', min:1,   max:20, step:0.5, lv:2},
+      {k:'throw_force_max',   u:'m/s', min:2,   max:40, step:0.5},
+      {k:'throw_charge_time', u:'s',   min:0.1, max:5,  step:0.1, lv:2},
+    ]},
+    { id:'pickup', fields:[
+      {k:'grab_pull_time', u:'s', min:0, max:1, step:0.02, lv:3},
+      {k:'grab_out_time',  u:'s', min:0, max:1, step:0.02, lv:3},
+    ]},
+  ]},
+]},
+
+/* Meteo › Data e ora: lo stato del cielo (ora nel cielo, sole, luna) arriva
+   da Ruby con setSky. dep:[…] = vale solo se tutti gli interruttori sono
+   accesi; '!chiave' = solo se quell'interruttore è spento. */
+{ id:'weather', subs:[
+  { id:'time', note:'sky.note', foot:'sky', groups:[
+    { id:'sky', fields:[
+      {k:'sky_enabled', type:'bool'},
+      {k:'sky_now', type:'bool', dep:'sky_enabled'},
+    ]},
+    /* Luogo: type 'preset' = tendina che compila latitudine, longitudine e
+       fuso (PLACES); non è un'impostazione, mostra il luogo che corrisponde */
+    { id:'place', fields:[
+      {k:'sky_place_custom', type:'bool', dep:'sky_enabled'},
+      {k:'sky_city', type:'preset', lit:PLACE_NAMES, opts:['np', 'sp'], dep:'sky_place_custom'},
+      {k:'sky_lat', u:'°', min:-90,  max:90,  step:0.01, dep:'sky_place_custom'},
+      {k:'sky_lon', u:'°', min:-180, max:180, step:0.01, dep:'sky_place_custom'},
+      {k:'sky_tz',  u:'h', min:-12,  max:14,  step:0.5,  dep:'sky_place_custom', lv:2},
+    ]},
+    { id:'date', fields:[
+      {k:'sky_hour',  u:'h', min:0, max:23.75, step:0.25, fmt:'hm', dep:['sky_enabled', '!sky_now']},
+      {k:'sky_day',   u:'', min:1, max:31, step:1, int:true, dep:['sky_enabled', '!sky_now']},
+      {k:'sky_month', u:'', min:1, max:12, step:1, int:true, uname:'month', dep:['sky_enabled', '!sky_now']},
+    ]},
+    { id:'flow', fields:[
+      {k:'sky_flow', type:'bool', dep:['sky_enabled', '!sky_now']},
+      {k:'sky_day_minutes', u:'min', min:0.5, max:120, step:0.5, dep:['sky_flow', '!sky_now']},
+    ]},
+    { id:'skyshow', fields:[
+      {k:'sky_shadows', type:'bool', dep:'sky_enabled'},
+      {k:'sky_colors',  type:'bool', lv:2, dep:'sky_enabled'},
+      {k:'sky_sun',     type:'bool', lv:2, dep:'sky_enabled'},
+      {k:'sky_moon',    type:'bool', lv:2, dep:'sky_enabled'},
+      {k:'sky_stars',   type:'bool', lv:2, dep:'sky_enabled'},
+      {k:'sky_body_size',  u:'×',  min:1, max:10,   step:0.5, lv:3, dep:'sky_enabled'},
+      {k:'sky_star_count', u:'n',  min:0, max:3000, step:50, int:true, lv:3, dep:'sky_stars'},
+      {k:'sky_fps',        u:'Hz', min:5, max:60,   step:1,  int:true, lv:3, dep:'sky_enabled'},
+      {k:'sky_shadow_fps', u:'Hz', min:0.5, max:30, step:0.5, lv:3, dep:'sky_shadows'},
+    ]},
+  ]},
+  /* Pioggia e neve (lib/precip.rb). dep su una scelta: vale se non è 'none' */
+  { id:'precip', note:'precip.note', groups:[
+    { id:'precip', fields:[
+      {k:'precip_kind', type:'choice', opts:['none','rain','snow','mix']},
+      {k:'precip_intensity', u:'%', min:5, max:100, step:5, int:true, dep:'precip_kind'},
+    ]},
+    { id:'wind', fields:[
+      {k:'precip_wind',     u:'m/s', min:0, max:25,  step:0.5, dep:'precip_kind'},
+      {k:'precip_wind_dir', u:'°',   min:0, max:355, step:5, int:true, lv:2, dep:'precip_kind'},
+    ]},
+    { id:'precipfx', fields:[
+      {k:'precip_fog',    type:'bool', dep:'precip_kind'},
+      {k:'precip_roofs',  type:'bool', lv:2, dep:'precip_kind'},
+      {k:'precip_radius', u:'m',  min:5,   max:60,    step:1,   lv:3, dep:'precip_kind'},
+      {k:'precip_max',    u:'n',  min:500, max:20000, step:500, int:true, lv:3, dep:'precip_kind'},
+      {k:'precip_fps',    u:'Hz', min:10,  max:60,    step:1,   int:true, lv:3, dep:'precip_kind'},
+    ]},
+    { id:'storm', fields:[
+      {k:'storm',         type:'bool', dep:'precip_kind'},
+      {k:'storm_rate',    u:'/min', min:1, max:30, step:1, int:true, lv:2, dep:'storm'},
+      {k:'storm_thunder', type:'bool', lv:2, dep:'storm'},
+    ]},
+    { id:'snowcover', fields:[
+      {k:'snow_cover',      type:'bool', lv:2},
+      {k:'snow_cover_time', u:'min', min:0.5, max:30, step:0.5, lv:2, dep:'snow_cover'},
+    ]},
+  ]},
+  /* Nuvole (lib/clouds.rb) */
+  { id:'clouds', note:'cloud.note', groups:[
+    { id:'clouds', fields:[
+      {k:'cloud_enabled', type:'bool'},
+      {k:'cloud_cover', u:'%', min:5, max:100, step:5, int:true, dep:'cloud_enabled'},
+      {k:'cloud_shade', type:'bool', lv:2, dep:'cloud_enabled'},
+    ]},
+    { id:'cloudwind', fields:[
+      {k:'cloud_wind',     u:'m/s', min:0, max:60,  step:1, dep:'cloud_enabled'},
+      {k:'cloud_wind_dir', u:'°',   min:0, max:355, step:5, int:true, lv:2, dep:'cloud_enabled'},
+      {k:'cloud_timelapse', type:'bool', lv:2, dep:'cloud_enabled'},
+    ]},
+    { id:'cloudshape', fields:[
+      {k:'cloud_height', u:'m',  min:300, max:5000, step:100, int:true, lv:2, dep:'cloud_enabled'},
+      {k:'cloud_size',   u:'m',  min:200, max:3000, step:50,  int:true, lv:3, dep:'cloud_enabled'},
+      {k:'cloud_fps',    u:'Hz', min:5,   max:30,   step:1,   int:true, lv:3, dep:'cloud_enabled'},
+    ]},
+  ]},
+  /* Situazioni pronte: pulsanti che impostano tutto il meteo (weather_preset in lib/sky.rb) */
+  { id:'presets', special:'presets' },
+]},
+
+{ id:'system', subs:[
+  { id:'perf', groups:[
+    { id:'loop', fields:[ {k:'tick_rate', u:'Hz', min:10, max:144, step:1, int:true, lv:3} ]},
+  ]},
+  { id:'keys',  special:'keys' },
+  { id:'lang',  special:'lang' },
+  /* Aspetto: type 'color' = '#rrggbb'; type 'choice' = una fra opts (etichetta
+     tradotta o.<chiave>.<valore>) o fra le chiavi di lit (etichetta fissa: nomi
+     di caratteri, emoji). I valori ammessi sono gli stessi di LOOK_CHOICES in
+     lib/config.rb. L'aspetto si applica subito: vedi applyLook. */
+  { id:'look', note:'look.note', foot:'look', groups:[
+    { id:'theme', fields:[
+      {k:'ui_theme', type:'choice', opts:['auto','dark','light','midnight','warm','contrast']},
+      {k:'ui_accent',    type:'color'},
+      {k:'ui_highlight', type:'color', lv:2},
+      {k:'ui_danger',    type:'color', lv:2},
+      {k:'ui_custom_colors', type:'bool', lv:3},
+      {k:'ui_bg',   type:'color', lv:3, dep:'ui_custom_colors'},
+      {k:'ui_text', type:'color', lv:3, dep:'ui_custom_colors'},
+    ]},
+    { id:'font', fields:[
+      {k:'ui_font', type:'choice', lit:FONT_NAMES, opts:['system']},
+      {k:'ui_font_size',   u:'px', min:12,  max:20, step:0.5},
+      {k:'ui_line_height', u:'×',  min:1.2, max:2,  step:0.05, lv:3},
+    ]},
+    { id:'layout', fields:[
+      {k:'ui_radius',      u:'px', min:0,   max:16,  step:1, int:true, lv:2},
+      {k:'ui_spacing',     u:'×',  min:0.6, max:1.6, step:0.05, lv:2},
+      {k:'ui_hints',       type:'bool', lv:2},
+      {k:'ui_animations',  type:'bool', lv:2},
+      {k:'ui_label_width', u:'px', min:150, max:360, step:5, int:true, lv:3},
+      {k:'ui_scrollbar',   u:'px', min:4,   max:16,  step:1, int:true, lv:3},
+    ]},
+    { id:'icons', fields:[
+      {k:'ui_tab_icons', type:'choice', opts:['text','both','icons']},
+      {k:'ui_logo', type:'choice', lit:LOGOS, opts:['none'], lv:2},
+    ]},
+    { id:'cross', preview:true, fields:[
+      {k:'hud_cross_color', type:'color'},
+      {k:'hud_cross_style', type:'choice', opts:['cross','dot','circle','crossdot'], lv:2},
+      {k:'hud_cross_size',    u:'px', min:3,   max:30, step:1, int:true, lv:2},
+      {k:'hud_cross_opacity', u:'0–1', min:0.1, max:1, step:0.05, lv:2},
+      {k:'hud_cross_gap',     u:'px', min:0,   max:12, step:1, int:true, lv:3},
+      {k:'hud_cross_width',   u:'px', min:1,   max:4,  step:1, int:true, lv:3},
+      {k:'hud_cross_outline', type:'bool', lv:3},
+    ]},
+    { id:'bar', fields:[
+      {k:'hud_bar_color',      type:'color', lv:2},
+      {k:'hud_bar_zone_color', type:'color', lv:3},
+      {k:'hud_bar_width',  u:'px', min:60, max:300, step:5, int:true, lv:3},
+      {k:'hud_bar_height', u:'px', min:2,  max:16,  step:1, int:true, lv:3},
+    ]},
+  ]},
+  /* Ponte per Claude (lib/bridge.rb): lo stato arriva da Ruby con setBridge */
+  { id:'bridge', note:'bridge.note', foot:'bridge', groups:[
+    { id:'bridge', fields:[
+      {k:'bridge_enabled', type:'bool', lv:2},
+      {k:'bridge_live', type:'bool', lv:2},
+      {k:'bridge_step_delay', u:'s', min:0.05, max:2, step:0.05, lv:2},
+      {k:'bridge_detail', type:'choice', opts:['solids','ops','anim'], lv:2},
+      {k:'bridge_orbit', type:'bool', lv:2, dep:'bridge_live'},
+      {k:'bridge_orbit_speed', u:'°/s', min:-45, max:45, step:1, lv:3, dep:'bridge_orbit'},
+    ]},
+  ]},
+  { id:'backup', special:'backup' },
+  { id:'log',    special:'log' },
+]},
+];
+
+/* ═══════════════════════════════════════════════════════════════
+   BANDIERE — SVG inline 24×16.
+   Su Windows le emoji bandiera non hanno glifo (escono come "IT",
+   "FR"…), quindi vanno disegnate. Le forme sono semplificate:
+   servono a riconoscere la lingua a colpo d'occhio, non a essere
+   riproduzioni araldiche.
+═══════════════════════════════════════════════════════════════ */
+function sv(inner){
+  return `<svg width="24" height="16" viewBox="0 0 24 16">${inner}</svg>`;
+}
+function bands(cols, vert){           // strisce uguali
+  const n = cols.length, s = (vert ? 24 : 16) / n;
+  return sv(cols.map((c, i) => vert
+    ? `<rect x="${i*s}" y="0" width="${s}" height="16" fill="${c}"/>`
+    : `<rect x="0" y="${i*s}" width="24" height="${s}" fill="${c}"/>`).join(''));
+}
+function wband(parts){                // strisce orizzontali pesate [colore,peso]
+  const tot = parts.reduce((a, p) => a + p[1], 0);
+  let y = 0;
+  return sv(parts.map(p => {
+    const h = 16 * p[1] / tot, r = `<rect x="0" y="${y}" width="24" height="${h}" fill="${p[0]}"/>`;
+    y += h; return r;
+  }).join(''));
+}
+function nordic(bg, cr, inner){       // croce scandinava
+  let s = `<rect width="24" height="16" fill="${bg}"/>`
+        + `<rect x="6" y="0" width="4" height="16" fill="${cr}"/>`
+        + `<rect x="0" y="6" width="24" height="4" fill="${cr}"/>`;
+  if(inner) s += `<rect x="7" y="0" width="2" height="16" fill="${inner}"/>`
+              +  `<rect x="0" y="7" width="24" height="2" fill="${inner}"/>`;
+  return sv(s);
+}
+function star(cx, cy, r, fill, rot){  // stella a 5 punte
+  let p = '';
+  for(let i = 0; i < 10; i++){
+    const a = (rot || -90) * Math.PI/180 + i * Math.PI/5;
+    const rr = i % 2 ? r * 0.382 : r;
+    p += (i ? 'L' : 'M') + (cx + rr*Math.cos(a)).toFixed(2) + ' ' + (cy + rr*Math.sin(a)).toFixed(2);
+  }
+  return `<path d="${p}Z" fill="${fill}"/>`;
+}
+
+const FLAGS = {
+  ar: () => sv('<rect width="24" height="16" fill="#186648"/><rect x="4" y="5" width="16" height="1.6" fill="#fff"/><path d="M4 9h14l2 2-2 2H4z" fill="#fff"/>'),
+  bg: () => bands(['#fff','#00966e','#d62612']),
+  cs: () => sv('<rect width="24" height="8" fill="#fff"/><rect y="8" width="24" height="8" fill="#d7141a"/><path d="M0 0l11 8-11 8z" fill="#11457e"/>'),
+  da: () => nordic('#c60c30', '#fff'),
+  de: () => bands(['#000','#dd0000','#ffce00']),
+  el: () => sv('<rect width="24" height="16" fill="#fff"/>'
+      + [0,2,4,6,8].map(i => `<rect y="${i*1.78}" width="24" height="1.78" fill="#0d5eaf"/>`).join('')
+      + '<rect width="8.9" height="8.9" fill="#0d5eaf"/><rect x="3.6" y="0" width="1.8" height="8.9" fill="#fff"/><rect x="0" y="3.55" width="8.9" height="1.8" fill="#fff"/>'),
+  en: () => sv('<rect width="24" height="16" fill="#012169"/>'
+      + '<path d="M0 0l24 16M24 0L0 16" stroke="#fff" stroke-width="3.2"/>'
+      + '<path d="M0 0l24 16M24 0L0 16" stroke="#c8102e" stroke-width="1.9"/>'
+      + '<path d="M12 0v16M0 8h24" stroke="#fff" stroke-width="5.3"/>'
+      + '<path d="M12 0v16M0 8h24" stroke="#c8102e" stroke-width="3.2"/>'),
+  es: () => wband([['#aa151b',1],['#f1bf00',2],['#aa151b',1]]),
+  et: () => bands(['#0072ce','#000','#fff']),
+  fi: () => nordic('#fff', '#003580'),
+  fr: () => bands(['#002395','#fff','#ed2939'], true),
+  he: () => sv('<rect width="24" height="16" fill="#fff"/><rect y="2" width="24" height="2" fill="#0038b8"/><rect y="12" width="24" height="2" fill="#0038b8"/>'
+      + '<path d="M12 5l2.6 4.5H9.4zM12 11L9.4 6.5h5.2z" fill="none" stroke="#0038b8" stroke-width="1"/>'),
+  hi: () => sv('<rect width="24" height="5.33" fill="#ff9933"/><rect y="5.33" width="24" height="5.33" fill="#fff"/><rect y="10.66" width="24" height="5.34" fill="#138808"/>'
+      + '<circle cx="12" cy="8" r="2" fill="none" stroke="#000080" stroke-width="0.7"/>'),
+  hr: () => sv('<rect width="24" height="5.33" fill="#ff0000"/><rect y="5.33" width="24" height="5.33" fill="#fff"/><rect y="10.66" width="24" height="5.34" fill="#171796"/>'
+      + '<path d="M9.6 4.4h4.8v3.2q0 2.4-2.4 3.4-2.4-1-2.4-3.4z" fill="#fff" stroke="#ff0000" stroke-width="0.7"/>'),
+  hu: () => bands(['#ce2939','#fff','#477050']),
+  id: () => bands(['#ce1126','#fff']),
+  it: () => bands(['#009246','#fff','#ce2b37'], true),
+  ja: () => sv('<rect width="24" height="16" fill="#fff"/><circle cx="12" cy="8" r="4.8" fill="#bc002d"/>'),
+  ko: () => sv('<rect width="24" height="16" fill="#fff"/>'
+      + '<path d="M12 3.6a4.4 4.4 0 010 8.8 2.2 2.2 0 000-4.4 2.2 2.2 0 010-4.4z" fill="#cd2e3a"/>'
+      + '<path d="M12 3.6a4.4 4.4 0 000 8.8 2.2 2.2 0 010-4.4 2.2 2.2 0 000-4.4z" fill="#0047a0"/>'
+      + '<g fill="#000"><rect x="2" y="3" width="4" height="0.7"/><rect x="2" y="4.3" width="4" height="0.7"/>'
+      + '<rect x="18" y="11.3" width="4" height="0.7"/><rect x="18" y="12.6" width="4" height="0.7"/></g>'),
+  lt: () => bands(['#fdb913','#006a44','#c1272d']),
+  lv: () => wband([['#9e3039',2],['#fff',1],['#9e3039',2]]),
+  nb: () => nordic('#ef2b2d', '#fff', '#002868'),
+  nl: () => bands(['#ae1c28','#fff','#21468b']),
+  pl: () => bands(['#fff','#dc143c']),
+  pt: () => sv('<rect width="24" height="16" fill="#da291c"/><rect width="9.6" height="16" fill="#046a38"/>'
+      + '<circle cx="9.6" cy="8" r="3.4" fill="none" stroke="#ffe900" stroke-width="1"/><rect x="8.2" y="6.6" width="2.8" height="2.8" fill="#fff" stroke="#da291c" stroke-width="0.6"/>'),
+  ro: () => bands(['#002b7f','#fcd116','#ce1126'], true),
+  ru: () => bands(['#fff','#0039a6','#d52b1e']),
+  sk: () => sv('<rect width="24" height="5.33" fill="#fff"/><rect y="5.33" width="24" height="5.33" fill="#0b4ea2"/><rect y="10.66" width="24" height="5.34" fill="#ee1c25"/>'
+      + '<path d="M6 4.6h5.2v3.6q0 2.6-2.6 3.6Q6 10.8 6 8.2z" fill="#ee1c25" stroke="#fff" stroke-width="0.7"/>'
+      + '<path d="M8.6 5.8v4.4M7.2 7.4h2.8M7.4 8.8h2.4" stroke="#fff" stroke-width="0.7"/>'),
+  sl: () => sv('<rect width="24" height="5.33" fill="#fff"/><rect y="5.33" width="24" height="5.33" fill="#0b4ea2"/><rect y="10.66" width="24" height="5.34" fill="#ee1c25"/>'
+      + '<path d="M5.4 4.4h5.2v3.4q0 2.6-2.6 3.6-2.6-1-2.6-3.6z" fill="#0b4ea2" stroke="#fff" stroke-width="0.7"/>'
+      + '<path d="M8 5.2l1.5 2.6h-3z" fill="#fff"/>'),
+  sr: () => bands(['#c6363c','#0c4076','#fff']),
+  sv: () => nordic('#006aa7', '#fecc02'),
+  th: () => wband([['#a51931',1],['#f4f5f8',1],['#2d2a4a',2],['#f4f5f8',1],['#a51931',1]]),
+  tr: () => sv('<rect width="24" height="16" fill="#e30a17"/><circle cx="9.4" cy="8" r="4" fill="#fff"/><circle cx="10.9" cy="8" r="3.2" fill="#e30a17"/>'
+      + star(15.2, 8, 2.1, '#fff')),
+  uk: () => bands(['#0057b7','#ffd700']),
+  vi: () => sv('<rect width="24" height="16" fill="#da251d"/>' + star(12, 8, 5, '#ff0')),
+  zh: () => sv('<rect width="24" height="16" fill="#de2910"/>' + star(5, 4.4, 3, '#ffde00')
+      + star(9.8, 1.9, 1.05, '#ffde00') + star(11.6, 4, 1.05, '#ffde00')
+      + star(11.6, 6.6, 1.05, '#ffde00') + star(9.6, 8.6, 1.05, '#ffde00')),
+};
+function flagOf(code){
+  const f = FLAGS[code];
+  return f ? f() : '<span class="auto-ico" style="display:inline-block"></span>';
+}
+
+/* ═══ Default ═══
+   Esistono solo in main.rb (DEFAULT): Ruby li invia con setDefaults prima
+   di loadSettings. Finché non arrivano DEF è vuoto e il pannello non
+   mostra segni di modifica né ripristina nulla. */
+let DEF = {};
+function setDefaults(d){
+  DEF = d || {};
+  refreshModified();
+  renderKeys();
+}
+
+/* ═══ Indice dei campi ═══ */
+const FIELDS = {};
+SPEC.forEach(t => t.subs.forEach(s => (s.groups || []).forEach(g =>
+  g.fields.forEach(f => { FIELDS[f.k] = f; }))));
+const NUM_KEYS  = Object.keys(FIELDS).filter(k => !FIELDS[k].type);
+const BOOL_KEYS = Object.keys(FIELDS).filter(k => FIELDS[k].type === 'bool');
+const STR_KEYS  = Object.keys(FIELDS).filter(k => FIELDS[k].type === 'color' || FIELDS[k].type === 'choice');
+/* valori di una scelta: prima quelli con nome fisso (lit), poi i tradotti (opts) */
+function choiceVals(f){ return Object.keys(f.lit || {}).concat(f.opts || []); }
+function choiceLabel(f, v){ return f.lit && f.lit[v] !== undefined ? f.lit[v] : T('o.' + f.k + '.' + v); }
+/* campi dell'Aspetto (quelli che applyLook trasforma in CSS o nell'anteprima) */
+const LOOK_KEYS = Object.keys(FIELDS).filter(k => /^(ui|hud)_/.test(k));
+
+/* ═══ Livelli di dettaglio ═══
+   Ogni contenitore prende il livello minimo dei suoi figli: un gruppo,
+   sotto-tab o tab compare appena almeno uno dei suoi campi è visibile.
+   Nascondere è compito del CSS (body[data-lv] + [data-lv]); i campi
+   nascosti restano nel DOM, quindi conservano e salvano il loro valore. */
+const LEVELS = [1, 2, 3];
+let LEVEL = 1;
+SPEC.forEach(t => {
+  t.subs.forEach(s => {
+    (s.groups || []).forEach(g => {
+      g.fields.forEach(f => { f.lv = f.lv || 1; });
+      g.lv = Math.min(...g.fields.map(f => f.lv));
+    });
+    s.lv = s.groups ? Math.min(...s.groups.map(g => g.lv)) : (s.lv || 1);
+  });
+  t.lv = Math.min(...t.subs.map(s => s.lv));
+});
+function shown(x){ return x.lv <= LEVEL; }
+
+function lvswHTML(){
+  return LEVELS.map(n => `<button data-lvl="${n}" title="${escA(T('lvl.h' + n))}"
+      onclick="setLevel(${n}, true)">${esc(T('lvl.' + n))}</button>`).join('');
+}
+
+/* save = true quando la scelta viene dall'utente (va salvata con le impostazioni) */
+function setLevel(n, save){
+  n = LEVELS.includes(+n) ? +n : 1;
+  LEVEL = n;
+  document.body.dataset.lv = n;
+  document.querySelectorAll('#lvsw button').forEach(b =>
+    b.classList.toggle('act', +b.dataset.lvl === n));
+  try { localStorage.setItem('dagawasd_lvl', n); } catch(e){}
+  // il riquadro aperto potrebbe essere sparito: selTab ripiega sul primo visibile
+  if(curTab) selTab(curTab);
+  runSearch(false);
+  markLevelMods();
+  if(save) saveNow();
+}
+
+/* ═══ i18n ═══ */
+let L    = {};      // dizionario corrente (chiave → testo)
+let LANGS = [];     // [{code,name,rtl}] fornito da Ruby
+let CURLANG = 'auto';
+function T(k){ return (L[k] !== undefined) ? L[k] : k; }
+function has(k){ return L[k] !== undefined; }
+
+/* ═══ Costruzione DOM ═══ */
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function fieldHTML(f){
+  const hk = 'h.' + f.k;
+  const lbl = `<div class="lbl"><span class="name">${esc(T('f.' + f.k))}</span>`
+            + (has(hk) ? `<span class="hint">${esc(T(hk))}</span>` : '') + `</div>`;
+  const rst = `<button class="rst" title="${escA(T('ui.reset_one'))}" onclick="resetOne('${f.k}')">↺</button>`;
+  if(f.type === 'bool'){
+    return `<div class="row" data-k="${f.k}" data-lv="${f.lv}">${lbl}
+      <label class="sw"><input type="checkbox" id="${f.k}" onchange="live('${f.k}')"><span class="knob"></span></label>
+      ${rst}
+    </div>`;
+  }
+  /* Colore: selettore + casella esadecimale (id_v), che resta vuota finché
+     Ruby non manda i valori: il selettore da solo direbbe "#000000". */
+  if(f.type === 'color'){
+    return `<div class="row" data-k="${f.k}" data-lv="${f.lv}">${lbl}
+      <input type="color" class="cpick" id="${f.k}" oninput="colorPick('${f.k}')" onchange="saveNow()">
+      <input class="nbox hex" id="${f.k}_v" type="text" maxlength="7" autocomplete="off" spellcheck="false"
+             oninput="hexIn('${f.k}')" onchange="fixHex('${f.k}')" onblur="fixHex('${f.k}')">
+      ${rst}
+    </div>`;
+  }
+  if(f.type === 'preset'){
+    const opts = choiceVals(f).map(v => `<option value="${v}">${esc(choiceLabel(f, v))}</option>`).join('');
+    return `<div class="row" data-k="${f.k}" data-lv="${f.lv}">${lbl}
+      <select class="sel" id="${f.k}" onchange="pickPlace(this.value)">${opts}</select>
+      <button class="rst" style="visibility:hidden" tabindex="-1">↺</button>
+    </div>`;
+  }
+  if(f.type === 'choice'){
+    const font = f.k === 'ui_font';
+    const opts = choiceVals(f).map(v => `<option value="${v}"${font ? ` style="font-family:${escA(FONT_STACK[v])}"` : ''}>${esc(choiceLabel(f, v))}</option>`).join('');
+    return `<div class="row" data-k="${f.k}" data-lv="${f.lv}">${lbl}
+      <select class="sel" id="${f.k}" onchange="live('${f.k}')">${opts}</select>
+      ${rst}
+    </div>`;
+  }
+  return `<div class="row" data-k="${f.k}" data-lv="${f.lv}">${lbl}
+    <input type="range" id="${f.k}" min="${f.min}" max="${f.max}" step="${f.step}" oninput="sync(this)">
+    <input class="nbox" id="${f.k}_v" type="text" inputmode="decimal" autocomplete="off"
+           oninput="sb(this,'${f.k}')" onchange="fix('${f.k}')" onblur="fix('${f.k}')">
+    <span class="unit">${esc(f.u || '')}</span>
+    ${rst}
+  </div>`;
+}
+
+/* ═══ Tasti personalizzabili ═══
+   KEYS: azione → codice VK di Windows (= event.keyCode nel pannello).
+   Clic su un tasto → "premi un tasto": il successivo keydown lo assegna;
+   se era già di un'altra azione le due si scambiano. Esc annulla.
+   KEY_LBL conserva il nome mostrato per i tasti che dipendono dal layout
+   (ò, è, +…): Ruby lo usa per la riga di stato. */
+const KEY_ACTS = ['forward','back','left','right','jump','crouch','run','use','kick','grab','cursor','record'];
+const RESERVED_VK = [27, 9, 33, 34, 36, 37, 38, 39, 40, 91, 92, 93, 98, 100, 102, 104];   // = RESERVED_KEYS in main.rb
+const VK_NAMES = {8:'Backspace', 13:'Enter', 16:'Shift', 17:'Ctrl', 18:'Alt', 20:'CapsLock',
+                  32:'Space', 35:'End', 36:'Home', 45:'Ins', 46:'Del'};
+const MOVE_T = {forward:'keys.fwd', left:'keys.left', back:'keys.back', right:'keys.right'};
+let KEYS = {}, KEY_LBL = {}, CAPTURE = null;
+
+function vkName(vk){
+  if(VK_NAMES[vk]) return VK_NAMES[vk];
+  if((vk >= 48 && vk <= 57) || (vk >= 65 && vk <= 90)) return String.fromCharCode(vk);
+  if(vk >= 112 && vk <= 135) return 'F' + (vk - 111);
+  if(vk >= 96 && vk <= 105) return 'Num' + (vk - 96);
+  return '#' + vk.toString(16).toUpperCase();
+}
+/* Nome da conservare solo se vkName non basta (tasti di punteggiatura ecc.) */
+function eventLabel(e, vk){
+  if(VK_NAMES[vk] || (vk >= 48 && vk <= 57) || (vk >= 65 && vk <= 90) || (vk >= 96 && vk <= 135)) return null;
+  return e.key && e.key.length === 1 ? e.key.toUpperCase() : null;
+}
+function keyLabel(a){ return KEY_LBL[a] || (KEYS[a] ? vkName(KEYS[a]) : '…'); }
+function keyMod(a){ return !!(DEF.keys && KEYS[a] !== undefined && KEYS[a] !== DEF.keys[a]); }
+function setLbl(a, l){ if(l) KEY_LBL[a] = l; else delete KEY_LBL[a]; }
+
+function kbtn(a, title){
+  return `<button class="kb${keyMod(a) ? ' mod' : ''}" data-act="${a}" title="${escA(title || T('keys.hint'))}"
+    onclick="captureKey('${a}')" onblur="cancelCapture('${a}')">${esc(keyLabel(a))}</button>`;
+}
+
+function keyRows(){
+  const k = x => `<kbd>${x}</kbd>`;
+  return [
+    [k('Ctrl') + '+' + k('PgUp'), 'keys.enter'],
+    [k('Ctrl') + '+' + k('Home'), 'keys.panel'],
+    [['forward','left','back','right'].map(a => kbtn(a, T(MOVE_T[a]))).join(' ')
+       + ' / ' + ['↑','←','↓','→'].map(k).join(' '), 'keys.move'],
+    [kbtn('run'),    'keys.run'],
+    [kbtn('jump'),   'keys.jump'],
+    [kbtn('crouch'), 'keys.crouch'],
+    [kbtn('use'),    'keys.use'],
+    [kbtn('kick'),   'keys.kick'],
+    [kbtn('grab'),   'keys.grab'],
+    [k('Shift') + '+' + k(esc(keyLabel('grab'))), 'keys.grab_inner'],
+    [kbtn('cursor'), 'keys.cursor'],
+    [kbtn('record'), 'keys.record'],
+    [k('🖱'), 'keys.zoom'],
+    [k('ESC') + ' / ' + k('Ctrl') + '+' + k('PgDn'), 'keys.exit'],
+  ];
+}
+function keyTableRows(){
+  return keyRows().map(r => `<tr><td>${r[0]}</td><td>${esc(T(r[1]))}</td></tr>`).join('');
+}
+function keysHTML(){
+  return `<div class="note">${T('keys.note')} ${esc(T('keys.hint'))}</div>
+    <table class="keys" id="keytable">${keyTableRows()}</table>
+    <div class="mbtns"><button class="btn btn-sm" onclick="resetKeys()">${esc(T('keys.reset'))}</button></div>`;
+}
+/* Ridisegna tutto ciò che mostra i tasti: legenda e guida. */
+function renderKeys(){
+  const t = document.getElementById('keytable');
+  if(t) t.innerHTML = keyTableRows();
+  const hb = document.getElementById('helpBody');
+  if(hb) hb.innerHTML = helpHTML();
+  markLevelMods();
+  if(SEARCH_Q) runSearch(false);
+}
+
+function captureKey(a){
+  if(CAPTURE && CAPTURE !== a) cancelCapture(CAPTURE);
+  CAPTURE = a;
+  const b = document.querySelector(`.kb[data-act="${a}"]`);
+  if(b){ b.classList.add('wait'); b.textContent = T('keys.press'); b.focus(); }
+}
+function cancelCapture(a){
+  if(CAPTURE !== a) return;
+  CAPTURE = null;
+  renderKeys();
+}
+document.addEventListener('keydown', e => {
+  if(!CAPTURE) return;
+  e.preventDefault(); e.stopPropagation();
+  const a = CAPTURE, vk = e.keyCode;
+  if(vk === 27){ cancelCapture(a); return; }
+  if(!vk || RESERVED_VK.includes(vk)){ flashStatus(T('keys.reserved')); return; }   // resta in attesa
+  const other = KEY_ACTS.find(x => x !== a && KEYS[x] === vk);
+  if(other){ KEYS[other] = KEYS[a]; setLbl(other, KEY_LBL[a]); }
+  KEYS[a] = vk; setLbl(a, eventLabel(e, vk));
+  CAPTURE = null;          // prima di ridisegnare: il blur del vecchio pulsante non deve annullare
+  renderKeys();
+  saveNow();
+}, true);
+
+function resetKeys(){
+  if(!DEF.keys) return;
+  KEYS = Object.assign({}, DEF.keys); KEY_LBL = {};
+  renderKeys(); saveNow();
+}
+
+/* ═══ Backup (esporta / importa) ═══
+   I file si scelgono con le finestre di sistema, aperte da Ruby. */
+function backupHTML(){
+  return `<div class="note">${esc(T('bk.note'))}</div>
+    <div class="mbtns">
+      <button class="btn btn-sm" onclick="sketchup.export_settings()">⤓ ${esc(T('bk.export'))}</button>
+      <button class="btn btn-sm" onclick="sketchup.import_settings()">⤒ ${esc(T('bk.import'))}</button>
+    </div>`;
+}
+
+function langHTML(){
+  const rows = LANGS.map(l =>
+    `<button data-lang="${l.code}" onclick="setLang('${l.code}')">
+       ${flagOf(l.code)}<span class="nm">${esc(l.name)}</span>
+       <span class="chk" data-chk="${l.code}"></span>
+     </button>`).join('');
+  return `<div class="note">${T('lang.note')}</div>
+    <div class="grp"><h3>${esc(T('grp.lang'))}</h3>
+      <div class="langgrid">
+        <button data-lang="auto" onclick="setLang('auto')">
+          <span class="auto-ico"></span><span class="nm">${esc(T('lang.auto'))}</span>
+          <span class="chk" data-chk="auto"></span>
+        </button>
+        ${rows}
+      </div>
+    </div>`;
+}
+
+/* ═══ Tabella materiali ═══
+   MATS arriva da Ruby dentro loadSettings (tabella effettiva) e torna
+   indietro con collect(). Le righe predefinite hanno id = chiave del
+   catalogo e nome tradotto mat.<id>; quelle aggiunte hanno un nome proprio. */
+let MATS = [];
+const BUILTIN = ['legno','pietra','metallo','vetro','gomma','pallone','cartone','plastica'];
+const MICO = {
+  wood:   '<rect x="2" y="4" width="16" height="12" rx="2" fill="#a0692e"/><path d="M4 8h12M4 12h9" stroke="#6b421a" stroke-width="1.3"/>',
+  stone:  '<path d="M3 13l2-6 5-3 5 2 2 6-4 4H7z" fill="#8a8a8a"/><path d="M8 7l2 4 4 1" stroke="#666" fill="none"/>',
+  metal:  '<path d="M10 2l7 4v8l-7 4-7-4V6z" fill="#9aa4ad"/><circle cx="10" cy="10" r="3" fill="#151515"/>',
+  glass:  '<rect x="4" y="3" width="12" height="14" rx="1.5" fill="#7fd3f0" fill-opacity=".35" stroke="#9fe0f5"/><path d="M7 6l-1 4M10 5l-2 7" stroke="#e8f8ff" stroke-width="1.2"/>',
+  rubber: '<circle cx="10" cy="10" r="8" fill="#262626" stroke="#555"/><circle cx="10" cy="10" r="3.5" fill="#151515" stroke="#777"/>',
+  ball:   '<circle cx="10" cy="10" r="8" fill="#eee"/><path d="M10 6l3 2-1 4H8L7 8z" fill="#222"/>',
+  box:    '<path d="M3 7l7-3 7 3v8l-7 3-7-3z" fill="#c49a5c"/><path d="M3 7l7 3 7-3M10 10v8" stroke="#8a6534" fill="none"/>',
+  plastic:'<path d="M8 2h4v3l2 3v10H6V8l2-3z" fill="#3fa9f5"/>',
+  cork:   '<rect x="5" y="3" width="10" height="14" rx="2" fill="#c8a06a"/><g fill="#8e6a3a"><circle cx="8" cy="7" r="1"/><circle cx="12" cy="10" r="1"/><circle cx="9" cy="13" r="1"/></g>',
+  ice:    '<path d="M10 2v16M3 6l14 8M17 6L3 14" stroke="#8fe3ff" stroke-width="2" stroke-linecap="round"/>',
+  foam:   '<g fill="#f2d25c"><circle cx="7" cy="8" r="4"/><circle cx="13" cy="7" r="3.5"/><circle cx="11" cy="13" r="4.5"/></g>',
+  generic:'<circle cx="10" cy="10" r="7" fill="#00c9a7" fill-opacity=".25" stroke="#00c9a7"/>',
+};
+const MICO_IDS = Object.keys(MICO);
+/* colonna → [min, max, decimali] */
+const MLIM = { density:[10, 20000, 0], restitution:[0, 0.98, 2], friction:[0, 1.5, 2] };
+
+function escA(s){ return esc(s).replace(/"/g, '&quot;'); }
+function micoSVG(id){ return `<svg width="20" height="20" viewBox="0 0 20 20">${MICO[id] || MICO.generic}</svg>`; }
+function isBuiltin(r){ return BUILTIN.includes(r.id) && !r.name; }
+
+function matHTML(){
+  return `<div class="note">${esc(T('mt.note'))}</div>
+    <div class="mwrap"><table class="mat">
+      <thead><tr><th></th><th>${esc(T('mt.name'))}</th><th>${esc(T('mt.keywords'))}</th>
+        <th>${esc(T('mt.density'))}<br>kg/m³</th><th>${esc(T('mt.bounce'))}<br>0–0.98</th>
+        <th>${esc(T('mt.friction'))}<br>μ</th><th></th></tr></thead>
+      <tbody id="matbody"></tbody>
+    </table></div>
+    <div class="mbtns">
+      <button class="btn btn-sm" onclick="madd()">+ ${esc(T('mt.add'))}</button>
+      <button class="btn btn-sm" onclick="sketchup.reset_materials()">${esc(T('mt.reset'))}</button>
+    </div>`;
+}
+
+function renderMaterials(){
+  const tb = document.getElementById('matbody');
+  if(!tb) return;
+  tb.innerHTML = MATS.map((r, i) => {
+    const nm = isBuiltin(r)
+      ? `<span class="bname">${esc(T('mat.' + r.id))}</span>`
+      : `<input value="${escA(r.name)}" oninput="mset(${i},'name',this.value)">`;
+    const numCell = k => `<td><input class="mnum" value="${(+r[k]).toFixed(MLIM[k][2])}"
+        onchange="mnum(${i},'${k}',this)" onblur="mnum(${i},'${k}',this)"></td>`;
+    return `<tr>
+      <td><button class="mico" title="${escA(T('mt.icon'))}" onclick="micon(${i})">${micoSVG(r.icon)}</button></td>
+      <td>${nm}</td>
+      <td><input value="${escA(r.keywords)}" oninput="mset(${i},'keywords',this.value)"></td>
+      ${numCell('density')}${numCell('restitution')}${numCell('friction')}
+      <td><button class="mdel" title="${escA(T('mt.del'))}" onclick="mdel(${i})">✕</button></td>
+    </tr>`;
+  }).join('');
+  if(SEARCH_Q) runSearch(false);
+}
+
+function mset(i, k, v){ MATS[i][k] = v; schedule(); }
+function mnum(i, k, el){
+  const [lo, hi, d] = MLIM[k];
+  let v = num(el.value);
+  if(v === null) v = MATS[i][k];
+  v = Math.min(hi, Math.max(lo, v));
+  el.value = v.toFixed(d);
+  if(MATS[i][k] !== v){ MATS[i][k] = v; saveNow(); }
+}
+function micon(i){
+  const r = MATS[i];
+  r.icon = MICO_IDS[(MICO_IDS.indexOf(r.icon) + 1) % MICO_IDS.length];
+  renderMaterials(); saveNow();
+}
+function madd(){
+  MATS.push({ id:'c' + Date.now().toString(36), name:T('mt.new'), density:500,
+              restitution:0.3, friction:0.5, keywords:'', icon:'generic' });
+  renderMaterials(); saveNow();
+}
+function mdel(i){ MATS.splice(i, 1); renderMaterials(); saveNow(); }
+
+function build(){
+  READY = false;       // il DOM che sta per nascere è vuoto: vedi saveNow
+  document.getElementById('tabs1').innerHTML = SPEC.map(t =>
+    `<button data-t="${t.id}" data-lv="${t.lv}" title="${escA(T('tab.' + t.id))}" onclick="selTab('${t.id}')">${tabLabel('tab.', t.id)}</button>`).join('')
+    + `<div class="srch"><span class="ico">⌕</span>
+         <input id="q" type="text" autocomplete="off" spellcheck="false"
+                placeholder="${escA(T('ui.search'))}" oninput="onSearchInput()" onkeydown="onSearchKey(event)">
+         <span class="cnt" id="qcnt"></span></div>`;
+  document.getElementById('q').value = SEARCH_RAW;   // sopravvive al cambio lingua
+  document.getElementById('content').innerHTML = SPEC.map(t => t.subs.map(s => {
+    let body;
+    if(s.special === 'keys')      body = keysHTML();
+    else if(s.special === 'lang') body = langHTML();
+    else if(s.special === 'materials') body = matHTML();
+    else if(s.special === 'backup')    body = backupHTML();
+    else if(s.special === 'log')       body = logHTML();
+    else if(s.special === 'presets')   body = presetsHTML();
+    else if(s.special === 'paths')     body = pathsHTML(s);
+    else body = (s.note ? `<div class="note">${esc(T(s.note))}</div>` : '')
+      + (s.groups || []).map(g =>
+      `<div class="grp" data-lv="${g.lv}"><h3>${esc(T('grp.' + g.id))}</h3>`
+      + (g.preview ? `<div class="hudprev"><svg id="hudsvg"></svg><span class="cap">${esc(T('look.preview'))}</span></div>` : '')
+      + `${g.fields.map(fieldHTML).join('')}</div>`).join('')
+      + (s.foot === 'look' ? `<div class="mbtns"><button class="btn btn-sm" onclick="resetLook()">${esc(T('look.reset'))}</button></div>` : '')
+      + (s.foot === 'bridge' ? `<div class="bstat" id="bridgeStatus"></div>` : '')
+      + (s.foot === 'sky' ? `<div class="bstat" id="skyStatus"></div>` : '');
+    return `<div class="pane" id="pane_${t.id}_${s.id}" data-lv="${s.lv}">${body}</div>`;
+  }).join('')).join('');
+
+  document.getElementById('lvsw').innerHTML = lvswHTML();
+  document.querySelectorAll('#lvsw button').forEach(b =>
+    b.classList.toggle('act', +b.dataset.lvl === LEVEL));
+  document.getElementById('btnHelp').title = T('help.title');
+  document.getElementById('logTitle').textContent   = T('log.title');
+  document.getElementById('logX').title             = T('help.close');
+  document.getElementById('logRefresh').textContent = '↻ ' + T('log.refresh');
+  document.getElementById('logCopy').textContent    = T('log.copy');
+  document.getElementById('logClear').textContent   = T('log.clear');
+  setLogCount(LOG_N);
+  setBridge(BRIDGE);   // #bridgeStatus è appena stato ricreato
+  setSky(SKY);         // idem #skyStatus
+  document.getElementById('helpX').title = T('help.close');
+  document.getElementById('helpBody').innerHTML = helpHTML();
+  document.getElementById('btnReset').textContent = T('ui.reset');
+  document.getElementById('btnSave').textContent  = T('ui.save');
+  STATUS = T('ui.autosave'); renderStatus();
+  markLang();
+  // le tendine partono senza scelta: come le caselle vuote, "valore non ancora arrivato"
+  document.querySelectorAll('#content select.sel').forEach(s => { s.selectedIndex = -1; });
+  renderMaterials();   // il DOM è stato ricostruito (anche al cambio lingua)
+  refreshModified();
+  if(SEARCH_Q) runSearch(false);
+}
+
+let curTab = null, curSub = {};
+
+function selTab(id){
+  let tab = SPEC.find(t => t.id === id);
+  if(!tab || !shown(tab)) tab = SPEC.find(shown);     // nascosto dal livello scelto
+  id = curTab = tab.id;
+  document.querySelectorAll('#tabs1 button[data-t]').forEach(b =>
+    b.classList.toggle('act', b.dataset.t === id));
+  document.getElementById('tabs2').innerHTML = tab.subs.map(s =>
+    `<button data-s="${s.id}" data-lv="${s.lv}" title="${escA(T('sub.' + s.id))}" onclick="selSub('${s.id}')">${tabLabel('sub.', s.id)}</button>`).join('');
+  const subs = tab.subs.filter(shown);
+  selSub(curSub[id] && subs.some(s => s.id === curSub[id]) ? curSub[id] : subs[0].id);
+  applySubHits();      // i sotto-tab sono appena stati ricreati
+  try { localStorage.setItem('dagawasd_tab', id); } catch(e){}
+}
+
+/* ═══ Ricerca impostazioni ═══
+   Cerca (senza badare a maiuscole e accenti) in: etichette e descrizioni
+   delle impostazioni, titoli dei gruppi, legenda tasti, tabella materiali,
+   elenco lingue e nomi di tab/sotto-tab. Evidenzia le righe trovate, i tab
+   e sotto-tab che le contengono (col numero di risultati) e il testo nelle
+   etichette. Invio passa al riquadro successivo con risultati, Esc svuota.
+   Si cerca solo fra ciò che il livello di dettaglio scelto mostra. */
+let SEARCH_RAW = '', SEARCH_Q = '', SEARCH_HITS = {}, searchTimer = null;
+
+function norm(s){
+  return String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+}
+
+function onSearchInput(){
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => runSearch(true), 120);   // "tempo reale" senza lavoro a ogni tasto
+}
+
+function onSearchKey(e){
+  if(e.key === 'Escape'){
+    e.target.value = ''; clearTimeout(searchTimer); runSearch(false);
+  } else if(e.key === 'Enter'){
+    clearTimeout(searchTimer); runSearch(false); gotoNextHit();
+  }
+}
+
+/* Righe di un riquadro che la ricerca considera, col loro testo. */
+function searchItems(pane){
+  const items = [];
+  pane.querySelectorAll('.row[data-k]').forEach(r => {
+    if(+r.dataset.lv > LEVEL) return;
+    const g = r.closest('.grp');
+    items.push([r, r.textContent + ' ' + (g ? g.querySelector('h3').textContent : '')]);
+  });
+  pane.querySelectorAll('table.keys tr, .langgrid button').forEach(r => items.push([r, r.textContent]));
+  pane.querySelectorAll('#matbody tr').forEach(r => {
+    const vals = [...r.querySelectorAll('input')].map(i => i.value).join(' ');
+    items.push([r, r.textContent + ' ' + vals]);
+  });
+  return items;
+}
+
+/* Evidenzia la parte trovata nell'etichetta (testo originale in data-orig). */
+function markName(row, q){
+  const nm = row.querySelector('.lbl .name');
+  if(!nm) return;
+  const orig = nm.dataset.orig !== undefined ? nm.dataset.orig : (nm.dataset.orig = nm.textContent);
+  const n = norm(orig), i = n.indexOf(q);
+  // se la normalizzazione cambia la lunghezza, gli indici non combaciano: niente <mark>
+  if(i < 0 || n.length !== orig.length){ nm.textContent = orig; return; }
+  nm.innerHTML = esc(orig.slice(0, i)) + '<mark>' + esc(orig.slice(i, i + q.length)) + '</mark>'
+               + esc(orig.slice(i + q.length));
+}
+
+function runSearch(jump){
+  const inp = document.getElementById('q');
+  SEARCH_RAW = inp ? inp.value : '';
+  SEARCH_Q = norm(SEARCH_RAW.trim());
+  SEARCH_HITS = {};
+  document.querySelectorAll('.hit').forEach(el => el.classList.remove('hit'));
+  document.querySelectorAll('.lbl .name[data-orig]').forEach(nm => { nm.textContent = nm.dataset.orig; });
+  const cnt = document.getElementById('qcnt');
+  if(!SEARCH_Q){
+    if(cnt) cnt.textContent = '';
+    if(inp) inp.classList.remove('none');
+    applyTabHits(); applySubHits();
+    return;
+  }
+  let total = 0;
+  SPEC.forEach(t => t.subs.forEach(s => {
+    const pane = document.getElementById('pane_' + t.id + '_' + s.id);
+    if(!pane || !shown(s)) return;
+    let n = 0;
+    searchItems(pane).forEach(([el, txt]) => {
+      if(norm(txt).includes(SEARCH_Q)){ el.classList.add('hit'); markName(el, SEARCH_Q); n++; }
+    });
+    // anche il nome del sotto-tab conta come risultato
+    SEARCH_HITS[t.id + '/' + s.id] = { n, label: norm(T('sub.' + s.id)).includes(SEARCH_Q) };
+    total += n;
+  }));
+  if(cnt) cnt.textContent = total ? String(total) : T('ui.search_none');
+  if(inp) inp.classList.toggle('none', total === 0);
+  applyTabHits(); applySubHits();
+
+  if(jump && total){
+    // il riquadro aperto non ha risultati: apri il primo che ne ha
+    const cur = SEARCH_HITS[curTab + '/' + curSub[curTab]];
+    if(!cur || !cur.n) gotoNextHit();
+    else scrollToFirstHit();
+  }
+}
+
+function paneHits(tid, sid){
+  const h = SEARCH_HITS[tid + '/' + sid];
+  return h ? h.n : 0;
+}
+
+function applyTabHits(){
+  document.querySelectorAll('#tabs1 button[data-t]').forEach(b => {
+    const t = SPEC.find(x => x.id === b.dataset.t);
+    const n = SEARCH_Q ? t.subs.reduce((a, s) => a + paneHits(t.id, s.id), 0) : 0;
+    const lbl = SEARCH_Q && (norm(b.textContent.replace(/\d+$/, '')).includes(SEARCH_Q) ||
+                t.subs.some(s => shown(s) && (SEARCH_HITS[t.id + '/' + s.id] || {}).label));
+    b.classList.toggle('hit', !!(n || lbl));
+    if(n) b.dataset.n = n; else delete b.dataset.n;
+  });
+}
+
+function applySubHits(){
+  document.querySelectorAll('#tabs2 button').forEach(b => {
+    const h = SEARCH_Q ? SEARCH_HITS[curTab + '/' + b.dataset.s] : null;
+    b.classList.toggle('hit', !!(h && (h.n || h.label)));
+    if(h && h.n) b.dataset.n = h.n; else delete b.dataset.n;
+  });
+}
+
+function scrollToFirstHit(){
+  const p = document.getElementById('pane_' + curTab + '_' + curSub[curTab]);
+  const el = p && p.querySelector('.hit');
+  if(el) el.scrollIntoView({ block: 'center' });
+}
+
+/* Passa al riquadro successivo (in ordine di tab) che ha risultati. */
+function gotoNextHit(){
+  const order = [];
+  SPEC.forEach(t => t.subs.forEach(s => order.push([t.id, s.id])));
+  const start = order.findIndex(([t, s]) => t === curTab && s === curSub[curTab]);
+  for(let k = 1; k <= order.length; k++){
+    const [t, s] = order[(start + k) % order.length];
+    if(paneHits(t, s)){
+      curSub[t] = s;
+      if(t !== curTab) selTab(t); else { selSub(s); applySubHits(); }
+      scrollToFirstHit();
+      return;
+    }
+  }
+}
+
+function selSub(id){
+  curSub[curTab] = id;
+  document.querySelectorAll('#tabs2 button').forEach(b =>
+    b.classList.toggle('act', b.dataset.s === id));
+  document.querySelectorAll('.pane').forEach(p => p.classList.remove('act'));
+  const p = document.getElementById('pane_' + curTab + '_' + id);
+  if(p) p.classList.add('act');
+  if(p && p.querySelector('#hudsvg')) applyLook();   // ora l'anteprima ha una larghezza vera
+  try { localStorage.setItem('dagawasd_sub_' + curTab, id); } catch(e){}
+}
+
+/* ═══ Guida ═══
+   Testi help.* in lang/*.json; i nomi dei tasti tra [quadre]
+   diventano <kbd>, come nella legenda comandi. */
+const HELP_ITEMS = 7;
+/* Nei testi i tasti predefiniti ([W], [Space]…) sono sostituiti da quelli scelti. */
+const HELP_TOKENS = {W:'forward', A:'left', S:'back', D:'right', Space:'jump', C:'crouch',
+                     Shift:'run', Alt:'use', K:'kick', G:'grab', F:'cursor'};
+function helpText(k){
+  return esc(T(k)).replace(/\[([^\]]+)\]/g, (m, n) => {
+    const a = HELP_TOKENS[n];
+    return `<kbd>${a && KEYS[a] ? esc(keyLabel(a)) : n}</kbd>`;
+  });
+}
+function helpHTML(){
+  let li = '';
+  for(let i = 1; i <= HELP_ITEMS; i++) li += `<li>${helpText('help.' + i)}</li>`;
+  return `<h2 id="helpTitle">${esc(T('help.title'))}</h2>
+    <p>${helpText('help.intro')}</p><ul>${li}</ul>`;
+}
+function openHelp(){
+  document.getElementById('help').classList.add('open');
+  document.getElementById('helpX').focus();
+}
+function closeHelp(){
+  document.getElementById('help').classList.remove('open');
+  document.getElementById('btnHelp').focus();
+}
+document.addEventListener('keydown', e => {
+  if(e.key !== 'Escape') return;
+  if(document.getElementById('logm').classList.contains('open')){ e.stopPropagation(); closeLog(); }
+  else if(document.getElementById('help').classList.contains('open')){ e.stopPropagation(); closeHelp(); }
+}, true);
+
+/* ═══ Registro errori ═══
+   Il testo arriva da Ruby (read_log → showLog). Il pulsante ⚠ nella barra
+   in alto compare solo se il registro contiene voci. */
+let LOG_N = 0, LOG_TEXT = '';
+function logHTML(){
+  return `<div class="note">${esc(T('log.note'))}</div>
+    <div class="mbtns"><button class="btn btn-sm" onclick="openLog()">${esc(T('log.open'))}</button></div>`;
+}
+function countLog(txt){ return (txt.match(/^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d \[/gm) || []).length; }
+function setLogCount(n){
+  LOG_N = n | 0;
+  const b = document.getElementById('btnLog');
+  if(!b) return;
+  b.hidden = !LOG_N;
+  b.textContent = '⚠ ' + LOG_N;
+  b.title = T('log.badge');
+}
+function openLog(){
+  document.getElementById('logm').classList.add('open');
+  const pre = document.getElementById('logPre');
+  pre.className = 'logpre empty'; pre.textContent = '…';
+  document.getElementById('logX').focus();
+  sketchup.read_log();
+}
+function closeLog(){ document.getElementById('logm').classList.remove('open'); }
+/* Chiamata da Ruby: {path, text}. Data e ora di ogni voce evidenziate. */
+function showLog(d){
+  LOG_TEXT = (d && d.text) || '';
+  document.getElementById('logPath').textContent = (d && d.path) || '';
+  const pre = document.getElementById('logPre');
+  if(!LOG_TEXT.trim()){
+    pre.className = 'logpre empty'; pre.textContent = T('log.empty');
+  } else {
+    pre.className = 'logpre';
+    pre.innerHTML = esc(LOG_TEXT).replace(/^(\d{4}-\d\d-\d\d \d\d:\d\d:\d\d)/gm, '<span class="ts">$1</span>');
+    pre.scrollTop = pre.scrollHeight;       // le voci più recenti sono in fondo
+  }
+  setLogCount(countLog(LOG_TEXT));
+}
+function copyLog(){
+  const done = () => flashStatus(T('log.copied'));
+  const fallback = () => {
+    const r = document.createRange(), sel = window.getSelection();
+    r.selectNodeContents(document.getElementById('logPre'));
+    sel.removeAllRanges(); sel.addRange(r);
+    try { document.execCommand('copy'); done(); } catch(e){}
+    sel.removeAllRanges();
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText)
+    navigator.clipboard.writeText(LOG_TEXT).then(done, fallback);
+  else fallback();
+}
+
+/* ═══ Ponte per Claude ═══
+   Chiamata da Ruby: {on, port} oppure {on:false, fail} (nessuna porta libera). */
+let BRIDGE = null;
+function setBridge(b){
+  BRIDGE = b || null;
+  const el = document.getElementById('bridgeStatus');
+  if(!el) return;
+  const on = !!(BRIDGE && BRIDGE.on);
+  el.classList.toggle('on', on);
+  el.textContent = '● ' + (on ? T('bridge.on').replace('{port}', BRIDGE.port)
+                              : T(BRIDGE && BRIDGE.fail ? 'bridge.fail' : 'bridge.off'));
+}
+
+/* ═══ Percorsi ═══
+   L'elenco arriva da Ruby (setPaths: [{name, dur, date}]) all'apertura, dopo
+   ogni registrazione o modifica e al cambio di modello. I comandi tornano a
+   Ruby come {cmd, name}: le finestre di conferma e di scelta le apre lui. */
+let PATHS = [];
+function pathsHTML(s){
+  return `<div class="note">${esc(T('path.note'))}</div><div id="pathList">${pathRows()}</div>`
+    + (s.groups || []).map(g => `<div class="grp" data-lv="${g.lv}"><h3>${esc(T('grp.' + g.id))}</h3>`
+      + `${g.fields.map(fieldHTML).join('')}</div>`).join('');
+}
+function pathClock(sec){ sec = Math.round(sec); return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0'); }
+function pathRows(){
+  if(!PATHS.length) return `<div class="pempty">${esc(T('path.empty'))}</div>`;
+  const b = (cmd, i, lbl, cls) => `<button${cls ? ` class="${cls}"` : ''} title="${escA(T('path.' + cmd + '.h'))}" onclick="pathCmd('${cmd}', ${i})">${lbl}</button>`;
+  return '<div class="plist">' + PATHS.map((p, i) => `<div class="prow">
+    <span class="pn" title="${escA(p.date)}">${esc(p.name)}</span><span class="pd">${pathClock(p.dur)}</span>
+    ${b('play', i, '▶ ' + esc(T('path.play')), 'pgo')}${b('scenes', i, esc(T('path.scenes')))}${b('frames', i, esc(T('path.frames')))}
+    ${b('rename', i, '✎')}${b('delete', i, '✕')}</div>`).join('') + '</div>';
+}
+function setPaths(list){
+  PATHS = Array.isArray(list) ? list : [];
+  const el = document.getElementById('pathList');
+  if(el) el.innerHTML = pathRows();
+}
+function pathCmd(cmd, i){
+  const p = PATHS[i];
+  if(p) sketchup.path_cmd(JSON.stringify({ cmd, name: p.name }));
+}
+
+/* ═══ Situazioni pronte ═══
+   Ruby imposta i valori (alba e tramonto calcolati per data e luogo),
+   salva e rimanda le impostazioni al pannello. */
+const WEATHER_PRESETS = ['clear', 'dawn', 'sunset', 'starry', 'snownight', 'storm', 'timelapse'];
+function presetsHTML(){
+  return `<div class="note">${esc(T('presets.note'))}</div><div class="wpgrid">`
+    + WEATHER_PRESETS.map(id => `<button class="wp" data-wp="${id}" onclick="sketchup.weather_preset('${id}')">`
+      + `<b>${esc(T('wp.' + id))}</b><span>${esc(T('wp.' + id + '.h'))}</span></button>`).join('')
+    + '</div>';
+}
+
+/* ═══ Luogo ═══
+   La tendina compila i tre campi; si riallinea da sola al luogo pronto che
+   corrisponde ai numeri (vuota se nessuno). */
+function placeOf(lat, lon){
+  return Object.keys(PLACES).find(p => Math.abs(PLACES[p][0] - lat) < 0.006 &&
+    (Math.abs(PLACES[p][0]) === 90 || Math.abs(PLACES[p][1] - lon) < 0.006));
+}
+function pickPlace(id){
+  const p = PLACES[id];
+  if(!p) return;
+  setNum('sky_lat', p[0]); setNum('sky_lon', p[1]); setNum('sky_tz', p[2]);
+  saveNow();
+}
+function markPlace(){
+  const sel = document.getElementById('sky_city');
+  if(!sel) return;
+  const lat = numVal('sky_lat'), lon = numVal('sky_lon');
+  const id = lat === null || lon === null ? null : placeOf(lat, lon);
+  if(id) sel.value = id; else sel.selectedIndex = -1;
+}
+function placeName(id){ return choiceLabel(FIELDS.sky_city, id); }
+
+/* ═══ Cielo ═══
+   Chiamata da Ruby: {on:false} oppure ora nel cielo (locale del modello),
+   luogo, altezza del sole, luna (percentuale illuminata e fase 0–7).
+   Date e mesi nella lingua del pannello con Intl. */
+let SKY = null;
+function skyDate(s, opts){
+  try { return new Intl.DateTimeFormat(document.documentElement.lang || 'en', Object.assign({timeZone:'UTC'}, opts))
+                 .format(new Date(Date.UTC(s.y, s.mo - 1, s.d, s.h || 0, s.mi || 0))); }
+  catch(e){ return s.d + '/' + s.mo; }
+}
+function monthName(m){ return skyDate({y:2001, mo:m, d:1}, {month:'long'}); }
+function setSky(s){
+  SKY = s || null;
+  const el = document.getElementById('skyStatus');
+  if(!el) return;
+  const on = !!(SKY && SKY.on);
+  el.classList.toggle('on', on);
+  if(!on){
+    el.textContent = '● ' + T('sky.off') + (SKY && SKY.overlay === false ? ' · ' + T('sky.old') : '');
+    return;
+  }
+  const deg = v => Math.abs(v).toFixed(1).replace(/\.0$/, '');
+  const pid = SKY.custom ? placeOf(SKY.lat, SKY.lon) : null;
+  const place = (SKY.custom ? (pid && placeName(pid)) : SKY.place) || (deg(SKY.lat) + '° ' + (SKY.lat < 0 ? 'S' : 'N') + ', ' + deg(SKY.lon) + '° ' + (SKY.lon < 0 ? 'W' : 'E'));
+  const hm = String(SKY.h).padStart(2, '0') + ':' + String(SKY.mi).padStart(2, '0');
+  const sun = T(SKY.sun >= 0 ? 'sky.sun_up' : 'sky.sun_down').replace('{alt}', Math.abs(SKY.sun));
+  const moon = T('sky.moon').replace('{phase}', T('sky.ph' + SKY.phase)).replace('{pct}', SKY.moon)
+             + (SKY.moon_up ? '' : ' · ' + T('sky.moon_down'));
+  el.textContent = '● ' + skyDate(SKY, {day:'numeric', month:'long', year:'numeric'}) + ', ' + hm + ' · ' + place;
+  const meta = document.createElement('span');
+  meta.className = 'smeta';
+  meta.textContent = sun + ' · ' + moon;
+  el.appendChild(meta);
+}
+
+/* ═══ Lingua ═══ */
+function markLang(){
+  document.querySelectorAll('[data-lang]').forEach(b =>
+    b.classList.toggle('act', b.dataset.lang === CURLANG));
+  document.querySelectorAll('[data-chk]').forEach(s =>
+    s.textContent = (s.dataset.chk === CURLANG) ? '✓' : '');
+}
+
+function setLang(code){
+  CURLANG = code;
+  markLang();
+  sketchup.set_language(code);      // Ruby ricarica il dizionario e richiama applyLang
+}
+
+/* Chiamata da Ruby: dict = dizionario, langs = elenco lingue,
+   cur = codice selezionato ('auto' o un codice), rtl = scrittura destra→sinistra */
+function applyLang(payload){
+  L       = payload.strings || {};
+  LANGS   = payload.languages || LANGS;
+  CURLANG = payload.current || 'auto';
+  document.documentElement.lang = payload.resolved || 'en';
+  document.body.classList.toggle('rtl', !!payload.rtl);
+  const keep = { tab: curTab, sub: Object.assign({}, curSub) };
+  build();
+  curSub = keep.sub;
+  selTab(keep.tab && SPEC.some(t => t.id === keep.tab) ? keep.tab : SPEC[0].id);
+  setRunning(document.getElementById('dot').classList.contains('on'));
+}
+
+/* ═══ Lettura / scrittura valori ═══ */
+let saveTimer = null;
+
+function decimals(step){
+  const s = String(step), i = s.indexOf('.');
+  return i < 0 ? 0 : s.length - i - 1;
+}
+
+/* Le caselle sono input di testo: con la locale italiana un <input type=number>
+   mostra la virgola e rilegge stringa vuota. Qui accettiamo sia '.' che ','. */
+function num(v){
+  const hm = /^\s*(\d{1,2})[:h](\d{2})\s*$/.exec(String(v));   // ore: 14:30 o 14h30
+  if(hm) return +hm[1] + hm[2] / 60;
+  const x = parseFloat(String(v).replace(',', '.').trim());
+  return isNaN(x) ? null : x;
+}
+
+function clampF(k, v){
+  const f = FIELDS[k];
+  if(!f) return v;
+  return Math.min(f.max, Math.max(f.min, v));
+}
+
+function fmt(k, v){
+  const f = FIELDS[k];
+  if(f && f.fmt === 'hm'){        // ore come HH:MM
+    const m = Math.round(parseFloat(v) * 60);
+    return String(Math.floor(m / 60) % 24).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+  }
+  return f && f.int ? String(Math.round(v)) : parseFloat(v).toFixed(decimals(f ? f.step : 0.01));
+}
+
+function sync(sl){            // slider → casella
+  const el = document.getElementById(sl.id + '_v');
+  if(el) el.value = fmt(sl.id, sl.value);
+  markMod(sl.id);
+  pairFix(sl.id);
+  schedule();
+}
+
+/* Coppie [minimo, massimo]: portandone uno oltre l'altro, l'altro lo segue
+   (un lancio minimo più forte del massimo farebbe lanciare più piano
+   caricando di più). Si applica ai valori confermati: slider, fine
+   digitazione, ripristino; mentre si scrive "1" per arrivare a "12" no. */
+const PAIRS = [['kick_force_min', 'kick_force'], ['throw_force_min', 'throw_force_max'],
+               ['crouch_height', 'eye_height']];
+function numVal(k){ const el = document.getElementById(k + '_v'); return el ? num(el.value) : null; }
+function setNum(k, v){
+  v = clampF(k, v);
+  const sl = document.getElementById(k), el = document.getElementById(k + '_v');
+  if(sl) sl.value = v;
+  if(el) el.value = fmt(k, v);
+  markMod(k);
+  return v;
+}
+function pairFix(k){
+  PAIRS.forEach(([lo, hi]) => {
+    if(k !== lo && k !== hi) return;
+    const a = numVal(lo), b = numVal(hi);
+    if(a === null || b === null || a <= b) return;
+    // l'altro segue; se il suo intervallo non ci arriva, torna indietro quello mosso
+    if(k === lo){ if(setNum(hi, a) < a) setNum(lo, numVal(hi)); }
+    else        { if(setNum(lo, b) > b) setNum(hi, numVal(lo)); }
+  });
+}
+
+function sb(inp, key){        // casella → slider
+  const v = num(inp.value);
+  if(v === null) return;      // digitazione in corso ("", "-", "0,"): non toccare nulla
+  const sl = document.getElementById(key);
+  if(sl) sl.value = clampF(key, v);
+  markMod(key);
+  schedule();
+}
+
+/* A fine digitazione riallinea la casella al valore effettivo (clamp + formato). */
+function fix(key){
+  const el = document.getElementById(key + '_v');
+  const sl = document.getElementById(key);
+  if(!el) return;
+  let v = num(el.value);
+  if(v === null) v = DEF[key] !== undefined ? DEF[key] : +(sl ? sl.value : 0);
+  v = clampF(key, v);
+  if(FIELDS[key].int) v = Math.round(v);
+  el.value = fmt(key, v);
+  if(sl) sl.value = v;
+  markMod(key);
+  pairFix(key);
+  saveNow();
+}
+
+function live(k){ markMod(k); saveNow(); }
+
+/* ═══ Valori modificati ═══
+   Pallino e ↺ sulle righe diverse dal predefinito; sullo switch dei livelli
+   un pallino segnala modifiche nascoste dal livello attuale. */
+function valueMod(k){
+  if(DEF[k] === undefined) return false;
+  if(STR_KEYS.includes(k)){
+    const v = strVal(k);
+    return v !== undefined && v !== DEF[k];
+  }
+  if(FIELDS[k].type === 'bool'){
+    const el = document.getElementById(k);
+    return !!el && el.checked !== !!DEF[k];
+  }
+  const el = document.getElementById(k + '_v');
+  const v = el ? num(el.value) : null;
+  return v !== null && fmt(k, clampF(k, v)) !== fmt(k, DEF[k]);
+}
+function markRow(k){
+  const r = document.querySelector(`.row[data-k="${k}"]`);
+  if(r) r.classList.toggle('mod', valueMod(k));
+}
+function markMod(k){ markRow(k); markUnit(k); markLevelMods(); markDeps(); if(LOOK_KEYS.includes(k)) applyLook(); }
+function refreshModified(){ Object.keys(FIELDS).forEach(k => { markRow(k); markUnit(k); }); markLevelMods(); markDeps(); applyLook(); }
+/* Unità che dipende dal valore: il nome del mese accanto al numero */
+function markUnit(k){
+  if(k === 'sky_lat' || k === 'sky_lon' || k === 'sky_tz') markPlace();
+  const f = FIELDS[k];
+  if(!f || f.uname !== 'month') return;
+  const v = numVal(k), u = document.querySelector(`.row[data-k="${k}"] .unit`);
+  if(u) u.textContent = v === null ? '' : monthName(Math.min(12, Math.max(1, Math.round(v))));
+}
+// Campi che valgono solo con un interruttore acceso: riga attenuata se
+// l'interruttore, o quello da cui dipende a sua volta, è spento.
+function depOn(k){
+  const f = FIELDS[k];
+  if(!f || !f.dep) return true;
+  // acceso = interruttore acceso o scelta diversa da 'none'; finché i valori
+  // non sono arrivati (undefined) la riga resta normale
+  return [].concat(f.dep).every(d => {
+    const neg = d[0] === '!', k = neg ? d.slice(1) : d, v = lookVal(k);
+    if(v === undefined) return true;
+    const on = v === true || (typeof v === 'string' && v !== 'none');
+    return neg ? !on : on && depOn(k);
+  });
+}
+function markDeps(){
+  if(!READY) return;   // prima di loadSettings le caselle sono tutte spente
+  Object.values(FIELDS).filter(f => f.dep).forEach(f => {
+    const row = document.querySelector(`.row[data-k="${f.k}"]`);
+    if(row) row.classList.toggle('off', !depOn(f.k));
+  });
+}
+function markLevelMods(){
+  const lvs = Object.keys(FIELDS).filter(valueMod).map(k => FIELDS[k].lv);
+  if(KEY_ACTS.some(keyMod)) lvs.push(1);
+  document.querySelectorAll('#lvsw button').forEach(b => {
+    const n = +b.dataset.lvl;
+    const hid = n > LEVEL && lvs.some(x => x > LEVEL && x <= n);
+    b.classList.toggle('mod', hid);
+    b.title = T('lvl.h' + n) + (hid ? '\n' + T('lvl.hidden_mod') : '');
+  });
+}
+function resetOne(k){
+  if(DEF[k] === undefined) return;
+  loadSettings({ [k]: DEF[k] });
+  pairFix(k);
+  saveNow();
+}
+
+/* ═══ Colori e scelte ═══
+   Il colore vale quanto scritto nella casella esadecimale; mentre si
+   digita un valore non valido vale l'ultimo buono, rimasto nel selettore. */
+function normHex(s){
+  s = String(s || '').trim().toLowerCase();
+  if(s[0] !== '#') s = '#' + s;
+  if(/^#[0-9a-f]{3}$/.test(s)) s = '#' + s.slice(1).split('').map(c => c + c).join('');
+  return /^#[0-9a-f]{6}$/.test(s) ? s : null;
+}
+function strVal(k){
+  const f = FIELDS[k];
+  if(f.type === 'color'){
+    const el = document.getElementById(k + '_v'), pk = document.getElementById(k);
+    if(!el) return undefined;
+    return normHex(el.value) || (READY && pk ? pk.value : undefined);
+  }
+  const el = document.getElementById(k);
+  return el && choiceVals(f).includes(el.value) ? el.value : undefined;
+}
+function setStr(k, v){
+  const el = document.getElementById(k);
+  if(!el) return;
+  if(FIELDS[k].type === 'color'){
+    const n = normHex(v);
+    if(!n) return;
+    const box = document.getElementById(k + '_v');
+    el.value = n; box.value = n; box.classList.remove('bad');
+  } else {
+    el.value = v;
+    if(el.value !== v) el.selectedIndex = -1;
+  }
+}
+function colorPick(k){
+  document.getElementById(k + '_v').value = document.getElementById(k).value;
+  document.getElementById(k + '_v').classList.remove('bad');
+  markMod(k); schedule();
+}
+function hexIn(k){
+  const box = document.getElementById(k + '_v'), n = normHex(box.value);
+  box.classList.toggle('bad', !n);
+  if(!n) return;                          // digitazione in corso
+  document.getElementById(k).value = n;
+  markMod(k); schedule();
+}
+function fixHex(k){
+  const box = document.getElementById(k + '_v'), pk = document.getElementById(k);
+  const n = normHex(box.value) || pk.value;
+  box.value = n; pk.value = n; box.classList.remove('bad');
+  markMod(k); saveNow();
+}
+/* "Ripristina aspetto": solo i campi del sotto-tab Aspetto */
+function resetLook(){
+  const d = {};
+  LOOK_KEYS.forEach(k => { if(DEF[k] !== undefined) d[k] = DEF[k]; });
+  loadSettings(d); saveNow();
+}
+
+/* ═══ Aspetto ═══
+   Trasforma le impostazioni ui_* in variabili CSS e classi del <body>, e
+   hud_* nell'anteprima del mirino. I neutri stanno fra sfondo e testo del
+   tema (NEUTRALS); accento, evidenziazione e colore di stop si scuriscono
+   o schiariscono per restare leggibili su sfondi chiari. Prima che Ruby
+   mandi i valori si usano quelli dell'ultima volta (localStorage): così
+   il pannello non si apre per un istante col tema predefinito. */
+let LOOK_CACHE = {};
+function rgb(h){ const n = normHex(h); return n ? [1, 3, 5].map(i => parseInt(n.slice(i, i + 2), 16)) : null; }
+function hex(c){ return '#' + c.map(x => Math.round(Math.min(255, Math.max(0, x))).toString(16).padStart(2, '0')).join(''); }
+function mix(a, b, t){ return a.map((x, i) => x + (b[i] - x) * t); }
+function lum(c){ return (0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]) / 255; }
+function rgba(c, a){ return `rgba(${c.map(Math.round).join(',')},${a})`; }
+const WHITE = [255, 255, 255], BLACK = [0, 0, 0];
+
+function lookVal(k){
+  const f = FIELDS[k];
+  let v;
+  if(STR_KEYS.includes(k)) v = strVal(k);
+  else if(f.type === 'bool'){
+    const el = document.getElementById(k);
+    v = READY && el ? el.checked : undefined;   // prima di loadSettings le caselle sono tutte spente
+  } else {
+    const el = document.getElementById(k + '_v'), x = el ? num(el.value) : null;
+    v = x === null ? undefined : clampF(k, x);
+  }
+  if(v === undefined) v = LOOK_CACHE[k];
+  if(v === undefined) v = DEF[k];
+  return v;
+}
+function systemLight(){
+  try { return window.matchMedia('(prefers-color-scheme: light)').matches; } catch(e){ return false; }
+}
+
+function applyLook(){
+  const v = {};
+  LOOK_KEYS.forEach(k => { v[k] = lookVal(k); });
+  if(LOOK_KEYS.some(k => v[k] === undefined)) return;   // niente valori: resta il CSS di base
+  LOOK_CACHE = v;
+  try { localStorage.setItem('dagawasd_look', JSON.stringify(v)); } catch(e){}
+  const r = document.documentElement.style, b = document.body;
+  const th = THEMES[v.ui_theme === 'auto' ? (systemLight() ? 'light' : 'dark') : v.ui_theme] || THEMES.dark;
+  const custom = v.ui_custom_colors && rgb(v.ui_bg) && rgb(v.ui_text);
+  const B = rgb(custom ? v.ui_bg : th.bg), F = rgb(custom ? v.ui_text : th.fg);
+  const light = lum(B) > lum(F);
+  const set = (n, c) => r.setProperty('--' + n, typeof c === 'string' ? c : hex(c));
+  for(const n in NEUTRALS) set(n, mix(B, F, th.boost && BOOST[n] ? BOOST[n] : NEUTRALS[n]));
+  set('edge', rgba(F, .14));
+  r.setProperty('color-scheme', light ? 'light' : 'dark');   // tendine e selettori di sistema
+
+  const A = rgb(v.ui_accent), H = rgb(v.ui_highlight), D = rgb(v.ui_danger);
+  set('acc', A); set('acc-hi', mix(A, light ? BLACK : WHITE, .12));
+  set('acc-ink', lum(A) > .45 ? '#0d0d0d' : '#ffffff');
+  set('acc-bg', mix(B, A, light ? .16 : .2)); set('acc-deep', mix(A, BLACK, .4));
+  set('acc-tx', light ? mix(A, F, .35) : A); set('acc-tx2', mix(A, B, .2));
+  set('knob', lum(A) > .8 ? '#0d0d0d' : '#ffffff');
+  set('hl', H); set('hl-tx', light ? mix(H, F, .45) : H);
+  set('hl-ink', lum(H) > .45 ? '#111111' : '#ffffff');
+  set('hl-soft', rgba(H, light ? .2 : .09)); set('hl-line', rgba(H, .45));
+  set('hl-bg', mix(B, H, .1)); set('hl-bg2', mix(B, H, .16)); set('hl-edge', mix(B, H, .38));
+  set('dg', D); set('dg-hi', mix(D, WHITE, .1)); set('dg-ink', lum(D) > .5 ? '#111111' : '#ffffff');
+  set('dg-bg', mix(B, D, .18)); set('dg-tx', light ? mix(D, F, .2) : mix(D, WHITE, .4)); set('dg-edge', mix(B, D, .6));
+
+  set('font', FONT_STACK[v.ui_font] || FONT_STACK.segoe);
+  set('fs', v.ui_font_size + 'px'); set('lh', String(v.ui_line_height));
+  set('rk', String(v.ui_radius / 6)); set('sp', String(v.ui_spacing));
+  set('lblw', v.ui_label_width + 'px'); set('sbw', v.ui_scrollbar + 'px');
+  b.classList.toggle('noanim', !v.ui_animations);
+  b.classList.toggle('nohints', !v.ui_hints);
+  ['text', 'both', 'icons'].forEach(m => b.classList.toggle('ti-' + m, v.ui_tab_icons === m));
+  const logo = document.getElementById('logo');
+  if(logo) logo.textContent = LOGOS[v.ui_logo] || '';
+  renderHudPreview(v);
+}
+
+/* Anteprima 1:1 di mirino e barra di carica, con le stesse misure che
+   usa lib/tool.rb (barra al 62 %, zona di topspin al 90 %). */
+function renderHudPreview(v){
+  const svg = document.getElementById('hudsvg');
+  if(!svg || v.hud_cross_size === undefined) return;
+  const W = svg.clientWidth || 340, cx = Math.round(W / 2) + .5, cy = 46.5;
+  const sz = v.hud_cross_size, lw = v.hud_cross_width, op = v.hud_cross_opacity, st = v.hud_cross_style;
+  const g = Math.min(v.hud_cross_gap, sz - 1, 12);
+  const col = normHex(v.hud_cross_color) || '#ffffff';
+  const dotR = st === 'dot' ? Math.max(sz / 3, 1.5) : lw + .5;
+  const shape = (c, w, o) => {
+    let s = '';
+    if(st === 'cross' || st === 'crossdot')
+      s += `<path d="M${cx - sz} ${cy}H${cx - g}M${cx + g} ${cy}H${cx + sz}M${cx} ${cy - sz}V${cy - g}M${cx} ${cy + g}V${cy + sz}"
+              stroke="${c}" stroke-width="${w}" stroke-opacity="${o}" fill="none"/>`;
+    if(st === 'circle') s += `<circle cx="${cx}" cy="${cy}" r="${sz}" stroke="${c}" stroke-width="${w}" stroke-opacity="${o}" fill="none"/>`;
+    if(st === 'dot' || st === 'crossdot') s += `<circle cx="${cx}" cy="${cy}" r="${dotR + (w - lw) / 2}" fill="${c}" fill-opacity="${o}"/>`;
+    return s;
+  };
+  let s = '';
+  if(v.hud_cross_outline) s += shape('#000', lw + 2, (op * 150 / 255).toFixed(3));
+  s += shape(col, lw, op);
+  const bw = v.hud_bar_width, bh = v.hud_bar_height, x0 = cx - bw / 2, y0 = cy + Math.max(26, sz + 14);
+  s += `<rect x="${x0 - 1}" y="${y0}" width="${bw + 2}" height="${bh}" fill="#000" fill-opacity=".43"/>`
+     + `<rect x="${x0}" y="${y0}" width="${bw * .62}" height="${bh}" fill="${normHex(v.hud_bar_color) || '#fff'}" fill-opacity=".86"/>`
+     + `<path d="M${x0 + bw * .9} ${y0 - 3}V${y0 + bh + 3}" stroke="${normHex(v.hud_bar_zone_color) || '#ffb428'}" stroke-width="1"/>`;
+  svg.innerHTML = s;
+}
+
+/* ═══ Barra in basso ═══
+   Priorità: messaggio lampo (importato, tasto riservato…) → spiegazione
+   dell'impostazione sotto il mouse → stato normale ("si applicano subito"). */
+let STATUS = '', INFO_K = null, FLASH = null, flashTimer = null, statusTimer = null;
+function renderStatus(){
+  const el = document.getElementById('status');
+  if(!el) return;
+  el.classList.toggle('flash', !!FLASH);
+  el.classList.toggle('info', !FLASH && !!INFO_K);
+  if(FLASH) el.textContent = FLASH;
+  else if(INFO_K) el.innerHTML = infoHTML(INFO_K);
+  else el.textContent = STATUS;
+}
+function flashStatus(t){
+  FLASH = t; renderStatus();
+  clearTimeout(flashTimer);
+  flashTimer = setTimeout(() => { FLASH = null; renderStatus(); }, 1800);
+}
+function setInfo(k){
+  if(INFO_K === k) return;
+  INFO_K = k; renderStatus();
+}
+/* Spiegazione lunga (d.*) se c'è, altrimenti la descrizione breve (h.*);
+   poi intervallo e valore predefinito. */
+function infoHTML(k){
+  const f = FIELDS[k];
+  const txt = has('d.' + k) ? T('d.' + k) : (has('h.' + k) ? T('h.' + k) : '');
+  const u = f.u && !f.u.includes('–') ? ' ' + f.u : '';     // "0–1" è già un intervallo
+  const meta = [];
+  if(!f.type) meta.push(`${T('ui.range')}: ${fmt(k, f.min)} – ${fmt(k, f.max)}${u}`);
+  if(DEF[k] !== undefined)
+    meta.push(`${T('ui.default')}: ` + (f.type === 'bool' ? T(DEF[k] ? 'ui.on' : 'ui.off')
+      : f.type === 'choice' ? choiceLabel(f, DEF[k]) : f.type === 'color' ? DEF[k] : fmt(k, DEF[k]) + u));
+  return `<b>${esc(T('f.' + k))}</b>` + (txt ? ` — ${esc(txt)}` : '')
+       + (meta.length ? `<span class="meta">${esc(meta.join(' · '))}</span>` : '');
+}
+
+function schedule(){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveNow, 300);
+}
+
+function collect(){
+  const out = {};
+  for(const k of NUM_KEYS){
+    const el = document.getElementById(k + '_v') || document.getElementById(k);
+    if(!el) continue;
+    let v = num(el.value);
+    if(v === null) v = DEF[k];
+    if(v === undefined) continue;     // casella vuota e default non ancora arrivati
+    v = clampF(k, v);
+    out[k] = FIELDS[k].int ? Math.round(v) : v;
+  }
+  for(const k of BOOL_KEYS){
+    const el = document.getElementById(k);
+    if(el) out[k] = el.checked;
+  }
+  for(const k of STR_KEYS){
+    const v = strVal(k) !== undefined ? strVal(k) : DEF[k];
+    if(v !== undefined) out[k] = v;
+  }
+  out.panel_level = LEVEL;
+  if(Object.keys(KEYS).length){ out.keys = KEYS; out.key_labels = KEY_LBL; }
+  if(MATS.length) out.materials = MATS;   // prima che Ruby la invii è vuota: non sovrascrivere
+  return out;
+}
+
+/* READY: il modulo contiene i valori veri. build() lo azzera (caselle vuote,
+   interruttori spenti) finché Ruby non manda loadSettings: salvare prima
+   manderebbe tutti gli interruttori a false, sovrascrivendo le impostazioni. */
+let READY = false;
+
+function saveNow(){
+  clearTimeout(saveTimer);
+  if(!READY) return;
+  sketchup.save_settings(JSON.stringify(collect()));
+  STATUS = T('ui.saved'); renderStatus();
+  clearTimeout(statusTimer);
+  statusTimer = setTimeout(() => { STATUS = T('ui.autosave'); renderStatus(); }, 1200);
+}
+
+function loadSettings(s){
+  for(const k of NUM_KEYS){
+    if(s[k] === undefined) continue;
+    const sl = document.getElementById(k), el = document.getElementById(k + '_v');
+    if(sl) sl.value = s[k];
+    if(el) el.value = fmt(k, s[k]);
+  }
+  for(const k of BOOL_KEYS){
+    const el = document.getElementById(k);
+    if(el && s[k] !== undefined) el.checked = !!s[k];
+  }
+  for(const k of STR_KEYS){
+    if(s[k] !== undefined) setStr(k, s[k]);
+  }
+  if(Array.isArray(s.materials)){
+    MATS = s.materials.map(r => Object.assign({}, r));
+    renderMaterials();
+  }
+  if(s.keys && typeof s.keys === 'object'){
+    KEYS = Object.assign({}, s.keys);
+    KEY_LBL = Object.assign({}, s.key_labels || {});
+    renderKeys();
+  }
+  if(s.panel_level !== undefined && +s.panel_level !== LEVEL) setLevel(s.panel_level, false);
+  refreshModified();
+  READY = true;
+  markDeps();
+}
+
+/* Ripristina i valori delle impostazioni; lingua, livello e tasti restano
+   (i tasti hanno il loro pulsante nella legenda Comandi). */
+function resetAll(){
+  const d = {};
+  Object.keys(FIELDS).forEach(k => { if(DEF[k] !== undefined) d[k] = DEF[k]; });
+  loadSettings(d); saveNow(); sketchup.reset_materials();
+}
+
+function setRunning(on){
+  const btn = document.getElementById('btnT'), dot = document.getElementById('dot');
+  if(on){
+    btn.textContent = '⏹ ' + T('ui.stop');  btn.className = 'btn btn-stop';
+    dot.textContent = '● ' + T('ui.active'); dot.className = 'dot on';
+  } else {
+    btn.textContent = '▶ ' + T('ui.start');  btn.className = 'btn btn-go';
+    dot.textContent = '● ' + T('ui.idle');   dot.className = 'dot';
+  }
+}
+
+window.onload = () => {
+  try { curTab = localStorage.getItem('dagawasd_tab'); } catch(e){}
+  // livello dell'ultima sessione, per non far "saltare" il pannello prima che
+  // Ruby mandi quello salvato nelle impostazioni
+  try { const lv = +localStorage.getItem('dagawasd_lvl'); if(LEVELS.includes(lv)) LEVEL = lv; } catch(e){}
+  document.body.dataset.lv = LEVEL;
+  try { LOOK_CACHE = JSON.parse(localStorage.getItem('dagawasd_look')) || {}; } catch(e){}
+  SPEC.forEach(x => {
+    try {
+      const s = localStorage.getItem('dagawasd_sub_' + x.id);
+      if(x.subs.some(y => y.id === s)) curSub[x.id] = s;
+    } catch(e){}
+  });
+  build();
+  selTab(curTab && SPEC.some(t => t.id === curTab) ? curTab : SPEC[0].id);
+  // spiegazioni nella barra in basso: #content resta, cambia solo il suo contenuto
+  const c = document.getElementById('content');
+  const rowOf = e => { const r = e.target.closest && e.target.closest('.row[data-k]'); return r ? r.dataset.k : null; };
+  c.addEventListener('mouseover', e => setInfo(rowOf(e)));
+  c.addEventListener('mouseleave', () => setInfo(null));
+  c.addEventListener('focusin', e => { const k = rowOf(e); if(k) setInfo(k); });
+  // tema automatico: segue il cambio chiaro/scuro di Windows
+  try { window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', applyLook); } catch(e){}
+  window.addEventListener('resize', () => renderHudPreview(LOOK_CACHE));
+  sketchup.request_settings();   // Ruby risponde con applyLang + loadSettings + setRunning
+};
+</script>
+</body>
+</html>
