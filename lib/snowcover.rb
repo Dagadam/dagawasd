@@ -59,7 +59,8 @@ module DagaWASD
 
     # ── Raccolta delle facce ──────────────────────────────────────
     def self.snow_collect_start(model)
-      @snow_queue = [[model.entities, Geom::Transformation.new]]
+      # La neve cade su tutto il modello, non solo sul contesto aperto
+      @snow_queue = [[model.entities, Geom::Transformation.new]] # rubocop:disable SketchupSuggestions/ModelEntities
       @snow_tris = []
       @snow_open = {}
       @snow_count = 0

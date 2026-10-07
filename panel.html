@@ -353,6 +353,7 @@ mark{background:var(--hl);color:var(--hl-ink);border-radius:2px;padding:0 1px}
 /* elementi sopra il livello scelto: nascosti (e ignorati dalla ricerca) */
 body[data-lv="1"] [data-lv="2"],body[data-lv="1"] [data-lv="3"],
 body[data-lv="2"] [data-lv="3"]{display:none!important}
+[data-lv="99"]{display:none!important}  /* parti assenti da questo pacchetto (vedi absent) */
 
 /* ══ GUIDA ("?") ══ */
 .btn-help{
@@ -1051,6 +1052,19 @@ SPEC.forEach(t => {
   t.lv = Math.min(...t.subs.map(s => s.lv));
 });
 function shown(x){ return x.lv <= LEVEL; }
+/* Sotto-tab di una parte che questo pacchetto non ha (il ponte per Claude
+   nel pacchetto per l'Extension Warehouse): livello 99, mai mostrato a
+   nessun livello né trovato dalla ricerca; i campi restano nel DOM. */
+const ABSENT = 99;
+function absent(subId){
+  SPEC.forEach(t => {
+    t.subs.filter(s => s.id === subId).forEach(s => {
+      s.lv = ABSENT;
+      (s.groups || []).forEach(g => { g.lv = ABSENT; g.fields.forEach(f => { f.lv = ABSENT; }); });
+    });
+    t.lv = Math.min(...t.subs.map(s => s.lv));
+  });
+}
 
 function lvswHTML(){
   return LEVELS.map(n => `<button data-lvl="${n}" title="${escA(T('lvl.h' + n))}"
@@ -1778,6 +1792,7 @@ function applyLang(payload){
   CURLANG = payload.current || 'auto';
   document.documentElement.lang = payload.resolved || 'en';
   document.body.classList.toggle('rtl', !!payload.rtl);
+  if(payload.bridge === false) absent('bridge');
   const keep = { tab: curTab, sub: Object.assign({}, curSub) };
   build();
   curSub = keep.sub;

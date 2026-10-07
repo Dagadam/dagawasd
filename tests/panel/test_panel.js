@@ -446,4 +446,16 @@ w.addEventListener('load', () => {
   const all = w.eval('Object.keys(FIELDS).length');
   const lv = n => w.eval(`Object.values(FIELDS).filter(f => f.lv === ${n}).length`);
   console.log(`     ripartizione: ${lv(1)} base · ${lv(2)} avanzate · ${lv(3)} molto avanzate (tot ${all})`);
+
+  // Pacchetto per l'Extension Warehouse: niente ponte, niente sezione (a nessun livello, nemmeno cercando)
+  w.eval(`applyLang(${JSON.stringify({ strings: Object.assign({}, en, it), languages: [], current: 'it', resolved: 'it', bridge: false })})`);
+  w.eval('setLevel(3, true)');
+  d.querySelector('#tabs1 button[data-t="system"]').click();
+  const subs = [...d.querySelectorAll('#tabs2 button')].filter(b => w.getComputedStyle(b).display !== 'none').map(b => b.dataset.s);
+  ok(!subs.includes('bridge') && subs.includes('lang'), `senza ponte: Sistema senza la sezione Ponte Claude (${subs.join(', ')})`);
+  const cerca = (t) => { d.getElementById('q').value = t; w.eval('runSearch(true)'); };   // #q è ricreato da applyLang
+  cerca(it['f.bridge_enabled']);
+  ok(!d.querySelector('.row[data-k="bridge_enabled"]').classList.contains('hit'), 'senza ponte: la ricerca non trova le sue impostazioni');
+  cerca(it['f.move_speed']);
+  ok(d.querySelector('.row[data-k="move_speed"]').classList.contains('hit'), 'senza ponte: il resto della ricerca funziona');
 });

@@ -3,7 +3,9 @@
 module DagaWASD
   module FPSWalk
 
-    PLUGIN_DIR    = File.expand_path('..', __dir__).freeze   # lib/ sta dentro la cartella dell'estensione
+    # lib/ sta dentro la cartella dell'estensione; UTF-8 dichiarato: con lettere
+    # accentate nel percorso __dir__ può arrivare con la codifica sbagliata
+    PLUGIN_DIR    = File.expand_path('..', __dir__.dup.force_encoding('UTF-8')).freeze
     # File dell'utente (impostazioni, ponte) fuori dalla cartella dell'estensione:
     # installando un .rbz il Gestore estensioni la riscrive.
     USER_DIR      = File.join(ENV['APPDATA'] || Dir.home, 'DagaWASD').freeze
@@ -11,7 +13,7 @@ module DagaWASD
     OLD_SETTINGS_FILE = File.join(PLUGIN_DIR, 'settings.json').freeze   # fino alla 2.0: recuperato al primo avvio
     PANEL_FILE    = File.join(PLUGIN_DIR, 'panel.html').freeze
     LANG_DIR      = File.join(PLUGIN_DIR, 'lang').freeze
-    LOG_FILE      = File.join(PLUGIN_DIR, 'dagawasd.log').freeze
+    LOG_FILE      = File.join(USER_DIR, 'dagawasd.log').freeze   # mai scrivere nella cartella dell'estensione
     LOG_MAX       = 256 * 1024
     M_TO_IN       = 39.3701
     IN_TO_M       = 1.0 / M_TO_IN

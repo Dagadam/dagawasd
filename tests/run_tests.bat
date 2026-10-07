@@ -8,7 +8,8 @@ rem    2. test di fisica e materiali (tests\test_physics.rb)
 rem    3. tasti, importazione e registro errori (tests\test_settings.rb)
 rem    4. ponte per Claude, meteo, passi e gamepad (test_bridge, test_sky, test_precip, test_clouds, test_sound)
 rem    5. completezza delle traduzioni (tests\test_i18n.rb)
-rem    6. pacchetto .rbz: si crea, si estrae e si carica (tests\test_rbz.rb)
+rem    6. pacchetti .rbz: si creano, si estraggono e si caricano (tests\test_rbz.rb),
+rem       e regole SketchUp sul pacchetto per l'Extension Warehouse (se c'e' rubocop)
 rem    7. test del pannello in un browser simulato (tests\panel)
 rem  Serve Ruby 3.2 (C:\Ruby32-x64) e, per il pannello, Node.js.
 rem  Questa cartella NON viene copiata in SketchUp da installa.bat.
@@ -73,6 +74,15 @@ echo  == Traduzioni ==
 echo.
 echo  == Pacchetto .rbz ==
 "%RUBY%" -E UTF-8 "%ROOT%\tests\test_rbz.rb" || set "FAIL=1"
+
+echo.
+echo  == Regole SketchUp per l'Extension Warehouse ==
+where rubocop >nul 2>nul
+if errorlevel 1 (
+  echo  [salto] rubocop non installato ^(istruzioni in tools\controlla_warehouse.rb^)
+) else (
+  "%RUBY%" -E UTF-8 "%ROOT%\tools\controlla_warehouse.rb" || set "FAIL=1"
+)
 
 echo.
 echo  == Pannello ==

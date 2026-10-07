@@ -34,12 +34,23 @@ ricostruite a posteriori dalle date dei file e dalle sessioni di lavoro.
   Claude disegna nel modello aperto; costruzione dal vivo passo per passo, con
   la camera che gira attorno al lavoro. Tutto si annulla con un solo Ctrl+Z.
 - **Pacchetto .rbz** per installare dal Gestore estensioni di SketchUp
-  (`tools/crea_rbz.bat`).
+  (`tools/crea_rbz.bat`), in due versioni: completa, e per l'Extension
+  Warehouse senza il ponte per Claude (`dagawasd-<versione>-warehouse.rbz`).
+- Controllo del pacchetto per l'Extension Warehouse con le regole di Trimble
+  (`tools/controlla_warehouse.bat`, gemma rubocop-sketchup).
 
 ### Modificato
+- Autore: **Dagadam**.
 - Le impostazioni stanno in `%APPDATA%\DagaWASD\settings.json`, fuori dalla
   cartella dell'estensione: aggiornare con un .rbz non le cancella più. Al
-  primo avvio quelle vecchie vengono recuperate da sole.
+  primo avvio quelle vecchie vengono recuperate da sole. Nella stessa
+  cartella anche il registro errori, `dagawasd.log`.
+- Il ponte per Claude è facoltativo: senza `lib/bridge.rb` l'estensione
+  funziona lo stesso e il pannello ne nasconde la sezione.
+- I file si caricano con `Sketchup.require`, così funzionano anche cifrati
+  dalla firma (.rbe).
+- Lasciando la camminata a uno strumento di vista (orbita, panoramica) mirino
+  e barra di carica vengono cancellati subito.
 - Da remoto (per esempio con RustDesk) i tasti arrivano: si scartano solo
   quelli che DagaWASD inietta da sé.
 - Descrizione nel Gestore estensioni aggiornata a tutto quello che fa.
@@ -49,6 +60,8 @@ ricostruite a posteriori dalle date dei file e dalle sessioni di lavoro.
   («ffd166#»), le parole chiave dei materiali si leggono dall'inizio, le
   unità come °/s non diventano s/°, il percorso del file del ponte resta
   intero.
+- Percorsi con lettere accentate (per esempio nel nome utente di Windows):
+  la codifica della cartella dell'estensione è dichiarata UTF-8.
 
 ### Rimosso
 - `settings.json` dai file distribuiti: i valori predefiniti stanno nel

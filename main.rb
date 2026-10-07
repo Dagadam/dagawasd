@@ -33,12 +33,18 @@ unless defined?(DagaWASD::FPSWalk::PLUGIN_DIR)
     config i18n settings input camera raycast player materials geometry support
     bodies collisions held physics actions lifecycle tick tool panel bridge sky precip clouds snowcover sound avi path
     gamepad ui
-  ].each { |f| require File.join(__dir__, 'lib', f) }
+  ].each do |f|
+    path = File.join(__dir__.dup.force_encoding('UTF-8'), 'lib', f)   # percorsi con lettere accentate
+    # Il ponte è facoltativo: il pacchetto per l'Extension Warehouse non lo ha.
+    next if f == 'bridge' && !File.exist?("#{path}.rb") && !File.exist?("#{path}.rbe")
+    # Sketchup.require e non require: con la firma i file possono diventare .rbe cifrati
+    Sketchup.require(path)
+  end
 
   begin
     DagaWASD::FPSWalk.register_ui
     DagaWASD::FPSWalk.start_hotkey_poller
-    DagaWASD::FPSWalk.bridge_sync       # ponte per Claude, se acceso nelle impostazioni
+    DagaWASD::FPSWalk.bridge_sync if DagaWASD::FPSWalk.bridge?   # ponte per Claude, se c'è ed è acceso
     DagaWASD::FPSWalk.sky_sync          # cielo animato, se acceso
     DagaWASD::FPSWalk.precip_sync       # pioggia e neve, se accese
     DagaWASD::FPSWalk.cloud_sync        # nuvole, se accese

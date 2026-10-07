@@ -141,7 +141,8 @@ module DagaWASD
 
     def self.build_obstacle_grid(skip)
       grid = Hash.new { |h, k| h[k] = [] }; big = []
-      Sketchup.active_model.entities.each do |e|
+      # Ostacoli: tutto il modello, anche se si sta modificando un gruppo
+      Sketchup.active_model.entities.each do |e| # rubocop:disable SketchupSuggestions/ModelEntities
         next if e == skip || !e.valid?
         b = e.bounds
         next if b.empty?

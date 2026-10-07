@@ -197,6 +197,7 @@ module DagaWASD
       line  = "#{Time.now.strftime('%Y-%m-%d %H:%M:%S')} [#{where}] #{err.class}: #{err.message}\n#{trace}\n"
       path  = log_path
       mode  = File.exist?(path) && File.size(path) > LOG_MAX ? 'w' : 'a'
+      FileUtils.mkdir_p(File.dirname(path))
       File.open(path, mode) { |f| f.write(line) }
       puts "DagaWASD [#{where}] #{err.class}: #{err.message}" unless @log_quiet
       Sketchup.status_text = "DagaWASD — #{t('rt.err_logged')}"

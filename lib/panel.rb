@@ -6,6 +6,10 @@ module DagaWASD
     # ══════════════════════════════════════════════════════════════
     # Pannello di controllo
     # ══════════════════════════════════════════════════════════════
+    # Il ponte per Claude è facoltativo: il pacchetto per l'Extension
+    # Warehouse non ha lib/bridge.rb (main.rb lo salta, vedi OPTIONAL).
+    def self.bridge?; respond_to?(:bridge_start); end
+
     # Invia al pannello dizionario, elenco lingue, impostazioni e stato.
     # L'ordine conta: applyLang ricostruisce il DOM, quindi i valori
     # vanno ricaricati subito dopo.
@@ -17,7 +21,8 @@ module DagaWASD
         'languages' => lang_index,
         'current'   => (@cfg['language'] || 'auto'),
         'resolved'  => @lang_code,
-        'rtl'       => @lang_rtl
+        'rtl'       => @lang_rtl,
+        'bridge'    => bridge?      # senza lib/bridge.rb il pannello nasconde la sezione
       }
       @dialog.execute_script("applyLang(#{js_json(payload)})")
       # I valori predefiniti esistono solo qui (DEFAULT): il pannello li
@@ -28,7 +33,7 @@ module DagaWASD
       @dialog.execute_script("loadSettings(#{js_json(@cfg.merge('materials' => mat_table))})")
       @dialog.execute_script("setRunning(#{@active})")
       @dialog.execute_script("setLogCount(#{log_count})")
-      @dialog.execute_script("setBridge(#{js_json(bridge_status)})")
+      @dialog.execute_script("setBridge(#{js_json(bridge_status)})") if bridge?
       @dialog.execute_script("setSky(#{js_json(sky_status)})")
       @dialog.execute_script("setPaths(#{js_json(path_list)})")
     rescue => fps_err; log_error(__method__, fps_err); nil; end
@@ -51,7 +56,7 @@ module DagaWASD
       @body_cache.clear
       @phys_entities.each_value { |st| st[:props] = nil }
       Sketchup.status_text = hud_text if @active
-      bridge_sync
+      bridge_sync if bridge?
       sky_sync
       precip_sync
       cloud_sync

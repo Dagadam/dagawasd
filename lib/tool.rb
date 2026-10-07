@@ -6,8 +6,13 @@ module DagaWASD
     # ══════════════════════════════════════════════════════════════
     # FPS Tool — blocca orbita/pan, disegna mirino
     # ══════════════════════════════════════════════════════════════
-    class FPSTool
-      def activate;        Sketchup.active_model.active_view.invalidate; end
+    # Qui si disegnano solo mirino e barra (2D): niente getExtents, che
+    # sposterebbe Zoom estensioni; quello delle particelle sta in precip.rb.
+    class FPSTool # rubocop:disable SketchupSuggestions/ToolDrawingBounds
+      def activate;       Sketchup.active_model.active_view.invalidate; end
+      # Sospeso da uno strumento di vista (orbita, panoramica): ridisegna,
+      # così mirino e barra di carica non restano sullo schermo
+      def suspend(view);   view.invalidate; end
       # Un altro strumento ha preso il posto di questo (clic sulla barra con
       # la freccia visibile, modello chiuso…): FPS non deve restare a guidare
       # la camera da solo. stop() mette @active a false prima di cambiare

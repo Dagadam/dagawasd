@@ -1,8 +1,13 @@
 # encoding: utf-8
 # DagaWASD — pacchetto .rbz per il Gestore estensioni di SketchUp.
 #
-#   ruby -E UTF-8 tools/crea_rbz.rb            → dist/dagawasd-<versione>.rbz
-#   ruby -E UTF-8 tools/crea_rbz.rb CARTELLA   → lo stesso pacchetto in CARTELLA (i test)
+#   ruby -E UTF-8 tools/crea_rbz.rb               → dist/dagawasd-<versione>.rbz
+#   ruby -E UTF-8 tools/crea_rbz.rb --warehouse   → dist/dagawasd-<versione>-warehouse.rbz
+#   ruby -E UTF-8 tools/crea_rbz.rb [...] CARTELLA → lo stesso pacchetto in CARTELLA (i test)
+#
+# Il pacchetto per l'Extension Warehouse non ha lib/bridge.rb: il ponte per
+# Claude esegue codice ricevuto da fuori, e la revisione lo rifiuterebbe.
+# main.rb lo salta e il pannello ne nasconde la sezione.
 #
 # Un .rbz è uno zip con, alla radice, quello che va nella cartella Plugins:
 #   dagawasd.rb                                   il loader, registra l'estensione
@@ -39,12 +44,14 @@ module CreaRbz
     log.include?("## [#{v}]") or errore("CHANGELOG.md non ha la sezione «## [#{v}]»: scrivi cosa cambia in questa versione")
   end
 
+  SOLO_COMPLETO = %w[lib/bridge.rb].freeze   # file esclusi dal pacchetto per l'Extension Warehouse
+
   # [percorso nello zip, file sul disco]
-  def contenuto
+  def contenuto(warehouse = false)
     ext = ->(rel) { ["dagawasd/#{rel}", File.join(ROOT, rel)] }
     lista = [['dagawasd.rb', File.join(ROOT, 'dagawasd.rb')], ext.('main.rb'), ext.('panel.html')]
     %w[lib/*.rb lang/*.json icons/*.png].each do |g|
-      Dir.glob(g, base: ROOT).sort.each { |rel| lista << ext.(rel) }
+      Dir.glob(g, base: ROOT).sort.each { |rel| lista << ext.(rel) unless warehouse && SOLO_COMPLETO.include?(rel) }
     end
     lista
   end
@@ -126,20 +133,24 @@ module CreaRbz
     voci.size
   end
 
-  def esegui(cartella = nil)
+  def esegui(cartella = nil, warehouse: false)
     v = versione
     controlla_changelog(v)
     controlla_elenco
-    lista = contenuto
+    lista = contenuto(warehouse)
     controlla_file(lista)
     cartella ||= File.join(ROOT, 'dist')
     FileUtils.mkdir_p(cartella)
-    dest = File.join(cartella, "dagawasd-#{v}.rbz")
+    nome = "dagawasd-#{v}#{warehouse ? '-warehouse' : ''}.rbz"
+    dest = File.join(cartella, nome)
     n = scrivi_zip(dest, lista)
-    puts "  dagawasd-#{v}.rbz: #{lista.size} file (#{n} voci), #{(File.size(dest) / 1024.0).round} KB"
+    puts "  #{nome}: #{lista.size} file (#{n} voci), #{(File.size(dest) / 1024.0).round} KB"
     puts "  #{dest}"
     dest
   end
 end
 
-CreaRbz.esegui(ARGV[0]) if $PROGRAM_NAME == __FILE__
+if $PROGRAM_NAME == __FILE__
+  warehouse = !ARGV.delete('--warehouse').nil?
+  CreaRbz.esegui(ARGV[0], warehouse: warehouse)
+end

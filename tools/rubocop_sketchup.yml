@@ -1,0 +1,21 @@
+# Regole di Trimble per l'Extension Warehouse (gemma rubocop-sketchup).
+# Le usa tools/controlla_warehouse.bat sul pacchetto per il Warehouse estratto.
+# Versioni installate: rubocop 1.68.0 e rubocop-sketchup 1.5.0 (le più nuove
+# vogliono gemme da compilare, e qui manca MSYS2).
+require: rubocop-sketchup
+AllCops:
+  DisabledByDefault: true
+  TargetRubyVersion: 2.7          # SketchUp 2021–2023; il 2024 ha Ruby 3.2
+  SketchUp:
+    SourcePath: src
+    TargetSketchUpVersion: 2021
+SketchupRequirements:
+  Enabled: true
+SketchupDeprecations:
+  Enabled: true
+SketchupBugs:
+  Enabled: true
+SketchupPerformance:
+  Enabled: true
+SketchupSuggestions:
+  Enabled: true

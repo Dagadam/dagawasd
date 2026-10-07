@@ -15,7 +15,7 @@ module DagaWASD
       when Sketchup::Group
         n = entity.name.to_s
         n.empty? ? (entity.definition.name.to_s rescue 'Group') : n
-      else entity.typename.to_s
+      else entity.class.name.to_s.split('::').last.to_s   # come typename, senza la sua lentezza
       end
     rescue => fps_err; log_error(__method__, fps_err); 'Oggetto'; end
 

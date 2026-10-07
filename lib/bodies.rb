@@ -62,7 +62,8 @@ module DagaWASD
       inner = insts[lvl]
       tr = Geom::Transformation.new
       insts[0..lvl].each { |e| tr *= e.transformation }
-      ni = Sketchup.active_model.entities.add_instance(inner.definition, tr)
+      # L'oggetto estratto va nel modello, non nel contesto aperto: la fisica lavora lì
+      ni = Sketchup.active_model.entities.add_instance(inner.definition, tr) # rubocop:disable SketchupSuggestions/ModelEntities
       # Le facce senza materiale prendevano quello del contenitore: fuori
       # dal gruppo devono restare dello stesso colore.
       mat = inner.material || insts[0...lvl].reverse.map(&:material).compact.first

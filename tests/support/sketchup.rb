@@ -75,6 +75,8 @@ module Sketchup
   class Face; end; class Edge; end; class Group; end; class ComponentInstance; end
   def self.status_text=(s); end
   def self.get_locale; 'it'; end
+  # Come in SketchUp: percorso senza estensione, carica .rb (o .rbe cifrato)
+  def self.require(path); Kernel.require(path); end
   # Modello finto: $stub_entities è l'elenco delle entità di primo livello
   Model = Struct.new(:entities)
   def self.active_model; Model.new($stub_entities || []); end

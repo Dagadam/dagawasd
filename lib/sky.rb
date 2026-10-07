@@ -29,7 +29,7 @@ module DagaWASD
     # Senza Sketchup::Overlay (prima del 2023) il cielo si vede solo
     # durante la camminata, disegnato dallo strumento FPS.
     # ══════════════════════════════════════════════════════════════
-    SKY_OVERLAY   = defined?(Sketchup::Overlay) ? true : false
+    SKY_OVERLAY   = defined?(Sketchup::Overlay) ? true : false # rubocop:disable SketchupSuggestions/Compatibility
     SKY_SUN_RAD   = 0.267 * DEG     # raggio apparente vero di sole e luna
     SKY_MOON_RAD  = 0.259 * DEG
     SKY_STAR_SEED = 20_261_002
