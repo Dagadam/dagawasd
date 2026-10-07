@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <!-- DagaWASD: icona della barra (si rende a 24 e 32 pixel con tools/rendi_icone).
+       Tasti W A S D in rilievo su una striscia di pavimento in prospettiva. -->
+  <defs>
+    <linearGradient id="suolo" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4f8fd6" stop-opacity="0"/>
+      <stop offset="1" stop-color="#2f6db3" stop-opacity="0.85"/>
+    </linearGradient>
+    <g id="tasto">
+      <rect x="-9.5" y="-7" width="19" height="19" rx="3.5" fill="#6b7486" stroke="#2f3540" stroke-width="1.4"/>
+      <rect x="-9.5" y="-10" width="19" height="17" rx="3.5" fill="#f6f7f9" stroke="#2f3540" stroke-width="1.4"/>
+    </g>
+  </defs>
+  <!-- pavimento: trapezio che si stringe verso l'alto, con due linee di fuga -->
+  <path d="M14 30 L50 30 L64 62 L0 62 Z" fill="url(#suolo)"/>
+  <path d="M32 30 L32 62 M23 30 L14 62 M41 30 L50 62" stroke="#ffffff" stroke-opacity="0.45" stroke-width="1.2" fill="none"/>
+  <g font-family="Segoe UI Black, Arial Black, Arial, sans-serif" font-weight="900" text-anchor="middle" fill="#d6373b" font-size="14">
+    <g transform="translate(32 15)"><use href="#tasto"/><text x="0" y="3.5">W</text></g>
+    <g transform="translate(11 39)"><use href="#tasto"/><text x="0" y="3.5">A</text></g>
+    <g transform="translate(32 39)"><use href="#tasto"/><text x="0" y="3.5">S</text></g>
+    <g transform="translate(53 39)"><use href="#tasto"/><text x="0" y="3.5">D</text></g>
+  </g>
+</svg>

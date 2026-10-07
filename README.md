@@ -52,6 +52,9 @@ aggiornamento non le cancella.
   Trimble (rubocop-sketchup).
 - Il numero di versione sta solo in `dagawasd.rb` (`VERSION`); ogni versione
   ha la sua sezione in `CHANGELOG.md`.
+- Le icone nascono dagli SVG in `pubblicazione/`: `tools\rendi_icone.bat`
+  rifà quelle della barra (`icons/`) e quella della scheda del Warehouse
+  (`pubblicazione/icona_512.png`).
 
 ## Licenza
 

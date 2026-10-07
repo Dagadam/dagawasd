@@ -10,29 +10,8 @@ dagawasd.log
 # Trascrizioni delle sessioni con Claude: appunti, non sorgenti
 /*.txt
 !/descrizione_youtube.txt
-/Artefatti/*.txt
 
-# Officina e generatori: copiati in G:\Officina, che ora è un repository a sé.
-# Gli originali qui restano finché non li cancelli; poi togli questo blocco.
-/Artefatti/officina/
-/Artefatti/anello/
-/Artefatti/barretta/
-/Artefatti/boccola/
-/Artefatti/bullone/
-/Artefatti/caratteri/
-/Artefatti/cilindro/
-/Artefatti/cinghia/
-/Artefatti/cubo/
-/Artefatti/dodecaedro/
-/Artefatti/farfalla/
-/Artefatti/forme/
-/Artefatti/icosaedro/
-/Artefatti/ingranaggio/
-/Artefatti/libro/
-/Artefatti/ottaedro/
-/Artefatti/piastra/
-/Artefatti/provino/
-/Artefatti/rondella/
-/Artefatti/sfera/
-/Artefatti/tetraedro/
-/Artefatti/vite/
+# Modelli, texture e prove personali: restano sul disco, non nel repository
+/Artefatti/
+# Lanciatore di Claude Code di questo computer
+/avviaClaude.bat
