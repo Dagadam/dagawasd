@@ -4,8 +4,9 @@ title DagaWASD - Installazione
 
 rem ==================================================================
 rem  Copia l'estensione nella cartella Plugins di ogni versione di
-rem  SketchUp trovata. settings.json NON viene mai sovrascritto:
-rem  le impostazioni salvate dal pannello restano intatte.
+rem  SketchUp trovata. Le impostazioni non si toccano: dalla 2.1 stanno
+rem  in %APPDATA%\DagaWASD\settings.json, fuori dall'estensione.
+rem  Per distribuirla agli altri: tools\crea_rbz.bat (pacchetto .rbz).
 rem ==================================================================
 
 set "SRC=%~dp0"
@@ -20,7 +21,7 @@ echo  Sorgente: %SRC%
 
 rem --- i file sorgente ci sono tutti? ---------------------------------
 set "MISSING="
-for %%F in (main.rb panel.html settings.json dagawasd.rb) do (
+for %%F in (main.rb panel.html dagawasd.rb) do (
   if not exist "%SRC%\%%F" set "MISSING=!MISSING! %%F"
 )
 if not exist "%SRC%\icons" set "MISSING=!MISSING! icons\"
@@ -86,10 +87,4 @@ rem lib\ si ricopia da zero: un file tolto dalla sorgente non deve restare insta
 if exist "%EXT%\lib" rmdir /S /Q "%EXT%\lib"
 xcopy /E /I /Y /Q "%SRC%\lib"   "%EXT%\lib\"   >nul && echo      lib\             aggiornata ^(codice^)
 
-
-if exist "%EXT%\settings.json" (
-  echo      settings.json    CONSERVATO - le tue impostazioni restano
-) else (
-  copy /Y "%SRC%\settings.json" "%EXT%\" >nul && echo      settings.json    creato con i valori di default
-)
 goto :eof

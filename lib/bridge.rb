@@ -57,7 +57,7 @@ module DagaWASD
     end
 
     def self.bridge_info_path
-      @bridge_file || File.join(ENV['APPDATA'] || Dir.home, 'DagaWASD', 'bridge.json')
+      @bridge_file || File.join(USER_DIR, 'bridge.json')
     end
 
     def self.bridge_status

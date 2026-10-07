@@ -1,5 +1,7 @@
 # DagaWASD — settings.json, tasti personalizzati, riga di stato e registro errori.
 # Parte di DagaWASD::FPSWalk, caricata da main.rb (che elenca tutti i file e il loro ordine).
+require 'fileutils'
+
 module DagaWASD
   module FPSWalk
 
@@ -13,6 +15,7 @@ module DagaWASD
     # e la barra degli strumenti non comparirebbero): si parte dai default e
     # il file rovinato viene messo da parte come settings.bad.json.
     def self.load_cfg
+      adopt_old_settings unless @settings_file
       data = {}
       if File.exist?(settings_path)
         begin
@@ -34,6 +37,15 @@ module DagaWASD
       sanitize_pairs
       @cfg
     end
+
+    # Fino alla 2.0 settings.json stava nella cartella dell'estensione: se in
+    # %APPDATA%\DagaWASD non c'è ancora, si parte da una copia di quello.
+    # L'originale resta dov'è (tornando a una versione vecchia c'è ancora).
+    def self.adopt_old_settings
+      return if File.exist?(SETTINGS_FILE) || !File.exist?(OLD_SETTINGS_FILE)
+      FileUtils.mkdir_p(USER_DIR)
+      FileUtils.cp(OLD_SETTINGS_FILE, SETTINGS_FILE)
+    rescue => fps_err; log_error(__method__, fps_err); end
 
     # Minimo oltre il massimo: il minimo scende al massimo.
     def self.sanitize_pairs
@@ -160,6 +172,7 @@ module DagaWASD
     # metà scrittura, settings.json resta quello di prima invece che troncato.
     def self.save_cfg
       tmp = "#{settings_path}.tmp"
+      FileUtils.mkdir_p(File.dirname(settings_path))
       File.write(tmp, JSON.pretty_generate(@cfg), encoding: 'UTF-8')
       File.rename(tmp, settings_path)
     rescue => e

@@ -4,7 +4,11 @@ module DagaWASD
   module FPSWalk
 
     PLUGIN_DIR    = File.expand_path('..', __dir__).freeze   # lib/ sta dentro la cartella dell'estensione
-    SETTINGS_FILE = File.join(PLUGIN_DIR, 'settings.json').freeze
+    # File dell'utente (impostazioni, ponte) fuori dalla cartella dell'estensione:
+    # installando un .rbz il Gestore estensioni la riscrive.
+    USER_DIR      = File.join(ENV['APPDATA'] || Dir.home, 'DagaWASD').freeze
+    SETTINGS_FILE = File.join(USER_DIR, 'settings.json').freeze
+    OLD_SETTINGS_FILE = File.join(PLUGIN_DIR, 'settings.json').freeze   # fino alla 2.0: recuperato al primo avvio
     PANEL_FILE    = File.join(PLUGIN_DIR, 'panel.html').freeze
     LANG_DIR      = File.join(PLUGIN_DIR, 'lang').freeze
     LOG_FILE      = File.join(PLUGIN_DIR, 'dagawasd.log').freeze

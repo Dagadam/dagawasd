@@ -7,6 +7,9 @@
 # questa finta API provoca lì vanno in un registro temporaneo, non nel
 # dagawasd.log del progetto. Ogni test può poi sceglierne uno suo.
 require 'tmpdir'
+# Impostazioni e file del ponte stanno in %APPDATA%\DagaWASD: i test usano
+# una cartella temporanea vuota, mai quella vera dell'utente.
+ENV['APPDATA'] = Dir.mktmpdir('dagawasd_test_appdata')
 module DagaWASD
   module FPSWalk
     @log_file  = File.join(Dir.tmpdir, 'dagawasd_test_load.log')

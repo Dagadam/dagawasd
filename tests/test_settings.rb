@@ -163,5 +163,31 @@ begin; raise ArgumentError, 'prova registro'; rescue => e; F.log_error(:test_set
 ok(F.log_count == 1, 'dopo lo svuotamento lo stesso errore viene registrato di nuovo')
 File.delete(log)
 
+# ── settings.json in %APPDATA%\DagaWASD, recuperato dalla cartella dell'estensione ──
+ok(F::SETTINGS_FILE.start_with?(ENV['APPDATA']) && !F::SETTINGS_FILE.start_with?(F::PLUGIN_DIR),
+   'settings.json sta fuori dalla cartella dell\'estensione (un .rbz non lo riscrive)')
+old_const = F::OLD_SETTINGS_FILE
+old_file  = File.join(Dir.mktmpdir('dagawasd_vecchio'), 'settings.json')
+File.write(old_file, JSON.generate('move_speed' => 5.5))
+F.send(:remove_const, :OLD_SETTINGS_FILE); F.const_set(:OLD_SETTINGS_FILE, old_file)
+saved_sf = F.instance_variable_get(:@settings_file)
+F.instance_variable_set(:@settings_file, nil)
+File.delete(F::SETTINGS_FILE) if File.exist?(F::SETTINGS_FILE)
+ok(F.load_cfg['move_speed'] == 5.5 && File.exist?(F::SETTINGS_FILE),
+   'primo avvio dopo l\'aggiornamento: le impostazioni vecchie vengono recuperate')
+ok(File.exist?(old_file), 'il settings.json vecchio resta al suo posto')
+File.write(F::SETTINGS_FILE, JSON.generate('move_speed' => 4.0))
+ok(F.load_cfg['move_speed'] == 4.0, 'avvii successivi: vale quello nuovo, il vecchio non lo ricopre')
+F.instance_variable_get(:@cfg)['move_speed'] = 3.3
+F.save_cfg
+ok(JSON.parse(File.read(F::SETTINGS_FILE))['move_speed'] == 3.3 && JSON.parse(File.read(old_file))['move_speed'] == 5.5,
+   'il salvataggio va nel file nuovo')
+File.delete(F::SETTINGS_FILE)
+File.delete(old_file)
+ok(F.load_cfg['move_speed'] == F::DEFAULT['move_speed'] && !File.exist?(F::SETTINGS_FILE),
+   'nessun settings.json, né nuovo né vecchio: valori predefiniti')
+F.send(:remove_const, :OLD_SETTINGS_FILE); F.const_set(:OLD_SETTINGS_FILE, old_const)
+F.instance_variable_set(:@settings_file, saved_sf)
+
 puts "\n#{$fail.zero? ? 'TUTTI I TEST PASSATI' : "#{$fail} TEST FALLITI"}"
 exit($fail.zero? ? 0 : 1)
