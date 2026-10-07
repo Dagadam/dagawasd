@@ -151,8 +151,15 @@ module Sketchup
   class AppObserver; end
   class ModelObserver; end
   class View; def invalidate; end; end
+  class ImageRep                       # immagini per le texture (sole, nuvole)
+    attr_reader :args
+    def set_data(*a); @args = a; end
+  end
   def self.add_observer(_o); true; end
   def self.version; '26.0.0'; end
+  def self.platform; $piattaforma || :platform_win; end
+  def self.read_default(_s, k, d = nil); ($defaults ||= {}).fetch(k, d); end
+  def self.write_default(_s, k, v); ($defaults ||= {})[k] = v; end
   class Model
     def start_operation(*); ($stub_ops ||= []) << :start; true; end
     def commit_operation; ($stub_ops ||= []) << :commit; true; end
@@ -164,17 +171,10 @@ module Sketchup
   end
 end
 
-# Niente audio né gamepad veri dai test (girano su Windows, Fiddle c'è):
-# lib/sound.rb e lib/gamepad.rb usano @snd e @xi se ci sono già.
+# Niente gamepad veri dai test (girano su Windows, Fiddle c'è):
+# lib/gamepad.rb usa @xi se c'è già.
 module DagaWASD
   module FPSWalk
-    class FakeWinmm
-      attr_reader :played, :mci
-      attr_accessor :mci_rc
-      def initialize; @played = []; @mci = []; @mci_rc = 0; end
-      def PlaySoundW(wav, _mod, _flags); @played << wav; 1; end
-      def mciSendStringW(cmd, *_); @mci << cmd.encode('UTF-8').delete("\0"); @mci_rc; end
-    end
     # Un gamepad per slot (0–3) o nessuno: stato = [pulsanti, lt, rt, lx, ly, rx, ry]
     class FakeXInput
       attr_accessor :pads
@@ -188,7 +188,6 @@ module DagaWASD
       end
       def XInputSetState(_slot, data); @rumble << data.unpack('S<S<'); 0; end
     end
-    @snd = FakeWinmm.new
     @xi  = FakeXInput.new
   end
 end

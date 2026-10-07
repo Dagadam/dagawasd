@@ -185,7 +185,6 @@ module DagaWASD
         # Impulso alla molla della camera: una caduta da ~3 m (≈8 m/s) con
         # land_dip 0.10 produce un abbassamento di picco di ~8 cm.
         @land_vel -= [impact * cf('land_dip').to_f, 1.5].min if impact > 1.5
-        step_land(impact)
         pad_rumble((impact - 3.0) / 9.0) if impact > 3.5
         @jumps_used = 0
       end
@@ -255,7 +254,6 @@ module DagaWASD
       # ── Head bob + dip d'atterraggio + roll ──────────────────────
       bob_z = 0.0; bob_side = 0.0
       h_speed = Math.sqrt(@vh_x**2 + @vh_y**2)
-      bob_prev = @bob_phase
       if cf('head_bob_enabled')
         if h_speed > 0.15 && @on_ground
           # Frequenza e ampiezza seguono la velocità reale: correre "pompa" di più
@@ -274,7 +272,6 @@ module DagaWASD
           bob_side = Math.sin(@bob_phase) * cf('head_bob_side').to_f * M_TO_IN * 0.12
         end
       end
-      step_tick(dt, h_speed, crouching, bob_prev)
 
       # Molla smorzata per il dip d'atterraggio (m)
       if @land_off.abs > 1e-5 || @land_vel.abs > 1e-5

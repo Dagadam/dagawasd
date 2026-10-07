@@ -6,7 +6,7 @@ rem  Lancia tutti i test del progetto:
 rem    1. controllo di sintassi dei file Ruby
 rem    2. test di fisica e materiali (tests\test_physics.rb)
 rem    3. tasti, importazione e registro errori (tests\test_settings.rb)
-rem    4. ponte per Claude, meteo, passi e gamepad (test_bridge, test_sky, test_precip, test_clouds, test_sound)
+rem    4. ponte per Claude, meteo e gamepad (test_bridge, test_sky, test_precip, test_clouds, test_gamepad)
 rem    5. completezza delle traduzioni (tests\test_i18n.rb)
 rem    6. pacchetti .rbz: si creano, si estraggono e si caricano (tests\test_rbz.rb),
 rem       e regole SketchUp sul pacchetto per l'Extension Warehouse (se c'e' rubocop)
@@ -60,8 +60,8 @@ echo  == Temporale, neve al suolo, situazioni ==
 "%RUBY%" -E UTF-8 "%ROOT%\tests\test_meteo_extra.rb" || set "FAIL=1"
 
 echo.
-echo  == Passi e gamepad ==
-"%RUBY%" -E UTF-8 "%ROOT%\tests\test_sound.rb" || set "FAIL=1"
+echo  == Gamepad ==
+"%RUBY%" -E UTF-8 "%ROOT%\tests\test_gamepad.rb" || set "FAIL=1"
 
 echo.
 echo  == Percorsi ==

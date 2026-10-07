@@ -47,7 +47,7 @@ module DagaWASD
         if best_z.nil? || z > best_z
           best_z = z
           best_n = hit_normal(res, 0, 0, -1)
-          @floor_hit = res                          # faccia e percorso: di che cosa è il pavimento (suoni)
+          @floor_hit = res                          # faccia e percorso: di che cosa è il pavimento (servirà ai suoni)
         end
       end
       best_z ? [best_z, best_n] : nil

@@ -4,7 +4,7 @@ title DagaWASD - Installazione
 
 rem ==================================================================
 rem  Copia l'estensione nella cartella Plugins di ogni versione di
-rem  SketchUp trovata. Le impostazioni non si toccano: dalla 2.1 stanno
+rem  SketchUp trovata. Le impostazioni non si toccano: stanno
 rem  in %APPDATA%\DagaWASD\settings.json, fuori dall'estensione.
 rem  Per distribuirla agli altri: tools\crea_rbz.bat (pacchetto .rbz).
 rem ==================================================================

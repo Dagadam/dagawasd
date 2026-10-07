@@ -21,17 +21,26 @@ require 'set'
 #   panel      pannello impostazioni          bridge     ponte per Claude
 #   sky        sole, luna, stelle, cielo      precip     pioggia e neve
 #   clouds     nuvole                         snowcover  neve al suolo
-#   sound      passi, canale del tuono        gamepad    controller XInput
 #   avi        video AVI Motion JPEG          path       percorsi registrati
-#   ui         menu e barra
+#   gamepad    controller XInput              ui         menu e barra
 # ══════════════════════════════════════════════════════════════════
 
+# Solo Windows: tastiera (user32), gamepad (XInput) e finestre passano dalle
+# DLL di Windows. Altrove l'estensione resta registrata ma non si carica, e
+# lo dice una volta sola (a SketchUp avviato, non durante il caricamento).
+if Sketchup.platform != :platform_win
+  unless Sketchup.read_default('DagaWASD', 'avviso_piattaforma', false)
+    UI.start_timer(0, false) do
+      UI.messagebox("DagaWASD works only with SketchUp for Windows.\nDagaWASD funziona solo con SketchUp per Windows.")
+    end
+    Sketchup.write_default('DagaWASD', 'avviso_piattaforma', true)
+  end
 # Già caricato (es. `load` ripetuto dalla console): non registrare di
 # nuovo menu, barra e timer.
-unless defined?(DagaWASD::FPSWalk::PLUGIN_DIR)
+elsif !defined?(DagaWASD::FPSWalk::PLUGIN_DIR)
   %w[
     config i18n settings input camera raycast player materials geometry support
-    bodies collisions held physics actions lifecycle tick tool panel bridge sky precip clouds snowcover sound avi path
+    bodies collisions held physics actions lifecycle tick tool panel bridge sky precip clouds snowcover avi path
     gamepad ui
   ].each do |f|
     path = File.join(__dir__.dup.force_encoding('UTF-8'), 'lib', f)   # percorsi con lettere accentate
@@ -49,7 +58,6 @@ unless defined?(DagaWASD::FPSWalk::PLUGIN_DIR)
     DagaWASD::FPSWalk.precip_sync       # pioggia e neve, se accese
     DagaWASD::FPSWalk.cloud_sync        # nuvole, se accese
     DagaWASD::FPSWalk.snow_sync         # neve al suolo
-    DagaWASD::FPSWalk.step_warm_start   # suoni dei passi pronti in sottofondo
     DagaWASD::FPSWalk.path_observe      # elenco dei percorsi nel pannello: segue il modello
   rescue => e
     DagaWASD::FPSWalk.log_error(:register_ui, e)

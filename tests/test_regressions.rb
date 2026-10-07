@@ -261,6 +261,22 @@ ok(cfg['kick_force_min'] == 8.0 && cfg['crouch_height'] == 1.5 && cfg['kick_forc
    'settings.json con minimo oltre il massimo: il minimo scende al massimo')
 ok(cfg['throw_force_min'] <= cfg['throw_force_max'], 'le coppie già in ordine restano com\'erano')
 
+# ── Fuori da Windows ─────────────────────────────────────────────────
+# Prima: su Mac main.rb caricava lib/input.rb (user32) e si rompeva all'avvio.
+# Ora non carica nulla e avvisa una volta sola. In un processo a parte, perché
+# qui l'estensione è già caricata.
+mac = <<~'RUBY'
+  $LOAD_PATH.unshift(ARGV[0])
+  require 'sketchup'
+  $piattaforma = :platform_osx
+  $avvisi = 0
+  module UI; def self.start_timer(*, &b); b&.call; 1; end; def self.messagebox(*); $avvisi += 1; end; end
+  2.times { load ARGV[1] }                       # due avvii: l'avviso compare una volta
+  print [defined?(DagaWASD::FPSWalk::PLUGIN_DIR).nil?, $avvisi].inspect
+RUBY
+out = IO.popen([RbConfig.ruby, '-E', 'UTF-8', '-e', mac, File.join(__dir__, 'support'), File.expand_path('../main.rb', __dir__)], &:read)
+ok(out == '[true, 1]', "fuori da Windows non carica il codice e avvisa una volta sola (#{out})")
+
 FileUtils.remove_entry(tmp)
 puts "\n#{$fail.zero? ? 'TUTTI I TEST PASSATI' : "#{$fail} TEST FALLITI"}"
 exit($fail.zero? ? 0 : 1)

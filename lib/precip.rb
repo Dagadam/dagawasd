@@ -202,7 +202,7 @@ module DagaWASD
         end
       end
       @precip_model = @precip_ov = @precip = @precip_set = @precip_tops = @precip_tick = @precip_fog_orig = @precip_roof_max = nil
-      @storm = @storm_next = @storm_thunder = nil
+      @storm = @storm_next = nil
       @storm_glow = 0.0
       @precip_paused = false
     end
@@ -291,9 +291,7 @@ module DagaWASD
     # Lampi a caso (storm_rate al minuto in media): due o tre guizzi in
     # STORM_FLASH secondi, un fulmine frastagliato dalla base delle nuvole
     # all'orizzonte, la vista che si schiarisce (un velo 2D su tutto) e, col
-    # cielo animato, anche la luce del modello. Il tuono arriva dopo
-    # distanza / 343 m/s: un suono generato qui (rumore marrone con
-    # inviluppo), vicino secco, lontano un brontolio.
+    # cielo animato, anche la luce del modello.
     STORM_FLASH = 0.45
 
     def self.storm_on?; precip_on? && cf('storm') ? true : false; end
@@ -337,52 +335,12 @@ module DagaWASD
         @storm = { t0: t, pulses: pulses, dist: dist,
                    bolt: storm_bolt(rnd.rand * 2 * Math::PI, dist, @precip_model.shadow_info['NorthAngle'].to_f) }
         @storm_next = t + storm_wait
-        # in coda: un lampo nuovo può arrivare prima del tuono del precedente
-        (@storm_thunder ||= []) << [t + dist / 343.0, dist < 1500.0] if cf('storm_thunder')
-      end
-      @storm_thunder&.reject! do |at, near|
-        next false if t < at
-        snd_play_file(storm_sound(near), near ? 'dagawasd_tuono_v' : 'dagawasd_tuono_l')   # canale suo: i passi non lo zittiscono
-        true
       end
       g = storm_glow(t)
       if g > 0.0 || @storm_glow.to_f > 0.0
         @storm_glow = g
         sky_frame(true) if @sky_model              # la scena si illumina col lampo
       end
-    end
-
-    # Il suono del tuono (WAV nella cartella temporanea, generato una volta)
-    def self.storm_sound(near)
-      require 'tmpdir'
-      @storm_wav ||= {}
-      @storm_wav[near] ||= begin
-        path = File.join(Dir.tmpdir, "dagawasd_tuono_#{near ? 'vicino' : 'lontano'}.wav")
-        File.binwrite(path, storm_wav_data(near)) unless File.exist?(path)
-        path
-      end
-    end
-
-    def self.storm_wav_data(near)
-      rate = 22_050
-      len = near ? 3.2 : 4.2
-      rnd = Random.new(near ? 7 : 8)
-      b = 0.0; lp = 0.0; k = near ? 0.35 : 0.12; gain = near ? 9000.0 : 7000.0
-      samples = Array.new((rate * len).round) do |i|
-        t = i.to_f / rate
-        b = (b + (rnd.rand * 2 - 1) * 0.08) * 0.995           # rumore marrone: rombo
-        env = if near
-                (t < 0.02 ? t / 0.02 : Math.exp(-t * 1.1)) * (1.0 + 0.6 * Math.sin(t * 7.0)**2)
-              else
-                t < 0.4 ? t / 0.4 : Math.exp(-(t - 0.4) * 0.9) * (1.0 + 0.4 * Math.sin(t * 4.0)**2)
-              end
-        crack = near && t < 0.25 ? (rnd.rand * 2 - 1) * Math.exp(-t * 18) * 0.6 : 0.0   # schiocco iniziale
-        lp += (b + crack - lp) * k
-        (lp * env * gain).round.clamp(-32_767, 32_767)
-      end
-      data = samples.pack('s<*')
-      ['RIFF', 36 + data.bytesize, 'WAVE', 'fmt ', 16, 1, 1, rate, rate * 2, 2, 16, 'data', data.bytesize]
-        .pack('a4Va4a4VvvVVvva4V') + data
     end
 
     def self.storm_draw(view)

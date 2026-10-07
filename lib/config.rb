@@ -10,7 +10,7 @@ module DagaWASD
     # installando un .rbz il Gestore estensioni la riscrive.
     USER_DIR      = File.join(ENV['APPDATA'] || Dir.home, 'DagaWASD').freeze
     SETTINGS_FILE = File.join(USER_DIR, 'settings.json').freeze
-    OLD_SETTINGS_FILE = File.join(PLUGIN_DIR, 'settings.json').freeze   # fino alla 2.0: recuperato al primo avvio
+    OLD_SETTINGS_FILE = File.join(PLUGIN_DIR, 'settings.json').freeze   # versioni di prova prima della 1.0: recuperato al primo avvio
     PANEL_FILE    = File.join(PLUGIN_DIR, 'panel.html').freeze
     LANG_DIR      = File.join(PLUGIN_DIR, 'lang').freeze
     LOG_FILE      = File.join(USER_DIR, 'dagawasd.log').freeze   # mai scrivere nella cartella dell'estensione
@@ -169,8 +169,6 @@ module DagaWASD
       'head_bob_amp'        => 0.035,
       'head_bob_side'       => 0.022,
       'land_dip'            => 0.10,
-      'steps_enabled'       => true,   # suono dei passi secondo il pavimento (lib/sound.rb)
-      'steps_volume'        => 70,     # %
       # ── Percorsi registrati (lib/path.rb) ─────────────────────────
       'path_smooth'         => 0.6,    # s di media mobile: toglie dondolio e scatti (0 = com'è)
       'path_speed'          => 1.0,    # × velocità di riproduzione, scene e video
@@ -267,7 +265,6 @@ module DagaWASD
       # Temporale e neve al suolo (lib/precip.rb, lib/snowcover.rb)
       'storm'               => false,  # lampi e tuoni, con pioggia o neve
       'storm_rate'          => 6,      # lampi al minuto
-      'storm_thunder'       => true,   # tuono, in ritardo secondo la distanza
       'snow_cover'          => true,   # la neve si posa su tetti e terreno
       'snow_cover_time'     => 3.0,    # minuti per una copertura piena
       # 'auto' = segui la lingua dell'interfaccia di SketchUp

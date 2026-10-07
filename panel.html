@@ -655,10 +655,6 @@ const SPEC = [
     { id:'landing', fields:[
       {k:'land_dip', u:'', min:0, max:0.5, step:0.01, lv:2},
     ]},
-    { id:'steps', fields:[
-      {k:'steps_enabled', type:'bool'},
-      {k:'steps_volume', u:'%', min:0, max:100, step:5, int:true, dep:'steps_enabled'},
-    ]},
   ]},
   /* Percorsi registrati col tasto R (lib/path.rb): elenco con i comandi, poi le impostazioni */
   { id:'paths', special:'paths', groups:[
@@ -806,7 +802,6 @@ const SPEC = [
     { id:'storm', fields:[
       {k:'storm',         type:'bool', dep:'precip_kind'},
       {k:'storm_rate',    u:'/min', min:1, max:30, step:1, int:true, lv:2, dep:'storm'},
-      {k:'storm_thunder', type:'bool', lv:2, dep:'storm'},
     ]},
     { id:'snowcover', fields:[
       {k:'snow_cover',      type:'bool', lv:2},

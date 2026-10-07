@@ -15,10 +15,6 @@ F.instance_variable_set(:@settings_file, File.join(tmp, 'settings.json'))
 F.load_cfg
 cfg = F.instance_variable_get(:@cfg)
 
-$sounds = []
-module UI
-  def self.play_sound(path); $sounds << path; end
-end
 module Sketchup
   class Color
     attr_reader :rgba
@@ -99,7 +95,7 @@ cfg.merge!('sky_flow' => false, 'sky_enabled' => false)
 # ── Temporale ───────────────────────────────────────────────────
 F.instance_variable_set(:@precip_rnd, Random.new(3))
 F.instance_variable_set(:@precip_model, xm)
-cfg.merge!('precip_kind' => 'none', 'storm' => true, 'storm_rate' => 6, 'storm_thunder' => true, 'cloud_height' => 1500)
+cfg.merge!('precip_kind' => 'none', 'storm' => true, 'storm_rate' => 6, 'cloud_height' => 1500)
 ok(!F.storm_on?, 'senza pioggia niente temporale')
 cfg['precip_kind'] = 'rain'
 ok(F.storm_on?, 'pioggia e temporale: acceso')
@@ -114,27 +110,6 @@ ok(F.storm_glow(100.0) == 1.0 && F.storm_glow(100.0 + F::STORM_FLASH + 0.01) == 
 b = s[:bolt]
 top = Math.atan2(1500.0, s[:dist])
 ok((Math.asin(b.first[2]) - top).abs < 1e-6 && b.last[2].abs < 1e-9, 'fulmine dalla base delle nuvole all\'orizzonte')
-th = F.instance_variable_get(:@storm_thunder).first
-ok(th && (th[0] - (100.0 + s[:dist] / 343.0)).abs < 1e-6, "tuono dopo #{(s[:dist] / 343.0).round(1)} s (#{s[:dist].round} m)")
-F.instance_variable_set(:@storm_next, th[0] - 1.0)       # un altro lampo prima del tuono
-F.storm_step(th[0] - 1.0)
-snd = F.instance_variable_get(:@snd)
-plays = -> { snd.mci.grep(/\Aplay dagawasd_tuono/) }
-ok(F.instance_variable_get(:@storm_thunder).size == 2 && plays.().empty?, 'un lampo nuovo prima del tuono: due tuoni in coda, nessuno perso')
-F.storm_step(th[0] + 0.01)
-opened = snd.mci.map { |c| c[/\Aopen "(.+)" type waveaudio alias dagawasd_tuono_[vl]\z/, 1] }.compact
-ok(plays.().size == 1 && opened.size == 1 && File.binread(opened[0], 4) == 'RIFF' && $sounds.empty?,
-   'tuono: un WAV suonato quando arriva, sul suo canale MCI (i passi non lo zittiscono)')
-snd.mci_rc = 263                                          # MCI non disponibile
-F.instance_variable_set(:@snd_open, {})
-F.snd_play_file(opened[0], 'dagawasd_tuono_v')
-snd.mci_rc = 0
-ok($sounds == [opened[0]], 'senza MCI il tuono passa da UI.play_sound')
-wav = F.storm_wav_data(true)
-size, = wav.byteslice(4, 4).unpack('V'); rate, = wav.byteslice(24, 4).unpack('V'); n, = wav.byteslice(40, 4).unpack('V')
-ok(size == wav.bytesize - 8 && rate == 22_050 && n == wav.bytesize - 44, 'WAV valido: 22050 Hz, 16 bit, intestazione coerente')
-pcm = wav.byteslice(44, n).unpack('s<*')
-ok(pcm.map(&:abs).max > 3000 && pcm.first(2205).map(&:abs).max > pcm.last(2205).map(&:abs).max * 3, 'tuono vicino: forte all\'inizio, poi si spegne')
 F.instance_variable_set(:@storm_glow, 0.8)
 v = XView.new
 F.storm_draw(v)

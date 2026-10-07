@@ -84,7 +84,11 @@ class FakeView
   def initialize; @calls = []; @cam = FakeCam.new; end
   def camera; @cam; end
   def invalidate; end
-  def draw(mode, pts); @calls << [:draw, mode, pts.size, @drawing_color, pts.map(&:z).min]; end
+  def draw(mode, pts, texture: nil, uvs: nil)
+    @calls << [:draw, mode, pts.size, @drawing_color, pts.map { |p| p.is_a?(Array) ? p[2] : p.z }.min, texture, uvs]
+  end
+  def load_texture(_rep); @tex = (@tex || 0) + 1; end
+  def release_texture(_id); end
   def pixels_to_model(px, _pt); px * 2.0; end
 end
 class FakeModel
@@ -163,16 +167,30 @@ sole_a = lambda do |alt_deg|
   F.instance_variable_set(:@sky, salvo.merge(sun: [0.0, Math.cos(a), Math.sin(a)], sun_alt: alt_deg, stars: nil, moon_alt: -90.0))
   fm.view.calls.clear
   F.sky_draw(fm.view)
-  fm.view.calls.select { |x| x[1] == GL_POLYGON }
+  fm.view.calls.select { |x| x[5] }                  # il sole: triangoli con l'immagine
 end
 prima = sole_a.(-1.1)
 occhio = fm.view.camera.eye.z
-ok(prima.size == 1 && prima[0][3].to_a[3] == 40 && prima[0][4] >= occhio - 1e-6,
-   'sole a −1,1°: disco nascosto, sopra l\'orizzonte solo il chiarore tenue')
+# nell'immagine il disco è il cerchio di raggio 1 / (2 SUN_GLOW) attorno al centro: v = altezza
+disco = 0.5 / F::SUN_GLOW
+vs = ->(x) { x[6].map { |uv| uv[1] - 0.5 } }
+ok(prima.size == 1 && prima[0][4] >= occhio - 1e-6 && (vs.(prima[0]).min > disco || vs.(prima[0]).max < -disco),
+   'sole a −1,1°: disco nascosto, sopra l\'orizzonte solo il chiarore')
 ok(sole_a.(-4).empty?, 'sole a −4°: non si vede nulla')
 meta = sole_a.(0.5)
-ok(meta.size == 3 && meta.all? { |x| x[4] >= occhio - 1e-6 }, "sole a +0,5°: si vede solo la parte sopra l'orizzonte (#{meta.size} dischi)")
-ok(sole_a.(30).all? { |x| x[2] == 32 }, 'sole alto: dischi interi')
+ok(meta.size == 1 && meta[0][2] < 6 + 3 && meta[0][4] >= occhio - 1e-6 && vs.(meta[0]).min < 0 && vs.(meta[0]).max > 0,
+   "sole a +0,5°: si vede solo la parte sopra l'orizzonte, col centro del disco")
+alto = sole_a.(30)
+ok(alto.size == 1 && alto[0][2] == 6 && alto[0][6].map { |uv| uv[0, 2].map { |x| x.round(6) } }.uniq.sort == [[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]],
+   'sole alto: quadrato intero, immagine intera')
+pix = F.sun_pixels(1.0, 0.0).unpack('C*')
+alfa = ->(i, j) { pix[(j * F::SUN_TEX + i) * 4 + 3] }
+h = F::SUN_TEX / 2
+ok(alfa.(h, h) == 255 && alfa.(0, h) == 0 && alfa.(0, 0) == 0 && (h...F::SUN_TEX).each_cons(2).all? { |i, k| alfa.(k, h) <= alfa.(i, h) },
+   'immagine del sole: disco pieno, alone che cala senza scalini fino a zero sul bordo')
+velato = F.sun_pixels(0.2, 0.0).unpack('C*')
+ok(velato[(h * F::SUN_TEX + h) * 4 + 3] > 150 && velato[(h * F::SUN_TEX + h + 9) * 4 + 3] > 40,
+   'sotto la neve una macchia chiara e sfocata, non un disco trasparente')
 F.instance_variable_set(:@sky, salvo)
 
 # Salvataggio: originali nel file, poi il cielo riprende
@@ -188,7 +206,8 @@ F.sky_sync
 fm.view.calls.clear
 F.sky_draw(fm.view)
 c = fm.view.calls
-ok(c.none? { |x| x[1] == GL_QUADS } && c.count { |x| x[0] == :draw && x[1] == GL_POLYGON } >= 3, 'a mezzogiorno il sole sì, le stelle no')
+ok(c.none? { |x| x[1] == GL_QUADS } && c.none? { |x| x[5] },
+   'a mezzogiorno niente stelle, e il sole (a sud, alle spalle della camera che guarda a nord) non si disegna')
 ok(ro['SkyColor'].to_a[0, 3] == [0, 154, 217] && si['Light'] == 80, 'a mezzogiorno colori e luce del modello')
 
 # Il tempo scorre: un giorno in 2 minuti → 12 minuti di cielo per secondo

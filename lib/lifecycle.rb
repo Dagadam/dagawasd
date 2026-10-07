@@ -114,7 +114,6 @@ module DagaWASD
       @main_hwnd = nil
       pad_rumble_tick
       @pad = @pad_prev_btn = nil       # al rientro i pulsanti già premuti non scattano
-      @step_kind_cache = nil           # materiali cambiati nel frattempo: si rileggono
       # L'oggetto in mano viene mollato e, insieme a quelli ancora in volo,
       # finisce di cadere: senza, resterebbero sospesi a mezz'aria nel modello.
       if @grabbed_entity&.valid?

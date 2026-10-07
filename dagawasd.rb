@@ -12,7 +12,7 @@ require 'extensions.rb'
 module DagaWASD
   module FPSWalkLoader
 
-    VERSION = '2.1.0' unless defined?(VERSION)
+    VERSION = '1.0.0' unless defined?(VERSION)
 
     unless defined?(EXTENSION)
 
@@ -24,8 +24,8 @@ module DagaWASD
         'Cammina nel modello in prima persona con WASD e mouse (o gamepad): ' \
         'inerzia, salto, scale e pendenze, fisica degli oggetti secondo il ' \
         'materiale (calcia, afferra, lancia, spingi). Cielo con sole, luna e ' \
-        'stelle, pioggia, neve, nuvole e temporali, suoni dei passi, percorsi ' \
-        'registrati ed esportati in video.'
+        'stelle, pioggia, neve, nuvole e temporali, percorsi registrati ed ' \
+        'esportati in video. Solo per SketchUp su Windows.'
       # il pacchetto per l'Extension Warehouse non ha il ponte (lib/bridge.rb)
       ponte = File.join(dir, 'dagawasd', 'lib', 'bridge')
       if File.exist?("#{ponte}.rb") || File.exist?("#{ponte}.rbe")

@@ -336,14 +336,7 @@ module DagaWASD
       n = [seen.size, 1].max
       seen.each_with_index do |(dist, (v, _, hw, shape, level)), i|
         d = dist * (0.985 - 0.02 * i / n)          # le successive un filo davanti
-        c = sky_at(g, v, d)
-        u, w = sky_basis(v)                        # u orizzontale, w verso il basso
-        hx = d * Math.tan(hw)
-        hy = hx * (0.42 + 0.25 * v[2])             # viste di lato sono più basse
-        b = [c[0] + w[0] * hy, c[1] + w[1] * hy, c[2] + w[2] * hy]
-        t = [c[0] - w[0] * hy, c[1] - w[1] * hy, c[2] - w[2] * hy]
-        pts << [b[0] - u[0] * hx, b[1] - u[1] * hx, b[2] - u[2] * hx] << [b[0] + u[0] * hx, b[1] + u[1] * hx, b[2] + u[2] * hx] <<
-          [t[0] + u[0] * hx, t[1] + u[1] * hx, t[2] + u[2] * hx] << [t[0] - u[0] * hx, t[1] - u[1] * hx, t[2] - u[2] * hx]
+        pts.concat(cloud_quad(g, v, hw, d))
         u0 = shape * cw + pad; u1 = (shape + 1) * cw - pad
         vt = 1.0 - level * ch - pad; vb = 1.0 - (level + 1) * ch + pad
         uvs << [u0, vb, 0] << [u1, vb, 0] << [u1, vt, 0] << [u0, vt, 0]
@@ -352,6 +345,32 @@ module DagaWASD
       view.drawing_color = Sketchup::Color.new(255, 255, 255)
       view.draw(GL_QUADS, pts, texture: @cloud_tex, uvs: uvs)
     rescue => fps_err; log_error(__method__, fps_err); nil; end
+
+    # I quattro angoli di una nuvola (direzione v, mezza larghezza hw) a distanza d
+    def self.cloud_quad(g, v, hw, d)
+      c = sky_at(g, v, d)
+      u, w = sky_basis(v)                          # u orizzontale, w verso il basso
+      hx = d * Math.tan(hw)
+      hy = hx * (0.42 + 0.25 * v[2])               # viste di lato sono più basse
+      b = [c[0] + w[0] * hy, c[1] + w[1] * hy, c[2] + w[2] * hy]
+      t = [c[0] - w[0] * hy, c[1] - w[1] * hy, c[2] - w[2] * hy]
+      [[b[0] - u[0] * hx, b[1] - u[1] * hx, b[2] - u[2] * hx], [b[0] + u[0] * hx, b[1] + u[1] * hx, b[2] + u[2] * hx],
+       [t[0] + u[0] * hx, t[1] + u[1] * hx, t[2] + u[2] * hx], [t[0] - u[0] * hx, t[1] - u[1] * hx, t[2] - u[2] * hx]]
+    end
+
+    # Profondità lungo lo sguardo del punto più lontano delle nuvole che
+    # possono stare davanti al cerchio di raggio ang attorno a w (0 se
+    # nessuna): il sole va dietro di loro, se no le taglierebbe (sky_draw_sun).
+    def self.cloud_depth_near(g, w, ang)
+      list = @cloud_list
+      return 0.0 unless list && @cloud_pix && cloud_on?
+      e = g[:eye]; dir = g[:dir]
+      list.map do |v, _, hw|
+        cosa = v[0] * w[0] + v[1] * w[1] + v[2] * w[2]
+        next 0.0 if Math.acos(cosa.clamp(-1.0, 1.0)) > ang + hw * 1.3
+        cloud_quad(g, v, hw, sky_dist(g, v) * 0.985).map { |p| (p[0] - e[0]) * dir[0] + (p[1] - e[1]) * dir[1] + (p[2] - e[2]) * dir[2] }.max
+      end.max || 0.0
+    end
 
     # Le nuvole le disegna il cielo, se c'è (dopo sole e stelle)
     def self.cloud_by_sky?; @sky && @sky_ov && cf('sky_enabled') ? true : false; end

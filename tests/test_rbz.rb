@@ -22,7 +22,7 @@ unless File.exist?(tar)
 end
 
 sorgente = ->(n) { n == 'dagawasd.rb' ? File.join(ROOT, n) : File.join(ROOT, n.delete_prefix('dagawasd/')) }
-tutti = (%w[dagawasd.rb dagawasd/main.rb dagawasd/panel.html] +
+tutti = (%w[dagawasd.rb dagawasd/main.rb dagawasd/panel.html dagawasd/LICENSE] +
          Dir.glob('{lib/*.rb,lang/*.json,icons/*.png}', base: ROOT).map { |f| "dagawasd/#{f}" }).sort
 
 [[false, "dagawasd-#{ver}.rbz", 'completo'], [true, "dagawasd-#{ver}-warehouse.rbz", 'Extension Warehouse']].each do |wh, nome, quale|
@@ -40,7 +40,7 @@ tutti = (%w[dagawasd.rb dagawasd/main.rb dagawasd/panel.html] +
 
   nomi = Dir.glob('**/*', base: x).select { |f| File.file?(File.join(x, f)) }.sort
   attesi = wh ? tutti - ['dagawasd/lib/bridge.rb'] : tutti
-  ok(nomi == attesi, "contiene esattamente loader, main.rb, panel.html, lib, lang e icons (#{nomi.size} file)" +
+  ok(nomi == attesi, "contiene esattamente loader, main.rb, panel.html, LICENSE, lib, lang e icons (#{nomi.size} file)" +
                      (wh ? ', senza lib/bridge.rb' : ''))
   ok(nomi.none? { |n| n =~ /settings\.json|\.log\z|\.txt\z/ }, 'niente settings.json né registri')
   diversi = nomi.reject { |n| File.binread(File.join(x, n)) == File.binread(sorgente.(n)) }

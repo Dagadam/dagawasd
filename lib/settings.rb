@@ -38,8 +38,9 @@ module DagaWASD
       @cfg
     end
 
-    # Fino alla 2.0 settings.json stava nella cartella dell'estensione: se in
-    # %APPDATA%\DagaWASD non c'è ancora, si parte da una copia di quello.
+    # Nelle versioni di prova prima della 1.0 settings.json stava nella
+    # cartella dell'estensione: se in %APPDATA%\DagaWASD non c'è ancora,
+    # si parte da una copia di quello.
     # L'originale resta dov'è (tornando a una versione vecchia c'è ancora).
     def self.adopt_old_settings
       return if File.exist?(SETTINGS_FILE) || !File.exist?(OLD_SETTINGS_FILE)

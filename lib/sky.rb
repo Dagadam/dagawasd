@@ -304,6 +304,7 @@ module DagaWASD
       if (m = @sky_model)
         begin
           m.overlays.remove(@sky_ov) if @sky_ov
+          m.active_view.release_texture(@sun_tex) if @sun_tex
           sky_restore(m)
           m.remove_observer(@sky_mobs) if @sky_mobs
           m.active_view.invalidate
@@ -311,7 +312,7 @@ module DagaWASD
           nil                       # modello già chiuso
         end
       end
-      @sky_model = @sky_ov = @sky = @sky_orig = @sky_sig = @sky_utc = @sky_tick = @sky_place_set = nil
+      @sky_model = @sky_ov = @sky = @sky_orig = @sky_sig = @sky_utc = @sky_tick = @sky_place_set = @sun_tex = @sun_tex_key = nil
       @sky_paused = false
       sky_push_status(true)
     end
@@ -628,20 +629,75 @@ module DagaWASD
           view.draw(GL_TRIANGLES, tris.map { |p| Geom::Point3d.new(*p) })
         end
       end
-      if cf('sky_sun') && s[:sun_alt] > -SKY_SUN_RAD * size * 2.6 / DEG
-        w = s[:sun]; d = sky_dist(g, w); rad = d * Math.tan(SKY_SUN_RAD * size)
-        u, v = sky_basis(w)
-        low = ((8.0 - s[:sun_alt]) / 10.0).clamp(0.0, 1.0)       # rosso vicino all'orizzonte
-        core = sky_mix([255, 250, 232], [255, 150, 70], low)
-        sky_disc(view, sky_at(g, w, d), u, v, rad * 2.6, Sketchup::Color.new(*core, (40 * veil).round), zh)
-        # col disco tutto sotto l'orizzonte resta solo il chiarore tenue dell'alba
-        if s[:sun_alt] > -SKY_SUN_RAD * size / DEG
-          sky_disc(view, sky_at(g, w, d * 0.997), u, v, rad * 1.6, Sketchup::Color.new(*core, (90 * veil).round), zh)
-          sky_disc(view, sky_at(g, w, d * 0.994), u, v, rad, Sketchup::Color.new(*core, (255 * veil).round), zh)
-        end
-      end
+      sky_draw_sun(view, cam, g, s, size, veil, zh) if cf('sky_sun') && s[:sun_alt] > -SKY_SUN_RAD * size * SUN_FADE / DEG
       cloud_draw(view, g) if cloud_on?            # per ultime: sole, luna e stelle restano dietro
     rescue => fps_err; log_error(__method__, fps_err); nil; end
+
+    # ── Sole ──────────────────────────────────────────────────────
+    # Un quadrato rivolto verso chi guarda, con un'immagine: disco e alone
+    # sfumati, senza gli scalini di più dischi sovrapposti. Pioggia e neve
+    # (veil < 1) non rendono il disco trasparente, che farebbe vedere il
+    # cielo attraverso: lo sfocano in una macchia chiara, come dietro un
+    # velo. L'immagine si rifà solo quando velo o colore cambiano di un
+    # decimo (64×64 pixel, pochi ms).
+    SUN_TEX  = 64
+    SUN_GLOW = 4.0      # mezzo lato del quadrato, in raggi del disco
+    SUN_FADE = 3.0      # da qui l'alone sfuma a zero sul bordo del quadrato
+
+    # Pixel BGRA; low = 0 bianco, 1 arancio vicino all'orizzonte
+    def self.sun_pixels(veil, low)
+      b, gr, r = sky_mix([255, 250, 232], [255, 150, 70], low).reverse
+      ss = ->(a, z, x) { t = ((x - a) / (z - a)).clamp(0.0, 1.0); t * t * (3 - 2 * t) }
+      soft = 0.06 + 0.5 * (1.0 - veil)                 # bordo del disco, in raggi
+      h = SUN_TEX / 2.0
+      Array.new(SUN_TEX * SUN_TEX) do |k|
+        x = Math.hypot(k % SUN_TEX + 0.5 - h, k / SUN_TEX + 0.5 - h) / h * SUN_GLOW   # distanza in raggi
+        disc = veil * (1.0 - ss.(1.0 - soft, 1.0 + soft, x))
+        haze = (1.0 - veil) * 0.85 * Math.exp(-(x / 1.6)**2)
+        glow = 0.35 * veil * Math.exp(-[x - 1.0, 0.0].max * 1.4)
+        a = (1.0 - (1.0 - disc) * (1.0 - haze) * (1.0 - glow)) * (1.0 - ss.(SUN_FADE, SUN_GLOW, x))
+        [b, gr, r, (a * 255).round]
+      end.flatten.pack('C*')
+    end
+
+    def self.sky_draw_sun(view, cam, g, s, size, veil, zh)
+      return unless view.respond_to?(:load_texture)
+      low = ((8.0 - s[:sun_alt]) / 10.0).clamp(0.0, 1.0)     # rosso vicino all'orizzonte
+      key = [(veil * 10).round, (low * 10).round]
+      if @sun_tex.nil? || @sun_tex_key != key
+        rep = Sketchup::ImageRep.new
+        rep.set_data(SUN_TEX, SUN_TEX, 32, 0, sun_pixels(key[0] / 10.0, key[1] / 10.0))
+        old = @sun_tex                                  # prima la nuova, poi via la vecchia (vedi cloud_draw)
+        @sun_tex = view.load_texture(rep)
+        view.release_texture(old) if old
+        @sun_tex_key = key
+      end
+      w = s[:sun]
+      k = Math.tan(SKY_SUN_RAD * size) * SUN_GLOW         # mezzo lato / profondità
+      # Il quadrato scrive la profondità anche dov'è trasparente: una nuvola
+      # dietro il suo piano verrebbe tagliata col bordo dritto. Quindi sta
+      # parallelo allo schermo (profondità uguale ovunque) e appena dietro
+      # la nuvola più lontana fra quelle che possono coprirlo. Non al piano
+      # lontano: senza pioggia né neve SketchUp lo tiene più vicino
+      # dell'ingombro e il sole spariva.
+      cos = w[0] * g[:dir][0] + w[1] * g[:dir][1] + w[2] * g[:dir][2]
+      return if cos < 0.05                                   # di lato o alle spalle: fuori dall'inquadratura
+      depth = sky_dist(g, w) * cos
+      depth = [depth, cloud_depth_near(g, w, Math.atan(k * 1.5)) * 1.003].max if cloud_on?
+      u = cam.xaxis.to_a; v = cam.yaxis.to_a
+      q = depth * k
+      c = sky_at(g, w, depth / cos)
+      # tagliato all'orizzonte: sotto lo nasconde la terra
+      poly = sky_clip([[-q, -q], [q, -q], [q, q], [-q, q]].map { |x, y| sky_xyz(c, u, v, x, y) }, zh)
+      return if poly.size < 3
+      uv = poly.map do |p|
+        e = [p[0] - c[0], p[1] - c[1], p[2] - c[2]]
+        [0.5 + (e[0] * u[0] + e[1] * u[1] + e[2] * u[2]) / (2 * q), 0.5 + (e[0] * v[0] + e[1] * v[1] + e[2] * v[2]) / (2 * q), 0]
+      end
+      fan = (1...poly.size - 1).flat_map { |j| [0, j, j + 1] }
+      view.drawing_color = Sketchup::Color.new(255, 255, 255)
+      view.draw(GL_TRIANGLES, fan.map { |j| poly[j] }, texture: @sun_tex, uvs: fan.map { |j| uv[j] })
+    end
 
     # ── Pannello ──────────────────────────────────────────────────
     def self.sky_status
