@@ -22,7 +22,8 @@ require 'set'
 #   sky        sole, luna, stelle, cielo      precip     pioggia e neve
 #   clouds     nuvole                         snowcover  neve al suolo
 #   avi        video AVI Motion JPEG          path       percorsi registrati
-#   gamepad    controller XInput              ui         menu e barra
+#   attesa     finestra durante il video      gamepad    controller XInput
+#   ui         menu e barra
 # ══════════════════════════════════════════════════════════════════
 
 # Solo Windows: tastiera (user32), gamepad (XInput) e finestre passano dalle
@@ -40,7 +41,7 @@ if Sketchup.platform != :platform_win
 elsif !defined?(DagaWASD::FPSWalk::PLUGIN_DIR)
   %w[
     config i18n settings input camera raycast player materials geometry support
-    bodies collisions held physics actions lifecycle tick tool panel bridge sky precip clouds snowcover avi path
+    bodies collisions held physics actions lifecycle tick tool panel bridge sky precip clouds snowcover avi path attesa
     gamepad ui
   ].each do |f|
     path = File.join(__dir__.dup.force_encoding('UTF-8'), 'lib', f)   # percorsi con lettere accentate

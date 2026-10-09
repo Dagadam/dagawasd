@@ -45,9 +45,17 @@ used += ph.scan(/^\{ id:'(\w+)', subs/).flatten.map { |t| "tab.#{t}" }
 used += ph.scan(/'(keys\.\w+)'/).flatten
 used += rb.scan(/'rt\.\w+'/).map { |k| k.delete("'") }            # chiavi passate come argomento (es. drop_grabbed)
 used += %w[legno pietra metallo vetro gomma pallone cartone plastica].map { |m| "mat.#{m}" }
+# Finestra durante il video (attesa.html): ogni 'att.…' e 'fun.…' fra apici
+# (T('att.stop'), battute { k:'fun.…' }, righe delle statistiche, finali)
+ah = read(File.join(ROOT, 'attesa.html'))
+att = ah.scan(/'((?:att|fun)\.\w+)'/).flatten.uniq
+used += att
 used.uniq!
 missing_en = used.reject { |k| en.key?(k) }
 ok(missing_en.empty?, "i #{used.size} testi usati da codice e pannello esistono in en.json#{missing_en.empty? ? '' : ": mancano #{missing_en.join(', ')}"}")
+# attesa.rb manda alla pagina solo att.* e fun.*: in en.json nessuno inutilizzato
+morti = en.keys.select { |k| k.start_with?('att.', 'fun.') } - att
+ok(morti.empty?, "ogni testo att./fun. di en.json è usato da attesa.html (#{att.size})#{morti.empty? ? '' : ": inutili #{morti.join(', ')}"}")
 
 (files - ['en']).sort.each do |c|
   d = parsed[c] || {}

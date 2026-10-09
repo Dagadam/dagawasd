@@ -21,7 +21,7 @@ echo  Sorgente: %SRC%
 
 rem --- i file sorgente ci sono tutti? ---------------------------------
 set "MISSING="
-for %%F in (main.rb panel.html dagawasd.rb) do (
+for %%F in (main.rb panel.html attesa.html dagawasd.rb) do (
   if not exist "%SRC%\%%F" set "MISSING=!MISSING! %%F"
 )
 if not exist "%SRC%\icons" set "MISSING=!MISSING! icons\"
@@ -80,6 +80,10 @@ if not exist "%EXT%" mkdir "%EXT%"
 
 copy /Y "%SRC%\main.rb"        "%EXT%\" >nul && echo      main.rb          aggiornato
 copy /Y "%SRC%\panel.html"     "%EXT%\" >nul && echo      panel.html       aggiornato
+copy /Y "%SRC%\attesa.html"    "%EXT%\" >nul && echo      attesa.html      aggiornato ^(finestra del video^)
+rem attesa\ (il personaggio) si ricopia da zero, se c'e'
+if exist "%EXT%\attesa" rmdir /S /Q "%EXT%\attesa"
+if exist "%SRC%\attesa" xcopy /E /I /Y /Q "%SRC%\attesa" "%EXT%\attesa\" >nul && echo      attesa\          aggiornata ^(personaggio^)
 copy /Y "%SRC%\dagawasd.rb"    "%DST%\" >nul && echo      dagawasd.rb      aggiornato
 xcopy /E /I /Y /Q "%SRC%\icons" "%EXT%\icons\" >nul && echo      icons\           aggiornate
 xcopy /E /I /Y /Q "%SRC%\lang"  "%EXT%\lang\"  >nul && echo      lang\            aggiornate ^(traduzioni^)

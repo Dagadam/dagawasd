@@ -271,6 +271,128 @@ view.singleton_class.send(:remove_method, :write_image)
 ok(per_giro == 4, "un giro dell'animazione scrive più fotogrammi (#{per_giro}): il ridisegno fra un giro e l'altro pesa meno")
 F.send(:remove_const, :PATH_BATCH); F.const_set(:PATH_BATCH, batch)
 
+# ── Finestra durante il video (lib/attesa.rb) ────────────────────────
+# Fin qui senza UI::HtmlDialog: la finestra non si apriva e il finale era
+# un messagebox. Da qui una finestra finta che raccoglie gli execute_script.
+module UI
+  class HtmlDialog
+    attr_reader :opts, :file, :scripts
+    def self.all; @all ||= []; end
+    def initialize(o); @opts = o; @scripts = []; @cb = {}; @visible = false; HtmlDialog.all << self; end
+    def set_file(f); @file = f; end
+    def add_action_callback(n, &b); @cb[n] = b; end
+    def set_on_closed(&b); @closed = b; end
+    def show; @visible = true; end
+    def visible?; @visible; end
+    def close; return unless @visible; @visible = false; @closed&.call; end
+    def bring_to_front; end
+    def execute_script(s); @scripts << s; end
+    def call(n, arg = ''); @cb[n].call(nil, arg); end
+    # [[funzione, dati]] dagli script: init({...}), progress({...}), finish({...})
+    def sent; @scripts.map { |s| m = s.match(/\A(\w+)\((.*)\)\z/m); [m[1], JSON.parse(m[2])] }; end
+    def last(fn); (sent.reverse.find { |f, _| f == fn } || [])[1]; end
+  end
+end
+class FakeEnts < Array
+  def grep(k); select { |e| e.is_a?(k) }; end
+end
+FakeDef = Struct.new(:entities, :group, :image) do
+  def group?; group; end
+  def image?; image; end
+end
+pm.define_singleton_method(:entities) { FakeEnts.new(Array.new(3) { Sketchup::Face.allocate }) }
+pm.define_singleton_method(:definitions) do
+  [FakeDef.new(FakeEnts.new(Array.new(5) { Sketchup::Face.allocate }), false, false),    # componente
+   FakeDef.new(FakeEnts.new(Array.new(2) { Sketchup::Face.allocate }), true, false),     # gruppo
+   FakeDef.new(FakeEnts.new([]), false, true)]                                            # immagine
+end
+pm.define_singleton_method(:materials) { %w[legno vetro] }
+pm.define_singleton_method(:title) { 'Faro' }
+F.send(:remove_const, :PATH_BATCH); F.const_set(:PATH_BATCH, 0.0)
+cfg.merge!('path_video_format' => 'png', 'path_video_fps' => 10, 'path_video_size' => 'hd')
+UI.define_singleton_method(:select_directory) { |**_o| tmp }
+nbox = boxes.size
+F.path_export_frames('Percorso 2')
+dlg = UI::HtmlDialog.all.last
+ok(dlg && dlg.visible? && dlg.file == F::ATTESA_FILE && File.exist?(dlg.file), 'all\'avvio si apre la finestra con attesa.html')
+ok(dlg.scripts.empty?, 'prima di ready la pagina non riceve nulla')
+dlg.call('ready')
+ini = dlg.last('init')
+st = ini && ini['stats']
+ok(ini && ini['strings'].keys.all? { |k| k.start_with?('att.', 'fun.') } && ini['strings']['att.stop'] == F.t('att.stop') && ini['lang'] == 'it',
+   'init: solo i testi att./fun., nella lingua scelta')
+ok(st && (st['m'] - 2.0).abs < 0.1 && st['total'] == 21 && st['w'] == 1280 && st['fps'] == 10 && st['format'] == 'png',
+   "statistiche: #{st && st['m']} m percorsi, 21 fotogrammi, 1280×720 a 10 al secondo")
+ok(st['faces'] == 10 && st['comps'] == 1 && st['mats'] == 2 && st['model'] == 'Faro',
+   'modello: facce di modello e definizioni (una volta), componenti senza gruppi e immagini, materiali, titolo')
+ok(st['up'] < 0.2 && st['turn'] < 5, 'dritto e in piano: niente salita, niente giri (il dondolio non conta)')
+k = 0
+k += 1 while view.anim&.nextFrame(view) && k < 1000
+prog = dlg.sent.select { |f, _| f == 'progress' }.map(&:last)
+ok(prog.size >= 20 && prog.map { |p| p['k'] }.each_cons(2).all? { |a, b| b >= a } && prog.last['k'] == 21 && prog.last['bytes'] == 21 * 3,
+   "avanzamento dopo ogni blocco (#{prog.size}): fotogrammi e byte scritti")
+fin = dlg.last('finish')
+ok(fin && fin['why'] == 'fine' && fin['n'] == 21 && fin['dir'] == File.join(tmp, 'Percorso 2').tr('/', '\\') && boxes.size == nbox,
+   'finale nel fumetto, niente messagebox')
+opened = []
+UI.define_singleton_method(:openURL) { |u| opened << u }
+dlg.call('open', 'dir')
+ok(opened.last == "file:///#{File.join(tmp, 'Percorso 2')}", '«Apri la cartella» apre quella delle immagini')
+UI.define_singleton_method(:start_timer) { |*_a, &b| b.call; 1 }
+dlg.call('close')
+ok(!dlg.visible? && F.instance_variable_get(:@attesa).nil?, '«Chiudi» chiude la finestra')
+
+F.path_export_frames('Percorso 2')
+dlg = UI::HtmlDialog.all.last
+dlg.call('ready')
+3.times { view.anim.nextFrame(view) }
+dlg.call('stop')
+fin = dlg.last('finish')
+ok(!F.path_busy? && fin && fin['why'] == 'interrotto' && fin['n'] == 3 && boxes.size == nbox, '«Interrompi» (o Esc nella pagina) ferma: il finale lo dice la finestra')
+F.attesa_close
+
+F.path_export_frames('Percorso 2')
+dlg = UI::HtmlDialog.all.last
+2.times { view.anim.nextFrame(view) }
+dlg.close
+ok(!F.path_busy? && boxes.size == nbox + 1 && boxes.last.include?('2'), 'finestra chiusa con la X: si ferma, e il finale torna un messagebox')
+
+cfg['path_video_format'] = 'avi'
+UI.define_singleton_method(:savepanel) { |*_a| avi_file }
+F.path_export_frames('Percorso 2')
+dlg = UI::HtmlDialog.all.last
+dlg.call('ready')
+k = 0
+k += 1 while view.anim&.nextFrame(view) && k < 1000
+fin = dlg.last('finish')
+ok(fin && fin['file'] == avi_file.tr('/', '\\') && fin['time'] == '0:02' && fin['mb'] >= 0, 'AVI: file, durata e MB nel finale')
+dlg.call('open', 'file')
+ok(opened.last == "file:///#{avi_file}", '«Guarda il video» apre il file')
+dlg.call('close')
+UI.singleton_class.send(:remove_method, :start_timer)
+
+# Pagina mancante (installazione incompleta): niente finestra bianca, finale col messagebox
+vera = F::ATTESA_FILE
+F.send(:remove_const, :ATTESA_FILE); F.const_set(:ATTESA_FILE, File.join(tmp, 'non_c_e.html'))
+quante = UI::HtmlDialog.all.size
+nbox = boxes.size
+F.path_export_frames('Percorso 2')
+k = 0
+k += 1 while view.anim&.nextFrame(view) && k < 1000
+ok(UI::HtmlDialog.all.size == quante && boxes.size == nbox + 1 && boxes.last.include?('avi'),
+   'attesa.html mancante: nessuna finestra, alla fine il messagebox di sempre')
+F.send(:remove_const, :ATTESA_FILE); F.const_set(:ATTESA_FILE, vera)
+
+# Salita, discesa e giri dello sguardo: rampa di 6 m su 30 m girando due volte
+ramp = Array.new(301) do |i|
+  a = i / 300.0 * 4 * Math::PI
+  [i * 0.1 * M, 0.0, 66 + i / 300.0 * 6 * M, Math.cos(a), Math.sin(a), 0.0, 0.0, 0.0, 1.0, 60.0]
+end
+st = F.attesa_stats(frames: ramp, name: 'rampa', dur: 10.0, speed: 1.0, fps: 30, total: 300, w: 1920, h: 1080)
+ok((st['up'] - 6.0).abs < 0.3 && st['down'] < 0.3 && (st['turn'] - 720).abs < 5 && (st['kmh'] - 30.6 / 10 * 3.6).abs < 0.3,
+   "rampa: #{st['up']} m in salita, #{st['down']} in discesa, sguardo girato di #{st['turn']}°, #{st['kmh']} km/h")
+F.send(:remove_const, :PATH_BATCH); F.const_set(:PATH_BATCH, batch)
+
 # ── Rinomina ed elimina dal pannello ─────────────────────────────────
 UI.define_singleton_method(:inputbox) { |*_a| ['Giro del faro'] }
 F.path_command('rename', 'Percorso 2')

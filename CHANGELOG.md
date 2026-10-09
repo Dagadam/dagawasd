@@ -10,6 +10,15 @@ Il numero sta in un posto solo, `VERSION` in `dagawasd.rb`;
 
 ## [Non ancora uscito]
 
+### Aggiunto
+- **Finestra durante il video**: mentre un percorso diventa video AVI o
+  immagini PNG, un personaggio parla da un fumetto con la barra di
+  avanzamento, le statistiche del percorso, del video e del modello
+  (fotogrammi, tempo trascorso e mancante, MB scritti e stima finale, metri
+  percorsi, facce, materiali, componenti) e battute ricavate da quei numeri,
+  in tutte le lingue. Esc o «Interrompi» fermano l'esportazione; alla fine il
+  fumetto dice com'è andata, con «Guarda il video» e «Apri la cartella».
+
 ## [1.0.0] — 2026-10-07
 
 Prima versione distribuita.

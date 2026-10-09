@@ -10,7 +10,7 @@ rem    4. ponte per Claude, meteo e gamepad (test_bridge, test_sky, test_precip,
 rem    5. completezza delle traduzioni (tests\test_i18n.rb)
 rem    6. pacchetti .rbz: si creano, si estraggono e si caricano (tests\test_rbz.rb),
 rem       e regole SketchUp sul pacchetto per l'Extension Warehouse (se c'e' rubocop)
-rem    7. test del pannello in un browser simulato (tests\panel)
+rem    7. test del pannello e della finestra del video in un browser simulato (tests\panel)
 rem  Serve Ruby 3.2 (C:\Ruby32-x64) e, per il pannello, Node.js.
 rem  Questa cartella NON viene copiata in SketchUp da installa.bat.
 rem ==================================================================
@@ -95,6 +95,7 @@ if errorlevel 1 (
     pushd "%ROOT%\tests\panel" && call npm install --silent && popd
   )
   node "%ROOT%\tests\panel\test_panel.js" || set "FAIL=1"
+  node "%ROOT%\tests\panel\test_attesa.js" || set "FAIL=1"
 )
 
 echo.

@@ -293,7 +293,9 @@ module DagaWASD
         extra[:avi] = MjpegAvi.new(file, w, h, fps)
         extra[:jpg] = File.join(Dir.tmpdir, "dagawasd_fotogramma_#{Process.pid}.jpg")
       end
-      path_start(:frames, name, extra)
+      err = path_start(:frames, name, extra.merge(bytes: 0))
+      attesa_open(@path_job) unless err      # lib/attesa.rb: personaggio, avanzamento, battute
+      err
     end
 
     # Più fotogrammi per giro dell'animazione, per ~PATH_BATCH s: fra un giro
@@ -307,7 +309,9 @@ module DagaWASD
       loop do
         go = path_frame_write(view, job)
         return go unless go
-        return true if Process.clock_gettime(Process::CLOCK_MONOTONIC) - t0 >= PATH_BATCH
+        next if Process.clock_gettime(Process::CLOCK_MONOTONIC) - t0 < PATH_BATCH
+        attesa_progress(job)
+        return true
       end
     end
 
@@ -322,11 +326,14 @@ module DagaWASD
       if (avi = job[:avi])
         ok = view.write_image(filename: job[:jpg], width: job[:w], height: job[:h], antialias: true, compression: 0.9)
         raise IOError, job[:jpg] unless ok
-        avi.add(File.binread(job[:jpg]))
+        jpeg = File.binread(job[:jpg])
+        avi.add(jpeg)
+        job[:bytes] = job[:bytes].to_i + jpeg.bytesize + 8
       else
-        ok = view.write_image(filename: File.join(job[:dir], format('frame_%05d.png', k + 1)),
-                              width: job[:w], height: job[:h], antialias: true)
+        png = File.join(job[:dir], format('frame_%05d.png', k + 1))
+        ok = view.write_image(filename: png, width: job[:w], height: job[:h], antialias: true)
         raise IOError, job[:dir] unless ok
+        job[:bytes] = job[:bytes].to_i + File.size(png)
       end
       job[:k] = k + 1
       if avi&.full?                              # al limite dei 4 GB di un AVI: si chiude qui
@@ -340,13 +347,17 @@ module DagaWASD
     def self.path_frames_done(job, why)
       return path_video_done(job, why) if job[:avi]
       n = job[:k]
-      return Sketchup.status_text = '' if n.zero?
-      bat = File.join(job[:dir], 'crea_video.bat')
-      File.write(bat, "@echo off\r\ncd /d \"%~dp0\"\r\n" \
-                      "ffmpeg -y -framerate #{job[:fps]} -i frame_%%05d.png -c:v libx264 -pix_fmt yuv420p -crf 18 " \
-                      "\"#{path_safe(job[:name])}.mp4\"\r\npause\r\n")
-      key = why == :fine ? 'path.frames_done' : 'path.frames_stopped'
       Sketchup.status_text = ''
+      unless n.zero?
+        bat = File.join(job[:dir], 'crea_video.bat')
+        File.write(bat, "@echo off\r\ncd /d \"%~dp0\"\r\n" \
+                        "ffmpeg -y -framerate #{job[:fps]} -i frame_%%05d.png -c:v libx264 -pix_fmt yuv420p -crf 18 " \
+                        "\"#{path_safe(job[:name])}.mp4\"\r\npause\r\n")
+      end
+      info = { 'n' => n, 'time' => path_clock(n.to_f / job[:fps]), 'mb' => (job[:bytes].to_i / 1_048_576.0).round(1),
+               'dir' => job[:dir].tr('/', '\\') }
+      return if attesa_finish(job, why, info) || n.zero?
+      key = why == :fine ? 'path.frames_done' : 'path.frames_stopped'
       UI.messagebox(format(t(key), n: n, dir: job[:dir]))
     rescue => fps_err
       log_error(__method__, fps_err)
@@ -357,13 +368,14 @@ module DagaWASD
       avi.close
       File.delete(job[:jpg]) if File.exist?(job[:jpg])
       Sketchup.status_text = ''
-      if avi.frames.zero?
-        File.delete(avi.path) rescue nil
-        return
-      end
+      n = avi.frames
+      File.delete(avi.path) if n.zero? && File.exist?(avi.path)
+      file = avi.path.tr('/', '\\')
+      time = path_clock(n.to_f / job[:fps])
+      mb = n.zero? ? 0.0 : (File.size(avi.path) / 1_048_576.0).round(1)
+      return if attesa_finish(job, why, 'n' => n, 'time' => time, 'mb' => mb, 'file' => n.zero? ? nil : file) || n.zero?
       key = why == :fine ? 'path.video_done' : 'path.video_stopped'
-      UI.messagebox(format(t(key), file: avi.path.tr('/', '\\'), time: path_clock(avi.frames.to_f / job[:fps]),
-                                   mb: (File.size(avi.path) / 1_048_576.0).round(1)))
+      UI.messagebox(format(t(key), file: file, time: time, mb: mb))
     rescue => fps_err
       log_error(__method__, fps_err)
     end

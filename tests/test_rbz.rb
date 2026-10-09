@@ -22,8 +22,8 @@ unless File.exist?(tar)
 end
 
 sorgente = ->(n) { n == 'dagawasd.rb' ? File.join(ROOT, n) : File.join(ROOT, n.delete_prefix('dagawasd/')) }
-tutti = (%w[dagawasd.rb dagawasd/main.rb dagawasd/panel.html dagawasd/LICENSE] +
-         Dir.glob('{lib/*.rb,lang/*.json,icons/*.png}', base: ROOT).map { |f| "dagawasd/#{f}" }).sort
+tutti = (%w[dagawasd.rb dagawasd/main.rb dagawasd/panel.html dagawasd/attesa.html dagawasd/LICENSE] +
+         Dir.glob('{lib/*.rb,lang/*.json,icons/*.png,attesa/*.{webp,gif,png}}', base: ROOT).map { |f| "dagawasd/#{f}" }).sort
 
 [[false, "dagawasd-#{ver}.rbz", 'completo'], [true, "dagawasd-#{ver}-warehouse.rbz", 'Extension Warehouse']].each do |wh, nome, quale|
   puts "\n── Pacchetto #{quale} ──"
@@ -40,9 +40,17 @@ tutti = (%w[dagawasd.rb dagawasd/main.rb dagawasd/panel.html dagawasd/LICENSE] +
 
   nomi = Dir.glob('**/*', base: x).select { |f| File.file?(File.join(x, f)) }.sort
   attesi = wh ? tutti - ['dagawasd/lib/bridge.rb'] : tutti
-  ok(nomi == attesi, "contiene esattamente loader, main.rb, panel.html, LICENSE, lib, lang e icons (#{nomi.size} file)" +
+  ok(nomi == attesi, "contiene esattamente loader, main.rb, panel.html, attesa.html, LICENSE, lib, lang e icons (#{nomi.size} file)" +
                      (wh ? ', senza lib/bridge.rb' : ''))
   ok(nomi.none? { |n| n =~ /settings\.json|\.log\z|\.txt\z/ }, 'niente settings.json né registri')
+  # installa.bat (per lo sviluppo) deve copiare le stesse cose: un file nuovo
+  # nel pacchetto ma non lì resta fuori dall'installazione (attesa.html, 2026-10-09)
+  unless wh
+    bat = File.read(File.join(ROOT, 'installa.bat'), encoding: 'UTF-8')
+    voci = nomi.map { |n| n.delete_prefix('dagawasd/').split('/').first }.uniq - ['LICENSE']
+    fuori = voci.reject { |v| bat.include?("%SRC%\\#{v}") }
+    ok(fuori.empty?, "installa.bat copia tutto quello che ha il pacchetto#{fuori.empty? ? '' : ": manca #{fuori.join(', ')}"}")
+  end
   diversi = nomi.reject { |n| File.binread(File.join(x, n)) == File.binread(sorgente.(n)) }
   ok(diversi.empty?, "file estratti identici ai sorgenti#{diversi.empty? ? '' : ": #{diversi.join(', ')}"}")
   if wh

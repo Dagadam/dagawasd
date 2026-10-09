@@ -12,6 +12,7 @@
 # Un .rbz è uno zip con, alla radice, quello che va nella cartella Plugins:
 #   dagawasd.rb                                   il loader, registra l'estensione
 #   dagawasd/main.rb, panel.html, LICENSE (MIT: la nota sull'autore va con ogni copia), lib/, lang/, icons/
+#   dagawasd/attesa.html e attesa/                la finestra durante il video, col personaggio se c'è
 # Niente test, strumenti, artefatti né settings.json: le impostazioni
 # dell'utente stanno in %APPDATA%\DagaWASD e un aggiornamento non le tocca.
 #
@@ -49,8 +50,9 @@ module CreaRbz
   # [percorso nello zip, file sul disco]
   def contenuto(warehouse = false)
     ext = ->(rel) { ["dagawasd/#{rel}", File.join(ROOT, rel)] }
-    lista = [['dagawasd.rb', File.join(ROOT, 'dagawasd.rb')], ext.('main.rb'), ext.('panel.html'), ext.('LICENSE')]
-    %w[lib/*.rb lang/*.json icons/*.png].each do |g|
+    lista = [['dagawasd.rb', File.join(ROOT, 'dagawasd.rb')], ext.('main.rb'), ext.('panel.html'), ext.('attesa.html'),
+             ext.('LICENSE')]
+    %w[lib/*.rb lang/*.json icons/*.png attesa/*.{webp,gif,png}].each do |g|
       Dir.glob(g, base: ROOT).sort.each { |rel| lista << ext.(rel) unless warehouse && SOLO_COMPLETO.include?(rel) }
     end
     lista

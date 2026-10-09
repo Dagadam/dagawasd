@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>DagaWASD</title>
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   ATTESA DEL VIDEO — la apre lib/attesa.rb mentre path.rb scrive i
+   fotogrammi. Ruby manda init (testi, aspetto, statistiche), poi
+   progress dopo ogni blocco di fotogrammi e finish alla fine.
+   Colori: tema e accento del pannello (Sistema › Aspetto); il fumetto
+   resta chiaro in tutti e due i temi, come carta.
+═══════════════════════════════════════════════════════════════ */
+:root{
+  --bg:#151515;--fg:#dcdcdc;--mut:#8a8a8a;--line:#2c2c2c;
+  --acc:#00c9a7;--acc-ink:#0d0d0d;--hl:#ffd166;--dg:#c04747;--dg-ink:#fff;
+  --glow:#123a33;--btn:#353535;--acc-tx:#0b7f6c;
+  --bub:#fbf8f1;--bub-fg:#1d1d1b;--bub-mut:#6f6a60;--bub-line:#e4ded1;--bub-edge:rgba(0,0,0,.06);--track:#e9e3d6;
+  --font:'Segoe UI',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:radial-gradient(ellipse at 30% 0%,var(--glow) 0%,var(--bg) 62%);
+  background-color:var(--bg);color:var(--fg);
+  font:15px/1.45 var(--font);user-select:none;overflow:hidden;
+  display:flex;flex-direction:column;
+}
+body.rtl{direction:rtl}
+
+/* ══ SCENA: personaggio a sinistra, fumetto a destra ══ */
+.scena{flex:1 1 auto;min-height:0;display:flex;align-items:flex-end;gap:26px;padding:20px 22px 8px}
+.pg{flex:0 0 170px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:4px}
+.pg img{max-width:170px;max-height:260px;display:block}
+.pg svg{width:160px;height:auto;overflow:visible}
+
+.fumetto{
+  position:relative;flex:1 1 auto;min-width:0;
+  background:var(--bub);color:var(--bub-fg);border-radius:24px;
+  padding:22px 24px 18px;display:flex;flex-direction:column;gap:14px;
+  box-shadow:0 10px 30px rgba(0,0,0,.28),0 0 0 1px var(--bub-edge);
+}
+/* coda del fumetto: verso la bocca del personaggio */
+.fumetto::before{
+  content:"";position:absolute;bottom:118px;left:-20px;width:30px;height:28px;
+  background:var(--bub);clip-path:polygon(100% 0,0 62%,100% 100%);
+}
+body.rtl .fumetto::before{left:auto;right:-20px;clip-path:polygon(0 0,100% 62%,0 100%)}
+
+.battuta{
+  font-size:1.2rem;line-height:1.42;font-weight:500;min-height:4.3em;
+  display:flex;align-items:center;transition:opacity .35s,transform .35s;
+}
+.battuta.via{opacity:0;transform:translateY(6px)}
+.battuta b{font-weight:700;color:var(--acc-tx)}
+
+/* ══ BARRA ══ */
+.barra{position:relative;height:26px;border-radius:13px;background:var(--track);overflow:hidden}
+.riemp{
+  position:absolute;inset:0 auto 0 0;width:0;border-radius:13px;background-color:var(--acc);
+  background-image:repeating-linear-gradient(-45deg,rgba(255,255,255,.22) 0 10px,transparent 10px 20px);
+  background-size:28px 28px;animation:strisce 1s linear infinite;transition:width .6s ease-out;
+}
+body.rtl .riemp{inset:0 0 0 auto;animation-direction:reverse}
+body.finito .riemp{animation:none}
+body.fermo .riemp{background-color:var(--hl)}
+body.errore .riemp{background-color:var(--dg)}
+@keyframes strisce{to{background-position:28px 0}}
+.pct{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:.93rem;color:var(--bub-fg);font-variant-numeric:tabular-nums;
+  text-shadow:0 0 4px var(--bub),0 0 2px var(--bub);
+}
+
+/* ══ STATISTICHE ══ */
+.stat{display:grid;grid-template-columns:1fr 1fr;gap:6px 22px;border-top:1px dashed var(--bub-line);padding-top:12px}
+.stat div{display:flex;justify-content:space-between;align-items:baseline;gap:10px;min-width:0}
+.stat div.largo{grid-column:1/-1}
+.stat dt{color:var(--bub-mut);font-size:.87rem;white-space:nowrap}
+.stat dd{font-weight:600;font-size:.93rem;font-variant-numeric:tabular-nums;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;text-align:end}
+.dove{font-size:.85rem;color:var(--bub-mut);word-break:break-all;user-select:text}
+.dove:empty{display:none}
+.dove bdi{direction:ltr;unicode-bidi:isolate}
+
+/* ══ PIEDE ══ */
+.piede{flex:0 0 auto;display:flex;align-items:center;gap:10px;padding:10px 22px 16px}
+.piede .nota{flex:1 1 auto;color:var(--mut);font-size:.87rem}
+.btn{
+  padding:9px 20px;border:none;border-radius:6px;cursor:pointer;font:600 .95rem var(--font);
+  background:var(--btn);color:var(--fg);outline:none;
+  transition:filter .12s,transform .06s;white-space:nowrap;
+}
+.btn:hover{filter:brightness(1.15)}
+.btn:active{transform:scale(.97)}
+.btn:focus-visible{box-shadow:0 0 0 2px var(--acc)}
+.btn.go{background:var(--acc);color:var(--acc-ink)}
+.btn.stop{background:var(--dg);color:var(--dg-ink)}
+[hidden]{display:none!important}
+
+/* ══ PERSONAGGIO DISEGNATO (finché non c'è attesa/personaggio.*) ══ */
+.corpo{animation:dondola 2.4s ease-in-out infinite;transform-origin:80px 205px}
+@keyframes dondola{0%,100%{transform:translateY(0) rotate(-1.5deg)}50%{transform:translateY(-5px) rotate(1.5deg)}}
+.occhi{animation:batti 4.6s infinite;transform-origin:80px 92px}
+@keyframes batti{0%,46%,50%,100%{transform:scaleY(1)}48%{transform:scaleY(.08)}}
+.braccio{animation:saluta 1.6s ease-in-out infinite;transform-origin:121px 128px}
+@keyframes saluta{0%,100%{transform:rotate(0)}50%{transform:rotate(-14deg)}}
+.bocca-o{display:none}
+body.parla .bocca{display:none}
+body.parla .bocca-o{display:inline;animation:parla .28s steps(2) 5}
+@keyframes parla{50%{transform:scaleY(.4)}}
+.bocca-o{transform-origin:80px 113px}
+body.finito:not(.fermo):not(.errore) .corpo{animation:salta .7s ease-in-out 3,dondola 2.4s ease-in-out 2.1s infinite}
+@keyframes salta{0%,100%{transform:translateY(0)}40%{transform:translateY(-22px)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<main class="scena">
+  <div class="pg" id="pg">
+    <svg viewBox="0 0 160 220" aria-hidden="true">
+      <ellipse cx="80" cy="212" rx="46" ry="7" fill="#000" opacity=".28"/>
+      <g class="corpo">
+        <rect x="52" y="182" width="20" height="26" rx="9" fill="var(--acc)"/>
+        <rect x="88" y="182" width="20" height="26" rx="9" fill="var(--acc)"/>
+        <ellipse cx="62" cy="208" rx="15" ry="7" fill="#2b2b2b"/>
+        <ellipse cx="98" cy="208" rx="15" ry="7" fill="#2b2b2b"/>
+        <path d="M80 44c38 0 56 34 56 80 0 42-20 66-56 66s-56-24-56-66c0-46 18-80 56-80z" fill="var(--acc)"/>
+        <path d="M80 120c22 0 34 14 34 34 0 18-14 30-34 30s-34-12-34-30c0-20 12-34 34-34z" fill="#fff" opacity=".22"/>
+        <path d="M27 120c-14 6-18 20-12 30" stroke="var(--acc)" stroke-width="12" stroke-linecap="round" fill="none"/>
+        <g class="braccio">
+          <path d="M131 126c12-4 18-16 16-30" stroke="var(--acc)" stroke-width="12" stroke-linecap="round" fill="none"/>
+          <g transform="translate(128 58) rotate(-12)">
+            <rect x="0" y="12" width="40" height="28" rx="3" fill="#2b2b2b"/>
+            <path d="M0 4l40-6 2 10-40 6z" fill="#2b2b2b"/>
+            <path d="M8 3l6 8M20 1l6 8M32-1l6 8" stroke="#fff" stroke-width="4"/>
+            <rect x="5" y="19" width="30" height="3" rx="1.5" fill="#fff" opacity=".7"/>
+            <rect x="5" y="27" width="20" height="3" rx="1.5" fill="#fff" opacity=".7"/>
+          </g>
+        </g>
+        <path d="M48 56c8-18 22-26 34-26 16 0 28 8 34 22-20-6-48-6-68 4z" fill="#2b2b2b"/>
+        <circle cx="86" cy="30" r="5" fill="#2b2b2b"/>
+        <g class="occhi">
+          <ellipse cx="64" cy="92" rx="12" ry="14" fill="#fff"/>
+          <ellipse cx="96" cy="92" rx="12" ry="14" fill="#fff"/>
+          <circle cx="67" cy="95" r="6" fill="#1d1d1b"/>
+          <circle cx="99" cy="95" r="6" fill="#1d1d1b"/>
+          <circle cx="69" cy="92" r="2" fill="#fff"/>
+          <circle cx="101" cy="92" r="2" fill="#fff"/>
+        </g>
+        <ellipse cx="52" cy="110" rx="7" ry="4" fill="#ff7a7a" opacity=".45"/>
+        <ellipse cx="108" cy="110" rx="7" ry="4" fill="#ff7a7a" opacity=".45"/>
+        <path class="bocca" d="M70 110q10 10 20 0" stroke="#1d1d1b" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+        <ellipse class="bocca-o" cx="80" cy="113" rx="7" ry="6" fill="#1d1d1b"/>
+      </g>
+    </svg>
+  </div>
+  <section class="fumetto">
+    <p class="battuta" id="battuta" aria-live="polite"></p>
+    <div class="barra" role="progressbar" aria-valuemin="0" aria-valuemax="100" id="barra">
+      <div class="riemp" id="riemp"></div>
+      <span class="pct" id="pct">0%</span>
+    </div>
+    <dl class="stat" id="stat"></dl>
+    <p class="dove" id="dove"></p>
+  </section>
+</main>
+<footer class="piede">
+  <span class="nota" id="nota"></span>
+  <button class="btn go" id="b-file" hidden></button>
+  <button class="btn" id="b-dir" hidden></button>
+  <button class="btn stop" id="b-stop"></button>
+  <button class="btn" id="b-close" hidden></button>
+</footer>
+<script>
+// ── Dati da Ruby ─────────────────────────────────────────────────
+let L = {};          // testi att.* e fun.* nella lingua scelta
+let LANG = 'en';
+let S = null;        // statistiche fisse (attesa_stats)
+let P = null;        // ultimo avanzamento {k, total, bytes, el} + at (orologio della pagina)
+let FIN = null;      // finale {why, n, time, mb, file|dir}
+const $ = id => document.getElementById(id);
+const T = k => L[k] || k;
+const call = (name, arg) => { try { sketchup[name](arg || ''); } catch(e){} };
+
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+// Cifre sempre latine (come i messaggi di Ruby), separatori della lingua
+const nf = (x, d = 0) => {
+  try { return new Intl.NumberFormat(LANG + '-u-nu-latn', { maximumFractionDigits: d }).format(x); }
+  catch(e){ return String(Math.round(x * 10 ** d) / 10 ** d); }
+};
+const clock = s => {
+  s = Math.max(0, Math.round(s));
+  const h = Math.floor(s / 3600), m = Math.floor(s / 60) % 60, x = String(s % 60).padStart(2, '0');
+  return h ? `${h}:${String(m).padStart(2, '0')}:${x}` : `${m}:${x}`;
+};
+// %{nome} → valore in grassetto, isolato (numeri e nomi giusti anche da destra a sinistra)
+const fill = (tpl, v = {}) => esc(tpl).replace(/%\{(\w+)\}/g, (all, k) => k in v ? `<b><bdi>${esc(v[k])}</bdi></b>` : all);
+
+// ── Avanzamento: valori vivi fra un messaggio di Ruby e l'altro ──
+function live(){
+  if(!P) return { k: 0, total: S ? S.total : 0, frac: 0, el: 0, ok: false };
+  const run = !FIN, since = run ? (performance.now() - P.at) / 1000 : 0;
+  const q = { k: P.k, total: P.total, frac: P.total ? P.k / P.total : 0, el: P.el + since, ok: P.k >= 3 && P.el >= 5 };
+  if(P.k > 0){
+    q.spf = P.el / P.k;
+    q.eta = Math.max(0, q.spf * (P.total - P.k) - since);
+    q.mb = P.bytes / 1048576;
+    q.est = q.mb / P.k * P.total;
+    q.vpm = 60 / (q.spf * (S ? S.fps : 30));     // secondi di video per minuto di attesa
+  }
+  return q;
+}
+
+// ── Battute: ognuna ha la sua condizione sulle statistiche (s) e
+// sull'avanzamento (q), e i suoi valori. Le traduzioni in lang/*.json.
+const R = (x, d = 0) => Math.round(x * 10 ** d) / 10 ** d;
+const JOKES = [
+  { k:'fun.eta1',     w:(s, q) => q.ok && q.eta < 60 },
+  { k:'fun.eta5',     w:(s, q) => q.ok && q.eta >= 60 && q.eta < 360,    v:(s, q) => ({ eta: clock(q.eta) }) },
+  { k:'fun.eta15',    w:(s, q) => q.ok && q.eta >= 360 && q.eta < 1200,  v:(s, q) => ({ eta: clock(q.eta) }) },
+  { k:'fun.eta45',    w:(s, q) => q.ok && q.eta >= 1200 && q.eta < 3600, v:(s, q) => ({ eta: clock(q.eta) }) },
+  { k:'fun.etalong',  w:(s, q) => q.ok && q.eta >= 3600,                 v:(s, q) => ({ eta: clock(q.eta) }) },
+  { k:'fun.spf',      w:(s, q) => q.ok,                                  v:(s, q) => ({ spf: nf(q.spf, 2) }) },
+  { k:'fun.ratio',    w:(s, q) => q.ok && q.vpm < 30,                    v:(s, q) => ({ vs: nf(q.vpm, 1) }) },
+  { k:'fun.floppy',   w:(s, q) => q.ok && q.est >= 5 && q.est < 1400,    v:(s, q) => ({ mb: nf(q.est), floppy: nf(q.est / 1.44) }) },
+  { k:'fun.cd',       w:(s, q) => q.ok && q.est >= 1400,                 v:(s, q) => ({ mb: nf(q.est), cd: nf(q.est / 700, 1) }) },
+  { k:'fun.steps',    w:s => s.m >= 10,                v:s => ({ m: nf(s.m), steps: nf(s.m >= 150 ? R(s.m / 0.75, -1) : s.m / 0.75) }) },
+  { k:'fun.room',     w:s => s.m >= 2 && s.m < 15,     v:s => ({ m: nf(s.m, 1) }) },
+  { k:'fun.tennis',   w:s => s.m >= 15 && s.m < 150,   v:s => ({ m: nf(s.m), x: nf(s.m / 23.77, 1) }) },
+  { k:'fun.football', w:s => s.m >= 150 && s.m < 600,  v:s => ({ m: nf(s.m), x: nf(s.m / 105, 1) }) },
+  { k:'fun.eiffel',   w:s => s.m >= 600,               v:s => ({ m: nf(s.m), x: nf(s.m / 330, 1) }) },
+  { k:'fun.slow',     w:s => s.kmh > 0.3 && s.kmh < 2, v:s => ({ kmh: nf(s.kmh, 1) }) },
+  { k:'fun.walk',     w:s => s.kmh >= 2 && s.kmh < 6.5, v:s => ({ kmh: nf(s.kmh, 1) }) },
+  { k:'fun.fast',     w:s => s.kmh >= 6.5,             v:s => ({ kmh: nf(s.kmh, 1) }) },
+  { k:'fun.climb',    w:s => s.up >= 4.5,              v:s => ({ up: nf(s.up, 1), floors: nf(s.up / 3) }) },
+  { k:'fun.down',     w:s => s.down >= 4.5 && s.down > s.up, v:s => ({ down: nf(s.down, 1) }) },
+  { k:'fun.flat',     w:s => s.up < 0.5 && s.down < 0.5 && s.m >= 20 },
+  { k:'fun.owl',      w:s => s.turn >= 720,            v:s => ({ deg: nf(s.turn), laps: nf(Math.floor(s.turn / 360)) }) },
+  { k:'fun.fastfwd',  w:s => s.speed > 1.01,           v:s => ({ sp: nf(s.speed, 2) }) },
+  { k:'fun.slowmo',   w:s => s.speed < 0.99,           v:s => ({ sp: nf(s.speed, 2) }) },
+  { k:'fun.disney',   w:s => s.total >= 48,            v:s => ({ total: nf(s.total), days: nf(Math.ceil(s.total / 24)) }) },
+  { k:'fun.pixels',   w:s => s.w * s.h * s.total >= 1e9, v:s => ({ mpx: nf(s.w * s.h / 1e6, 1), gpx: nf(s.w * s.h * s.total / 1e9, 1) }) },
+  { k:'fun.4k',       w:s => s.w >= 3840 },
+  { k:'fun.fps60',    w:s => s.fps >= 50,              v:s => ({ fps: nf(s.fps) }) },
+  { k:'fun.png',      w:s => s.format === 'png' },
+  { k:'fun.faces',    w:s => s.faces >= 1000,          v:s => ({ faces: nf(s.faces) }) },
+  { k:'fun.fewfaces', w:s => s.faces >= 2 && s.faces < 200, v:s => ({ faces: nf(s.faces) }) },
+  { k:'fun.mats',     w:s => s.mats >= 8,              v:s => ({ mats: nf(s.mats) }) },
+  { k:'fun.nomats',   w:s => s.mats === 0 },
+  { k:'fun.comps',    w:s => s.comps >= 10,            v:s => ({ comps: nf(s.comps) }) },
+  { k:'fun.weather',  w:s => s.weather === true },
+  { k:'fun.model',    w:s => !!s.model,                v:s => ({ model: s.model }) },
+  { k:'fun.click',    w:() => true }
+];
+// Traguardi: appena superati hanno la precedenza sulle battute a caso
+const MILESTONES = [[0.25, 'fun.p25'], [0.5, 'fun.p50'], [0.75, 'fun.p75'], [0.9, 'fun.p90']];
+const JOKE_EVERY = 11000;     // ms fra una battuta e l'altra
+const shown = new Set();
+let passed = 0;               // traguardi già detti
+let pending = null;           // traguardo da dire appena possibile
+let lastSay = 0, sayTimer = null, current = '';
+
+function say(html){
+  const el = $('battuta');
+  lastSay = performance.now();
+  el.classList.add('via');
+  clearTimeout(sayTimer);
+  sayTimer = setTimeout(() => {
+    el.innerHTML = `<span>${html}</span>`;
+    el.classList.remove('via');
+    document.body.classList.remove('parla');
+    void document.body.offsetWidth;       // riparte l'animazione della bocca
+    document.body.classList.add('parla');
+  }, 350);
+}
+
+function nextJoke(){
+  if(FIN || !S) return;
+  const q = live();
+  if(pending){ say(fill(T(pending), {})); pending = null; return; }
+  const ok = JOKES.filter(j => { try { return j.w(S, q); } catch(e){ return false; } });
+  let pool = ok.filter(j => !shown.has(j.k));
+  if(!pool.length){ shown.clear(); pool = ok.filter(j => j.k !== current); }
+  if(!pool.length) return;
+  const j = pool[Math.floor(Math.random() * pool.length)];
+  shown.add(j.k); current = j.k;
+  say(fill(T(j.k), j.v ? j.v(S, q) : {}));
+}
+
+// ── Statistiche nel fumetto ──────────────────────────────────────
+function renderStats(){
+  if(!S) return;
+  const q = live(), dash = '—';
+  const has = k => typeof S[k] === 'number';
+  const mb = q.mb !== undefined ? `${nf(q.mb, 1)} MB` + (FIN ? '' : q.ok ? ` → ~${nf(q.est)} MB` : '') : dash;
+  const rows = [
+    ['att.st_frames',  `${nf(q.k)} / ${nf(q.total)}`],
+    ['att.st_elapsed', clock(FIN ? FIN.el : q.el)],
+    ['att.st_left',    FIN ? clock(0) : q.ok ? clock(q.eta) : dash],
+    ['att.st_spf',     q.spf ? `${nf(q.spf, 2)} s` : dash],
+    ['att.st_file',    FIN ? `${nf(FIN.mb, 1)} MB` : mb],
+    ['att.st_faces',   has('faces') ? nf(S.faces) : dash],
+    ['att.st_mats',    has('mats') ? nf(S.mats) : dash],
+    ['att.st_comps',   has('comps') ? nf(S.comps) : dash],
+    ['att.st_path',    `${nf(S.m)} m · ${clock(S.rec)}`, true],               // true: a tutta larghezza
+    ['att.st_video',   `${S.w}×${S.h} · ${S.fps} fps · ${clock(S.vid)}`, true]
+  ];
+  $('stat').innerHTML = rows.map(([k, v, wide]) =>
+    `<div${wide ? ' class="largo"' : ''}><dt>${esc(T(k))}</dt><dd><bdi>${esc(v)}</bdi></dd></div>`).join('');
+  const pc = FIN && FIN.why === 'fine' ? 100 : Math.floor(q.frac * 100);
+  $('riemp').style.width = (FIN && FIN.why === 'fine' ? 100 : q.frac * 100) + '%';
+  $('pct').textContent = nf(pc) + '%';
+  $('barra').setAttribute('aria-valuenow', pc);
+}
+
+// ── Chiamate da Ruby ─────────────────────────────────────────────
+// Colori come [r, g, b]: niente color-mix, che il Chromium di SketchUp 2023 non ha
+const rgb = h => { const m = /^#?([0-9a-f]{6})$/i.exec(h || ''); if(!m) return null; const n = parseInt(m[1], 16); return [n >> 16, n >> 8 & 255, n & 255]; };
+const mix = (a, b, t) => '#' + a.map((x, i) => Math.round(x + (b[i] - x) * t).toString(16).padStart(2, '0')).join('');
+const lum = c => (0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]) / 255;
+
+function applyLook(o){
+  const r = document.documentElement.style, set = (n, v) => r.setProperty('--' + n, v);
+  const light = o.theme === 'light' || (o.theme === 'auto' && matchMedia('(prefers-color-scheme: light)').matches);
+  const B = rgb(o.bg) || (light ? [240, 240, 239] : [21, 21, 21]);
+  const F = rgb(o.text) || (light ? [30, 30, 30] : [220, 220, 220]);
+  const A = rgb(o.accent) || [0, 201, 167];
+  set('bg', mix(B, B, 0)); set('fg', mix(F, F, 0)); set('mut', mix(B, F, .55));
+  set('btn', mix(B, F, light ? .1 : .14));
+  set('acc', mix(A, A, 0)); set('acc-ink', lum(A) > .5 ? '#0d0d0d' : '#ffffff');
+  set('glow', mix(B, A, light ? .22 : .14));
+  set('acc-tx', mix(A, [29, 29, 27], .45));       // sul fumetto chiaro: accento scurito
+  set('bub-edge', light ? 'rgba(0,0,0,.16)' : 'rgba(0,0,0,.06)');
+  if(rgb(o.highlight)) set('hl', o.highlight);
+  const D = rgb(o.danger);
+  if(D){ set('dg', mix(D, D, 0)); set('dg-ink', lum(D) > .5 ? '#111111' : '#ffffff'); }
+}
+
+function init(d){
+  L = d.strings || {};
+  LANG = d.lang || 'en';
+  S = d.stats || null;
+  document.documentElement.lang = LANG;
+  document.documentElement.dir = d.rtl ? 'rtl' : 'ltr';
+  document.body.classList.toggle('rtl', !!d.rtl);
+  applyLook(d.look || {});
+  if(d.image){
+    const img = new Image();
+    img.alt = '';
+    img.onload = () => { $('pg').replaceChildren(img); };
+    img.src = 'attesa/' + d.image;
+  }
+  $('b-stop').textContent = T('att.stop');
+  $('b-close').textContent = T('att.close');
+  $('b-file').textContent = T('att.watch');
+  $('b-dir').textContent = T('att.folder');
+  $('nota').textContent = T('att.hint');
+  document.title = T('att.title');
+  if(S) say(fill(T('fun.start'), { total: nf(S.total) }));
+  renderStats();
+}
+
+function progress(p){
+  const prev = P ? P.k / P.total : 0;
+  P = Object.assign({}, p, { at: performance.now() });
+  const frac = P.total ? P.k / P.total : 0;
+  while(passed < MILESTONES.length && frac >= MILESTONES[passed][0]){
+    if(prev < MILESTONES[passed][0]) pending = MILESTONES[passed][1];
+    passed++;
+  }
+  // un traguardo non aspetta il giro, ma lascia leggere la battuta di prima
+  if(pending && performance.now() - lastSay > 4000) nextJoke();
+  renderStats();
+}
+
+function finish(f){
+  FIN = f;
+  const n = f.n || 0, png = S && S.format === 'png';
+  const b = document.body;
+  b.classList.add('finito');
+  b.classList.toggle('fermo', f.why !== 'fine' && f.why !== 'errore');
+  b.classList.toggle('errore', f.why === 'errore');
+  let key;
+  if(f.why === 'errore') key = 'fun.error';
+  else if(!n) key = 'fun.none';
+  else if(f.why === 'pieno') key = 'fun.full';
+  else if(f.why === 'fine') key = png ? 'fun.done_png' : 'fun.done';
+  else key = png ? 'fun.stopped_png' : 'fun.stopped';
+  say(fill(T(key), { n: nf(n), time: f.time || '', mb: nf(f.mb || 0, 1) }));
+  const where = f.file || f.dir;
+  $('dove').innerHTML = n && where ? `${esc(T('att.saved_in'))} <bdi>${esc(where)}</bdi>` : '';
+  $('b-stop').hidden = true;
+  $('b-close').hidden = false;
+  $('b-file').hidden = !(n && f.file);
+  $('b-dir').hidden = !n;
+  $('b-dir').classList.toggle('go', !f.file);
+  $('nota').textContent = '';
+  (n && f.file ? $('b-file') : $('b-close')).focus();
+  renderStats();
+}
+
+// ── Pulsanti e tasti ─────────────────────────────────────────────
+$('b-stop').onclick = () => call('stop');
+$('b-close').onclick = () => call('close');
+$('b-file').onclick = () => call('open', 'file');
+$('b-dir').onclick = () => call('open', 'dir');
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape'){ e.preventDefault(); call(FIN ? 'close' : 'stop'); }
+});
+document.addEventListener('contextmenu', e => e.preventDefault());
+
+setInterval(() => { if(!FIN) renderStats(); }, 500);
+setInterval(() => { if(performance.now() - lastSay >= JOKE_EVERY - 50) nextJoke(); }, 1000);
+window.addEventListener('load', () => call('ready'));
+</script>
+</body>
+</html>
