@@ -10,16 +10,7 @@ Il numero sta in un posto solo, `VERSION` in `dagawasd.rb`;
 
 ## [Non ancora uscito]
 
-### Aggiunto
-- **Finestra durante il video**: mentre un percorso diventa video AVI o
-  immagini PNG, un personaggio parla da un fumetto con la barra di
-  avanzamento, le statistiche del percorso, del video e del modello
-  (fotogrammi, tempo trascorso e mancante, MB scritti e stima finale, metri
-  percorsi, facce, materiali, componenti) e battute ricavate da quei numeri,
-  in tutte le lingue. Esc o «Interrompi» fermano l'esportazione; alla fine il
-  fumetto dice com'è andata, con «Guarda il video» e «Apri la cartella».
-
-## [1.0.0] — 2026-10-07
+## [1.0.0] — 2026-10-09
 
 Prima versione distribuita.
 
@@ -42,6 +33,16 @@ Prima versione distribuita.
 - **Percorsi**: registra la camera mentre cammini, riproducila, esportala in
   scene o in video AVI (Motion JPEG, si apre con il lettore di Windows e con
   VLC).
+- **Finestra durante il video**: mentre un percorso diventa video AVI o
+  immagini PNG, un personaggio parla da un fumetto con la barra di
+  avanzamento, le statistiche del percorso, del video e del modello
+  (fotogrammi, tempo trascorso e mancante, MB scritti e stima finale, metri
+  percorsi, facce, materiali, componenti) e battute ricavate da quei numeri,
+  in tutte le lingue. Esc o «Interrompi» fermano l'esportazione; alla fine il
+  fumetto dice com'è andata, con «Guarda il video» e «Apri la cartella».
+  A ogni export il personaggio si veste a caso, mai due volte uguale di
+  seguito: cappelli, cuffie o corona, occhiali, sciarpa o papillon, e in
+  mano un ciak, una bibita con la cannuccia, i popcorn o un gelato.
 - **Pannello delle impostazioni** con tasti personalizzati, temi, mirino,
   esportazione e importazione; interfaccia in 36 lingue, anche da destra a
   sinistra (arabo, ebraico). Le impostazioni stanno in

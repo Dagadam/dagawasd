@@ -2,14 +2,13 @@
 tests/panel/node_modules/
 # Pacchetti .rbz fatti da tools/crea_rbz.rb
 dist/
-# Registro errori e impostazioni locali di Claude Code
+# Registro errori; cartella di Claude Code (impostazioni locali, trascrizioni)
 dagawasd.log
-.claude/settings.local.json
+/.claude/
 # Backup di SketchUp
 *.skb
 # Trascrizioni delle sessioni con Claude: appunti, non sorgenti
 /*.txt
-!/descrizione_youtube.txt
 
 # Modelli, texture e prove personali: restano sul disco, non nel repository
 /Artefatti/

@@ -27,6 +27,10 @@ body{
   display:flex;flex-direction:column;
 }
 body.rtl{direction:rtl}
+/* Finché Ruby non manda testi e aspetto (init) la scena resta nascosta: senza,
+   il personaggio cambiava colore e saliva quando i pulsanti prendevano il testo */
+.scena,.piede{transition:opacity .25s}
+body.attende .scena,body.attende .piede{opacity:0}
 
 /* ══ SCENA: personaggio a sinistra, fumetto a destra ══ */
 .scena{flex:1 1 auto;min-height:0;display:flex;align-items:flex-end;gap:26px;padding:20px 22px 8px}
@@ -105,6 +109,8 @@ body.errore .riemp{background-color:var(--dg)}
 @keyframes batti{0%,46%,50%,100%{transform:scaleY(1)}48%{transform:scaleY(.08)}}
 .braccio{animation:saluta 1.6s ease-in-out infinite;transform-origin:121px 128px}
 @keyframes saluta{0%,100%{transform:rotate(0)}50%{transform:rotate(-14deg)}}
+.acc{display:none}
+.acc.on{display:inline}
 .bocca-o{display:none}
 body.parla .bocca{display:none}
 body.parla .bocca-o{display:inline;animation:parla .28s steps(2) 5}
@@ -115,7 +121,7 @@ body.finito:not(.fermo):not(.errore) .corpo{animation:salta .7s ease-in-out 3,do
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
-<body>
+<body class="attende">
 <main class="scena">
   <div class="pg" id="pg">
     <svg viewBox="0 0 160 220" aria-hidden="true">
@@ -128,18 +134,72 @@ body.finito:not(.fermo):not(.errore) .corpo{animation:salta .7s ease-in-out 3,do
         <path d="M80 44c38 0 56 34 56 80 0 42-20 66-56 66s-56-24-56-66c0-46 18-80 56-80z" fill="var(--acc)"/>
         <path d="M80 120c22 0 34 14 34 34 0 18-14 30-34 30s-34-12-34-30c0-20 12-34 34-34z" fill="#fff" opacity=".22"/>
         <path d="M27 120c-14 6-18 20-12 30" stroke="var(--acc)" stroke-width="12" stroke-linecap="round" fill="none"/>
+        <!-- Accessori: uno per posto (data-slot), scelti a caso a ogni export da dress() -->
+        <g class="acc" data-slot="neck" data-id="sciarpa">
+          <path d="M97 140l5 34 13-3-4-33z" fill="#d8433d"/>
+          <path d="M102 174l1 5M107 173l1 5M112 172l1 5" stroke="#d8433d" stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M28 122q52 22 104 0l2 15q-54 24-108 0z" fill="#e8504a"/>
+          <path d="M44 130l2 13M60 134l1 13M76 136v13M92 135l-1 13M108 131l-2 13" stroke="#fff" stroke-width="3" opacity=".55"/>
+        </g>
+        <g class="acc" data-slot="neck" data-id="papillon">
+          <path d="M80 130l-17-10v20zM80 130l17-10v20z" fill="#e8504a"/>
+          <circle cx="80" cy="130" r="4.5" fill="#c23a35"/>
+        </g>
         <g class="braccio">
           <path d="M131 126c12-4 18-16 16-30" stroke="var(--acc)" stroke-width="12" stroke-linecap="round" fill="none"/>
-          <g transform="translate(128 58) rotate(-12)">
+          <g class="acc" data-slot="hand" data-id="ciak" transform="translate(128 58) rotate(-12)">
             <rect x="0" y="12" width="40" height="28" rx="3" fill="#2b2b2b"/>
             <path d="M0 4l40-6 2 10-40 6z" fill="#2b2b2b"/>
             <path d="M8 3l6 8M20 1l6 8M32-1l6 8" stroke="#fff" stroke-width="4"/>
             <rect x="5" y="19" width="30" height="3" rx="1.5" fill="#fff" opacity=".7"/>
             <rect x="5" y="27" width="20" height="3" rx="1.5" fill="#fff" opacity=".7"/>
           </g>
+          <g class="acc" data-slot="hand" data-id="bibita" transform="translate(134 50) rotate(-8)">
+            <path d="M16 12l4-20 8-4" stroke="#3d7be0" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            <path d="M0 14h26l-4 36H4z" fill="#fff"/>
+            <path d="M2 27h22l-1 10H3z" fill="#e8504a"/>
+            <rect x="-2" y="10" width="30" height="6" rx="3" fill="#e8504a"/>
+            <path d="M6 18l1 28" stroke="#000" stroke-width="2" opacity=".08"/>
+          </g>
+          <g class="acc" data-slot="hand" data-id="popcorn" transform="translate(130 54) rotate(-6)">
+            <circle cx="5" cy="16" r="6" fill="#fff3c4"/><circle cx="13" cy="9" r="7" fill="#fff8dc"/>
+            <circle cx="23" cy="11" r="7" fill="#fff3c4"/><circle cx="30" cy="16" r="6" fill="#fff8dc"/>
+            <circle cx="17" cy="17" r="6" fill="#ffe9a0"/>
+            <path d="M0 18h34l-4 30H4z" fill="#fff"/>
+            <path d="M6 18l2 30M13 18l1 30M20 18v30M27 18l-1 30" stroke="#e8504a" stroke-width="3.5"/>
+          </g>
+          <g class="acc" data-slot="hand" data-id="gelato" transform="translate(136 42)">
+            <circle cx="15" cy="13" r="9" fill="#fff3c4"/>
+            <circle cx="15" cy="25" r="11" fill="#ff9ec4"/>
+            <circle cx="17" cy="3" r="3.5" fill="#e8504a"/>
+            <path d="M4 30h22L15 60z" fill="#e0a458"/>
+            <path d="M8 34l12 14M14 31l9 10M22 34L11 47M17 31l-9 9" stroke="#c2873e" stroke-width="1.5"/>
+          </g>
         </g>
-        <path d="M48 56c8-18 22-26 34-26 16 0 28 8 34 22-20-6-48-6-68 4z" fill="#2b2b2b"/>
-        <circle cx="86" cy="30" r="5" fill="#2b2b2b"/>
+        <g class="acc" data-slot="head" data-id="basco">
+          <path d="M48 56c8-18 22-26 34-26 16 0 28 8 34 22-20-6-48-6-68 4z" fill="#2b2b2b"/>
+          <circle cx="86" cy="30" r="5" fill="#2b2b2b"/>
+        </g>
+        <g class="acc" data-slot="head" data-id="cappellino">
+          <path d="M106 55c14-4 30-2 40 4-10 5-26 5-38 4z" fill="#2f62b8"/>
+          <path d="M46 62c0-24 16-36 34-36s34 12 34 36c-18-8-50-8-68 0z" fill="#3d7be0"/>
+          <path d="M80 27v30M62 32q-6 12-6 26M98 32q6 12 6 26" stroke="#2f62b8" stroke-width="1.5" fill="none"/>
+          <circle cx="80" cy="27" r="4" fill="#2f62b8"/>
+        </g>
+        <g class="acc" data-slot="head" data-id="cuffie">
+          <path d="M28 90c-2-60 106-60 104 0" stroke="#2b2b2b" stroke-width="7" fill="none"/>
+          <rect x="16" y="76" width="17" height="30" rx="7" fill="#e8504a"/>
+          <rect x="127" y="76" width="17" height="30" rx="7" fill="#e8504a"/>
+        </g>
+        <g class="acc" data-slot="head" data-id="cilindro">
+          <rect x="58" y="8" width="44" height="40" rx="3" fill="#2b2b2b"/>
+          <rect x="58" y="36" width="44" height="7" fill="#e8504a"/>
+          <ellipse cx="80" cy="48" rx="32" ry="6" fill="#2b2b2b"/>
+        </g>
+        <g class="acc" data-slot="head" data-id="corona">
+          <path d="M56 50l-2-28 13 14 13-20 13 20 13-14-2 28z" fill="#f5c518" stroke="#d9a400" stroke-width="2" stroke-linejoin="round"/>
+          <circle cx="80" cy="42" r="4" fill="#e8504a"/><circle cx="66" cy="44" r="3" fill="#3d7be0"/><circle cx="94" cy="44" r="3" fill="#3d7be0"/>
+        </g>
         <g class="occhi">
           <ellipse cx="64" cy="92" rx="12" ry="14" fill="#fff"/>
           <ellipse cx="96" cy="92" rx="12" ry="14" fill="#fff"/>
@@ -147,6 +207,16 @@ body.finito:not(.fermo):not(.errore) .corpo{animation:salta .7s ease-in-out 3,do
           <circle cx="99" cy="95" r="6" fill="#1d1d1b"/>
           <circle cx="69" cy="92" r="2" fill="#fff"/>
           <circle cx="101" cy="92" r="2" fill="#fff"/>
+        </g>
+        <g class="acc" data-slot="eyes" data-id="sole">
+          <path d="M46 88L28 82M114 88l18-6M78 88h4" stroke="#1d1d1b" stroke-width="3" stroke-linecap="round"/>
+          <path d="M45 76h34v18a12 12 0 0 1-12 12H57a12 12 0 0 1-12-12zM81 76h34v18a12 12 0 0 1-12 12H93a12 12 0 0 1-12-12z" fill="#1d1d1b"/>
+          <path d="M50 81h8M86 81h8" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".35"/>
+        </g>
+        <g class="acc" data-slot="eyes" data-id="tondi">
+          <circle cx="64" cy="92" r="15" fill="#fff" fill-opacity=".12" stroke="#8a5a2b" stroke-width="3"/>
+          <circle cx="96" cy="92" r="15" fill="#fff" fill-opacity=".12" stroke="#8a5a2b" stroke-width="3"/>
+          <path d="M79 90q1-3 2 0M49 90l-20-6M111 90l20-6" stroke="#8a5a2b" stroke-width="3" stroke-linecap="round" fill="none"/>
         </g>
         <ellipse cx="52" cy="110" rx="7" ry="4" fill="#ff7a7a" opacity=".45"/>
         <ellipse cx="108" cy="110" rx="7" ry="4" fill="#ff7a7a" opacity=".45"/>
@@ -320,7 +390,9 @@ const rgb = h => { const m = /^#?([0-9a-f]{6})$/i.exec(h || ''); if(!m) return n
 const mix = (a, b, t) => '#' + a.map((x, i) => Math.round(x + (b[i] - x) * t).toString(16).padStart(2, '0')).join('');
 const lum = c => (0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]) / 255;
 
-function applyLook(o){
+const LOOK_KEY = 'dagawasd_attesa_look';
+function applyLook(o, save){
+  if(save){ try { localStorage.setItem(LOOK_KEY, JSON.stringify(o)); } catch(e){} }
   const r = document.documentElement.style, set = (n, v) => r.setProperty('--' + n, v);
   const light = o.theme === 'light' || (o.theme === 'auto' && matchMedia('(prefers-color-scheme: light)').matches);
   const B = rgb(o.bg) || (light ? [240, 240, 239] : [21, 21, 21]);
@@ -344,11 +416,12 @@ function init(d){
   document.documentElement.lang = LANG;
   document.documentElement.dir = d.rtl ? 'rtl' : 'ltr';
   document.body.classList.toggle('rtl', !!d.rtl);
-  applyLook(d.look || {});
+  applyLook(d.look || {}, true);
   if(d.image){
     const img = new Image();
     img.alt = '';
-    img.onload = () => { $('pg').replaceChildren(img); };
+    img.onload = () => { $('pg').replaceChildren(img); reveal(); };
+    img.onerror = reveal;              // personaggio illeggibile: resta quello disegnato
     img.src = 'attesa/' + d.image;
   }
   $('b-stop').textContent = T('att.stop');
@@ -359,7 +432,10 @@ function init(d){
   document.title = T('att.title');
   if(S) say(fill(T('fun.start'), { total: nf(S.total) }));
   renderStats();
+  if(!d.image) reveal();
 }
+
+function reveal(){ document.body.classList.remove('attende'); }
 
 function progress(p){
   const prev = P ? P.k / P.total : 0;
@@ -399,6 +475,37 @@ function finish(f){
   (n && f.file ? $('b-file') : $('b-close')).focus();
   renderStats();
 }
+
+// ── Vestito del personaggio disegnato ────────────────────────────
+// Un accessorio a caso per posto ('' = niente), almeno tre in tutto e mai
+// lo stesso vestito dell'export precedente (ricordato nel browser della
+// finestra: se lo spazio non c'è, solo a caso). fixed: vestito imposto.
+const OUTFIT = {
+  head: ['basco', 'cappellino', 'cuffie', 'cilindro', 'corona', ''],
+  eyes: ['sole', 'tondi', '', ''],
+  neck: ['sciarpa', 'papillon', ''],
+  hand: ['ciak', 'bibita', 'popcorn', 'gelato']
+};
+const OUTFIT_KEY = 'dagawasd_vestito';
+function dress(fixed){
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+  let last = '';
+  try { last = localStorage.getItem(OUTFIT_KEY) || ''; } catch(e){}
+  let o, key, n = 0;
+  do {
+    o = {};
+    for(const s in OUTFIT) o[s] = fixed && s in fixed ? fixed[s] : pick(OUTFIT[s]);
+    key = Object.keys(OUTFIT).map(s => o[s]).join('+');
+  } while(!fixed && (Object.values(o).filter(Boolean).length < 3 || key === last) && ++n < 100);
+  document.querySelectorAll('#pg .acc').forEach(g =>
+    g.classList.toggle('on', o[g.getAttribute('data-slot')] === g.getAttribute('data-id')));
+  try { localStorage.setItem(OUTFIT_KEY, key); } catch(e){}
+  return o;
+}
+dress();
+// Aspetto dell'ultima volta subito, prima di init: lo sfondo non cambia colore
+try { const c = JSON.parse(localStorage.getItem(LOOK_KEY) || 'null'); if(c) applyLook(c); } catch(e){}
+setTimeout(reveal, 3000);   // Ruby non risponde: meglio i valori predefiniti di una finestra vuota
 
 // ── Pulsanti e tasti ─────────────────────────────────────────────
 $('b-stop').onclick = () => call('stop');

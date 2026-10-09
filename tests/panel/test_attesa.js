@@ -20,6 +20,7 @@ const calls = [];
 const dom = new JSDOM(html, {
   runScripts: 'dangerously',
   pretendToBeVisual: true,
+  url: 'http://localhost/',          // un'origine vera: localStorage (vestito precedente) funziona
   beforeParse(w){
     w.sketchup = {};
     for(const n of ['ready', 'stop', 'close', 'open']) w.sketchup[n] = a => calls.push([n, a]);
@@ -38,6 +39,32 @@ const STATS = { name:'Giro', model:'Faro', m:340.4, up:7.2, down:1.1, turn:1100,
 w.addEventListener('load', async () => {
   try {
     ok(calls.length === 1 && calls[0][0] === 'ready', 'caricata, chiede i dati a Ruby (ready)');
+    ok(w.document.body.classList.contains('attende'), 'finché Ruby non risponde la scena è nascosta (niente salto di colore e posizione)');
+
+    // ── Vestito a caso del personaggio ───────────────────────────────
+    const worn = () => [...w.document.querySelectorAll('#pg .acc.on')].map(g => g.getAttribute('data-slot') + ':' + g.getAttribute('data-id'));
+    const outfit = w.eval('OUTFIT');
+    const ids = [...w.document.querySelectorAll('#pg .acc')].map(g => g.getAttribute('data-slot') + ':' + g.getAttribute('data-id')).sort();
+    const listed = Object.entries(outfit).flatMap(([s, a]) => a.filter(Boolean).map(i => s + ':' + i)).sort();
+    ok(JSON.stringify(ids) === JSON.stringify(listed), `ogni accessorio di OUTFIT è disegnato e viceversa (${ids.length})`);
+    const seen = new Set();
+    let rules = true, repeat = 0, prev = worn().sort().join();
+    ok(worn().length >= 3, `già vestito all'apertura: ${worn().join(', ')}`);
+    for(let i = 0; i < 60; i++){
+      w.eval('dress()');
+      const now = worn();
+      const slots = now.map(x => x.split(':')[0]);
+      if(now.length < 3 || new Set(slots).size !== slots.length || !slots.includes('hand')) rules = false;
+      const key = now.sort().join();
+      if(key === prev) repeat++;
+      prev = key;
+      seen.add(key);
+    }
+    ok(rules, 'sempre: almeno tre accessori, uno per posto, qualcosa in mano');
+    ok(repeat === 0, 'mai lo stesso vestito due export di fila');
+    ok(seen.size >= 25, `vestiti diversi in 60 export: ${seen.size}`);
+    w.eval(`dress({ head: 'cilindro', eyes: '', neck: 'papillon', hand: 'gelato' })`);
+    ok(worn().sort().join() === 'hand:gelato,head:cilindro,neck:papillon', 'vestito imposto: esattamente quello');
 
     // ── Tutte le lingue: ogni battuta ha i suoi valori ───────────────
     const jokes = w.eval('JOKES.map(j => j.k)');
@@ -72,6 +99,9 @@ w.addEventListener('load', async () => {
     ok($('stat').querySelectorAll('dt').length === 10 && $('stat').textContent.includes('3840×2160 · 60 fps'), '10 statistiche, risoluzione e fps');
     ok($('stat').textContent.includes('21.345') && $('stat').textContent.includes('340 m'), 'numeri col separatore italiano');
     ok(w.document.documentElement.style.getPropertyValue('--acc') === '#00c9a7', 'accento del pannello');
+    ok(!w.document.body.classList.contains('attende'), 'arrivati testi e aspetto: la scena compare');
+    ok(JSON.parse(w.localStorage.getItem('dagawasd_attesa_look')).accent === '#00c9a7',
+       'aspetto ricordato: la prossima finestra parte già coi colori giusti');
 
     w.eval('lastSay = -1e9');      // la battuta di prima è stata letta: il traguardo non aspetta
     w.eval(`progress({ k: 2000, total: 7800, bytes: 52428800, el: 1300 })`);
