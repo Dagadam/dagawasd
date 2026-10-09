@@ -55,6 +55,8 @@ aggiornamento non le cancella.
 - Le icone nascono dagli SVG in `pubblicazione/`: `tools\rendi_icone.bat`
   rifà quelle della barra (`icons/`) e quella della scheda del Warehouse
   (`pubblicazione/icona_512.png`).
+- La scheda per l'Extension Warehouse (testi in inglese e note per i
+  revisori) sta in `pubblicazione/extension_warehouse.md`.
 
 ## Licenza
 
