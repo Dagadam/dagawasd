@@ -79,12 +79,3 @@ Settings are stored in `%APPDATA%\DagaWASD`, so updates never erase them.
 - **Loading.** All files are loaded with `Sketchup.require`; the package
   works signed and encrypted (.rbe). Checked with rubocop-sketchup 1.5.0:
   no offences.
-
-## Cosa resta da fare a mano
-
-1. **Immagini della scheda**: 3–5 catture (camminata in un modello, oggetti
-   che cadono, meteo, finestra del video). Formato 16:9, almeno 1280×720.
-2. **Firma**: nel portale, *Extension Signing*, carica il `.rbz` per
-   l'Extension Warehouse e scarica quello firmato (cifratura facoltativa).
-3. **Invio**: crea la scheda con i testi qui sopra, carica il `.rbz` firmato
-   e le immagini, invia per la revisione.
