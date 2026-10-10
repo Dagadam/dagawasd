@@ -7,6 +7,8 @@ WASD e mouse, o con un gamepad.
 person with WASD and mouse or a gamepad, with object physics, sky, weather
 and recorded camera paths. The interface is available in 36 languages.*
 
+https://youtu.be/w6xE86y7iEw?is=7Gh12tF7atE_N9_K
+
 ## Che cosa fa
 
 - **Camminata**: inerzia, corsa, accovacciarsi, salto, gradini e pendenze,
