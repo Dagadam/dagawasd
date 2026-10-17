@@ -386,6 +386,34 @@ function Voce-Aperta($padre, [string]$nome) {
   $null
 }
 
+# Con Qt una voce attivata via UI Automation esegue il comando ma lascia
+# aperte le tendine (un clic vero le chiuderebbe): si richiudono dall'ultima
+# alla prima. Se una resta aperta, Esc, ma solo con la finestra principale in
+# primo piano (con la tendina aperta lo è ancora): se il comando ha aperto un
+# dialogo, il primo piano è suo e un Esc lo chiuderebbe. Ritorna quante
+# tendine restano aperte.
+function Chiudi-Menu($aperti) {
+  if ($aperti.Count -eq 0) { return 0 }
+  for ($i = $aperti.Count - 1; $i -ge 0; $i--) {
+    $o = $null
+    try { if ($aperti[$i].TryGetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern, [ref]$o)) { $o.Collapse() } } catch { }
+  }
+  $cMenu = New-Object System.Windows.Automation.PropertyCondition($UIA::ControlTypeProperty, $CT::Menu)
+  $aperte = {
+    @($aperti | Where-Object {
+      try { $m = $_.FindFirst($Tree::Children, $cMenu); $m -and -not $m.Current.IsOffscreen } catch { $false }
+    }).Count
+  }
+  for ($t = 0; $t -le $aperti.Count; $t++) {
+    Start-Sleep -Milliseconds 150
+    $n = & $aperte
+    if ($n -eq 0) { return 0 }
+    if ([FinW]::GetForegroundWindow() -ne [IntPtr]$script:MainH) { return $n }
+    [FinW]::Key(0x1B, $false); [FinW]::Key(0x1B, $true)
+  }
+  & $aperte
+}
+
 function Rett($e) {
   $r = $e.Current.BoundingRectangle
   [Drawing.Rectangle]::new([int]$r.X, [int]$r.Y, [int]$r.Width, [int]$r.Height)
@@ -490,25 +518,30 @@ switch ($Comando) {
     $n = Norm $voci[0]
     $v = @($barra.FindAll($Tree::Children, [System.Windows.Automation.Condition]::TrueCondition)) | Where-Object { (Norm $_.Current.Name) -eq $n } | Select-Object -First 1
     if (-not $v) { Fail "nella barra dei menu non c'è «$($voci[0])»" }
+    $aperti = New-Object System.Collections.Generic.List[object]   # le voci di cui si è aperta la tendina
+    $errore = $null
     for ($i = 0; $i -lt $voci.Count; $i++) {
       if ($i -gt 0) {
         $v = Voce-Aperta $v $voci[$i]
-        if (-not $v) { [FinW]::Key(0x1B, $false); [FinW]::Key(0x1B, $true); Fail "voce «$($voci[$i])» non trovata nel menu aperto" }
+        if (-not $v) { $errore = "voce «$($voci[$i])» non trovata nel menu aperto"; break }
       }
       $o = $null
       # dalla barra si scende in verticale; verso un sottomenu, laterale, prima in orizzontale
       $f = Indica (Rett $v) $(if ($i -eq 0) { 0 } elseif ($i -eq 1) { 1 } else { 2 })
       try {
         if ($i -lt $voci.Count - 1) {
-          if (-not $v.TryGetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern, [ref]$o)) { Fail "«$($voci[$i])» non apre un sottomenu" }
+          if (-not $v.TryGetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern, [ref]$o)) { $errore = "«$($voci[$i])» non apre un sottomenu"; break }
           $o.Expand()
+          $aperti.Add($v)
         } else {
-          if (-not $v.TryGetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern, [ref]$o)) { Fail "«$($voci[$i])» non è un comando" }
+          if (-not $v.TryGetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern, [ref]$o)) { $errore = "«$($voci[$i])» non è un comando"; break }
           $o.Invoke()
         }
       } finally { if ($f) { [Indicatore]::Chiudi($f, 120) } }
     }
-    "menu: $($voci -join ' › ')"
+    $restano = Chiudi-Menu $aperti        # anche quando qualcosa è andato storto
+    if ($errore) { Fail $errore }
+    "menu: $($voci -join ' › ')$(if ($restano) { " (tendina rimasta aperta: c'è un dialogo davanti)" })"
   }
   'aspetta' {
     if ($Arg.Count -lt 1) { Fail 'aspetta <finestra> [secondi]' }
