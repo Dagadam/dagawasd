@@ -237,6 +237,33 @@ public static class Indicatore {
 }
 '@
 
+# Chiamate che possono restare appese: un comando che apre una finestra
+# modale (Preferenze…) risponde solo quando la si chiude, e intanto le
+# chiamate alla principale vanno in timeout dopo decine di secondi. Qui
+# partono in un thread a parte; ritornano true se finite entro ms.
+Add-Type -ReferencedAssemblies UIAutomationClient, UIAutomationTypes, WindowsBase -TypeDefinition @'
+using System;
+using System.Threading;
+using System.Windows.Automation;
+public static class Lancia {
+  static bool Fai(Action a, int ms) {
+    Exception err = null;
+    var t = new Thread(() => { try { a(); } catch (Exception x) { err = x; } });
+    t.IsBackground = true;
+    t.Start();
+    if (!t.Join(ms)) return false;
+    if (err != null && !(err is TimeoutException) && !(err is System.Runtime.InteropServices.COMException)) throw err;
+    return err == null;
+  }
+  public static bool Invoke(AutomationElement e, int ms) {
+    return Fai(() => ((InvokePattern)e.GetCurrentPattern(InvokePattern.Pattern)).Invoke(), ms);
+  }
+  public static bool Collapse(AutomationElement e, int ms) {
+    return Fai(() => ((ExpandCollapsePattern)e.GetCurrentPattern(ExpandCollapsePattern.Pattern)).Collapse(), ms);
+  }
+}
+'@
+
 function Indica($rett, [int]$modo = 0) {
   if (-not $Imp.bridge_windows_mouse) { return $null }
   if ($rett.Width -le 0 -or $rett.Height -le 0) { return $null }   # senza misura
@@ -355,7 +382,14 @@ function Trova-Controllo($win, [string]$nome) {
 function Premi($c) {
   $o = $null
   if (-not $c.Current.IsEnabled) { Fail "«$($c.Current.Name)» è disattivato" }
-  if ($c.TryGetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern, [ref]$o)) { $o.Invoke(); return 'premuto' }
+  # Voci di elenco, schede e voci d'albero: si scelgono. Con Qt hanno anche
+  # Invoke, che però non le seleziona (la pagina accanto non cambiava).
+  $sceglie = @($CT::ListItem, $CT::TabItem, $CT::TreeItem, $CT::RadioButton) -contains $c.Current.ControlType
+  if ($sceglie -and $c.TryGetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern, [ref]$o)) { $o.Select(); return 'scelto' }
+  if ($c.TryGetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern, [ref]$o)) {
+    if ([Lancia]::Invoke($c, 3000)) { return 'premuto' }
+    return 'premuto (ha aperto una finestra modale)'
+  }
   if ($c.TryGetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern, [ref]$o)) { $o.Toggle(); return "stato=$($o.Current.ToggleState)" }
   if ($c.TryGetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern, [ref]$o)) { $o.Select(); return 'scelto' }
   if ($c.TryGetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern, [ref]$o)) { $o.Expand(); return 'aperto' }
@@ -392,12 +426,14 @@ function Voce-Aperta($padre, [string]$nome) {
 # primo piano (con la tendina aperta lo è ancora): se il comando ha aperto un
 # dialogo, il primo piano è suo e un Esc lo chiuderebbe. Ritorna quante
 # tendine restano aperte.
-function Chiudi-Menu($aperti) {
+# Con una finestra modale aperta dal comando la principale risponde a fatica:
+# si chiede solo di richiudere, con un tempo massimo, senza controllare.
+function Chiudi-Menu($aperti, [bool]$modale = $false) {
   if ($aperti.Count -eq 0) { return 0 }
   for ($i = $aperti.Count - 1; $i -ge 0; $i--) {
-    $o = $null
-    try { if ($aperti[$i].TryGetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern, [ref]$o)) { $o.Collapse() } } catch { }
+    try { [void][Lancia]::Collapse($aperti[$i], 2000) } catch { }
   }
+  if ($modale) { return 0 }
   $cMenu = New-Object System.Windows.Automation.PropertyCondition($UIA::ControlTypeProperty, $CT::Menu)
   $aperte = {
     @($aperti | Where-Object {
@@ -520,6 +556,7 @@ switch ($Comando) {
     if (-not $v) { Fail "nella barra dei menu non c'è «$($voci[0])»" }
     $aperti = New-Object System.Collections.Generic.List[object]   # le voci di cui si è aperta la tendina
     $errore = $null
+    $modale = $false
     for ($i = 0; $i -lt $voci.Count; $i++) {
       if ($i -gt 0) {
         $v = Voce-Aperta $v $voci[$i]
@@ -535,13 +572,13 @@ switch ($Comando) {
           $aperti.Add($v)
         } else {
           if (-not $v.TryGetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern, [ref]$o)) { $errore = "«$($voci[$i])» non è un comando"; break }
-          $o.Invoke()
+          $modale = -not [Lancia]::Invoke($v, 3000)   # non finito: il comando ha aperto una finestra modale
         }
       } finally { if ($f) { [Indicatore]::Chiudi($f, 120) } }
     }
-    $restano = Chiudi-Menu $aperti        # anche quando qualcosa è andato storto
+    $restano = Chiudi-Menu $aperti $modale   # anche quando qualcosa è andato storto
     if ($errore) { Fail $errore }
-    "menu: $($voci -join ' › ')$(if ($restano) { " (tendina rimasta aperta: c'è un dialogo davanti)" })"
+    "menu: $($voci -join ' › ')$(if ($modale) { ' (ha aperto una finestra modale)' })$(if ($restano) { " (tendina rimasta aperta: c'è un dialogo davanti)" })"
   }
   'aspetta' {
     if ($Arg.Count -lt 1) { Fail 'aspetta <finestra> [secondi]' }
