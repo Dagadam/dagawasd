@@ -8,6 +8,15 @@ che chiedono qualcosa a chi aggiorna.
 Il numero sta in un posto solo, `VERSION` in `dagawasd.rb`;
 `tools/crea_rbz.rb` rifiuta di fare il pacchetto se qui manca la sua sezione.
 
+## [Non ancora uscito]
+
+### Corretto
+- Avviare la camminata stando dentro una sfera aperta in modifica scriveva
+  un errore nel registro (le sfere restavano visibili): ora le sfere restano
+  accese senza errori.
+- Raramente il disegno dei numeri delle sfere si interrompeva con un errore
+  nel registro, e i numeri successivi non comparivano.
+
 ## [1.1.0] — 2026-10-17
 
 ### Aggiunto

@@ -127,6 +127,7 @@ class Dict < Hash
   def delete_key(k); delete(k); end
 end
 class FakeModel
+  attr_accessor :active_path
   attr_reader :view, :dicts, :ops, :tools_sel, :layers, :materials, :definitions, :entities
   def initialize
     @view = FakeView.new; @view.model = self; @dicts = {}; @ops = []; @tools_sel = []
@@ -287,6 +288,12 @@ ok(!pm.layers[F::KEY_TAG].visible?, 'se il tag era già spento resta spento')
 pm.layers[F::KEY_TAG].visible = true
 ok(F.key_hide(pm) && !pm.layers[F::KEY_TAG].visible? && (F.key_unhide(pm, true) || true) && pm.layers[F::KEY_TAG].visible?,
    'modalità FPS: stesso spegni e riaccendi')
+# FPS avviato con una sfera aperta in modifica: SketchUp darebbe ArgumentError
+# («cannot hide layer that is a part of the active path», registro 2026-10-15)
+sfera = F.key_instances(pm).values.flatten.first
+pm.active_path = [sfera]
+ok(!F.key_hide(pm) && pm.layers[F::KEY_TAG].visible?, 'dentro una sfera aperta il tag resta acceso, senza errori')
+pm.active_path = nil
 
 # ── Overlay: curva e numeri ──────────────────────────────────────────
 view.camera.set(Geom::Point3d.new(-5 * M, 0, 66), Geom::Point3d.new(0, 0, 66), Geom::Vector3d.new(0, 0, 1))   # tutte davanti
@@ -309,6 +316,12 @@ view.drawn.clear; view.texts.clear
 F.key_draw(view)
 ok(view.texts.size == ord.size, 'davanti solo un\'altra sfera (o la sua freccia): il numero si scrive')
 pm.singleton_class.send(:remove_method, :raytest)
+view.drawn.clear; view.texts.clear
+# screen_coords senza risposta (registro 2026-10-17): quel numero si salta, gli altri no
+view.define_singleton_method(:screen_coords) { |p| p.equal?(F.instance_variable_get(:@key_curves).values[0][2][0]) ? nil : Geom::Point3d.new(p.x, p.y, 0) }
+F.key_draw(view)
+ok(view.texts.size == ord.size - 1, 'un punto senza coordinate sullo schermo: solo il suo numero manca')
+view.singleton_class.send(:remove_method, :screen_coords)
 view.drawn.clear; view.texts.clear
 view.camera.set(Geom::Point3d.new(20 * M, 0, 66), Geom::Point3d.new(30 * M, 0, 66), Geom::Vector3d.new(0, 0, 1))
 F.key_draw(view)
@@ -401,7 +414,7 @@ class Inst; def model; $pm; end; end
 class FakeView; def show_frame; end; end
 class Sel < Array; def add(e); self << e unless include?(e); end; end
 class FakeModel
-  attr_accessor :active_path, :tool_id
+  attr_accessor :tool_id
   def selection; @sel ||= Sel.new; end
   def tools; id = @tool_id || F::KE_SELECT; o = Object.new; o.define_singleton_method(:active_tool_id) { id }; o; end
   def close_active; @active_path = nil; true; end

@@ -534,6 +534,8 @@ module DagaWASD
     def self.key_hide(model)
       l = model&.layers&.[](KEY_TAG)
       return false unless l && l.visible?
+      # Dentro una sfera aperta (Modifica componente) SketchUp rifiuta di spegnerne il tag
+      return false if model.active_path&.any? { |e| e.layer == l }
       l.visible = false
       true
     rescue => fps_err; log_error(__method__, fps_err); false; end
@@ -613,7 +615,7 @@ module DagaWASD
         c[2].each_with_index do |pt, i|
           next if (pt.x - eye.x) * dir.x + (pt.y - eye.y) * dir.y + (pt.z - eye.z) * dir.z <= 0
           next unless key_seen?(model, eye, pt)
-          sc = view.screen_coords(pt)
+          sc = view.screen_coords(pt) or next
           view.draw_text(Geom::Point3d.new(sc.x + 10, sc.y - 22, 0), (i + 1).to_s,
                          size: 11, bold: true, color: Sketchup::Color.new(255, 140, 0))
         end
