@@ -26,6 +26,7 @@ module Geom
     def +(v); Point3d.new(x + v.x, y + v.y, z + v.z); end
     def offset(v, l); k = l / Math.sqrt(v.x**2 + v.y**2 + v.z**2); Point3d.new(x + v.x * k, y + v.y * k, z + v.z * k); end
     def distance(o); Math.sqrt((x - o.x)**2 + (y - o.y)**2 + (z - o.z)**2); end
+    def vector_to(o); Vector3d.new(o.x - x, o.y - y, o.z - z); end
     def to_a; [x, y, z]; end
   end
   class Vector3d < Point3d

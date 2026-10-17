@@ -22,7 +22,7 @@ unless File.exist?(tar)
 end
 
 sorgente = ->(n) { n == 'dagawasd.rb' ? File.join(ROOT, n) : File.join(ROOT, n.delete_prefix('dagawasd/')) }
-tutti = (%w[dagawasd.rb dagawasd/main.rb dagawasd/panel.html dagawasd/attesa.html dagawasd/LICENSE] +
+tutti = (%w[dagawasd.rb dagawasd/main.rb dagawasd/panel.html dagawasd/attesa.html dagawasd/keyedit.html dagawasd/LICENSE] +
          Dir.glob('{lib/*.rb,lang/*.json,icons/*.png,attesa/*.{webp,gif,png}}', base: ROOT).map { |f| "dagawasd/#{f}" }).sort
 
 [[false, "dagawasd-#{ver}.rbz", 'completo'], [true, "dagawasd-#{ver}-warehouse.rbz", 'Extension Warehouse']].each do |wh, nome, quale|

@@ -20,7 +20,8 @@ https://youtu.be/w6xE86y7iEw?is=7Gh12tF7atE_N9_K
 - **Percorsi**: registra la camera mentre cammini, riproducila, esportala in
   scene o in video AVI. Ritoccala nel modello spostando e ruotando le sue
   posizioni (sfere con una freccia lunga quanto lo zoom e il riquadro
-  dell'inquadratura), o costruiscine una da zero.
+  dell'inquadratura), o costruiscine una da zero. Doppio clic su una sfera
+  (o Invio) apre le sue impostazioni, con l'anteprima di ciò che vede.
 - **Gamepad** XInput e visuale con il tastierino numerico.
 - Pannello delle impostazioni in 36 lingue.
 
@@ -64,7 +65,8 @@ aggiornamento non le cancella.
 - Nel SketchUp aperto, col ponte acceso e con «Finestre e tasti» acceso nel
   pannello (strumenti per Claude Code, non installati):
   - `tools\finestre.ps1` arriva dove il Ruby non arriva: finestre native,
-    avvisi, menu, cattura della vista con cielo e nuvole, tasti simulati;
+    avvisi, menu, cattura della vista con cielo e nuvole, tasti simulati e
+    clic veri nella vista 3D (per esempio il doppio clic su una sfera);
   - `tools\collaudo.rb` prova dal vivo pulsante e menu del pannello, la
     conferma di «Elimina» e un video fino alla finestra finale;
   - `tools\schermate.rb` fa le immagini della scheda in

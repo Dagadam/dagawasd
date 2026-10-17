@@ -50,12 +50,18 @@ used += %w[legno pietra metallo vetro gomma pallone cartone plastica].map { |m| 
 ah = read(File.join(ROOT, 'attesa.html'))
 att = ah.scan(/'((?:att|fun)\.\w+)'/).flatten.uniq
 used += att
+# Pannello della sfera (keyedit.html, lib/keyedit.rb): ogni 'ke.…' fra apici
+kh = read(File.join(ROOT, 'keyedit.html'))
+ke = (kh.scan(/'(ke\.[\w.]+)'/).flatten + read(File.join(ROOT, 'lib', 'keyedit.rb')).scan(/t\('(ke\.[\w.]+)'\)/).flatten).uniq
+used += ke
 used.uniq!
 missing_en = used.reject { |k| en.key?(k) }
 ok(missing_en.empty?, "i #{used.size} testi usati da codice e pannello esistono in en.json#{missing_en.empty? ? '' : ": mancano #{missing_en.join(', ')}"}")
 # attesa.rb manda alla pagina solo att.* e fun.*: in en.json nessuno inutilizzato
 morti = en.keys.select { |k| k.start_with?('att.', 'fun.') } - att
 ok(morti.empty?, "ogni testo att./fun. di en.json è usato da attesa.html (#{att.size})#{morti.empty? ? '' : ": inutili #{morti.join(', ')}"}")
+morti = en.keys.select { |k| k.start_with?('ke.') } - ke
+ok(morti.empty?, "ogni testo ke. di en.json è usato dal pannello della sfera (#{ke.size})#{morti.empty? ? '' : ": inutili #{morti.join(', ')}"}")
 
 (files - ['en']).sort.each do |c|
   d = parsed[c] || {}

@@ -13,6 +13,7 @@ const saved = [];
 const logCalls = [];
 const presetCalls = [];
 const pathCalls = [];
+const pasteCalls = [];
 const dom = new JSDOM(html, {
   runScripts: 'dangerously',
   beforeParse(w){
@@ -21,7 +22,8 @@ const dom = new JSDOM(html, {
       toggle(){}, set_language(){}, reset_materials(){ saved.push('RESET'); },
       read_log(){ logCalls.push('read'); }, clear_log(){ logCalls.push('clear'); },
       weather_preset(id){ presetCalls.push(id); },
-      path_cmd(j){ pathCalls.push(JSON.parse(j)); }
+      path_cmd(j){ pathCalls.push(JSON.parse(j)); },
+      panel_paste(){ pasteCalls.push(1); }
     };
     w.HTMLElement.prototype.scrollIntoView = function(){};
   }
@@ -482,4 +484,29 @@ w.addEventListener('load', () => {
   ok(!d.querySelector('.row[data-k="bridge_enabled"]').classList.contains('hit'), 'senza ponte: la ricerca non trova le sue impostazioni');
   cerca(it['f.move_speed']);
   ok(d.querySelector('.row[data-k="move_speed"]').classList.contains('hit'), 'senza ponte: il resto della ricerca funziona');
+
+  // ── Menu del destro: mai quello del browser; nelle caselle il nostro, tradotto ──
+  const menu = el => !el.dispatchEvent(new w.MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 50, clientY: 50 }));
+  const aperto = () => d.getElementById('menuctx').classList.contains('aperto');
+  ok(menu(d.getElementById('btnSave')) && !aperto(), 'destro fuori dalle caselle: niente menu del browser, nessun menu');
+  const qm = d.getElementById('q');
+  qm.value = 'velocità';
+  qm.setSelectionRange(0, 0);
+  ok(menu(qm) && aperto(), 'destro nella casella di ricerca: niente menu del browser, si apre il nostro');
+  ok(d.getElementById('t-cut').textContent === it['ke.cut'] && d.getElementById('t-paste').textContent === it['ke.paste'],
+     `in italiano: ${it['ke.cut']}, ${it['ke.copy']}, ${it['ke.paste']}`);
+  ok(d.getElementById('c-copy').disabled && !d.getElementById('c-paste').disabled, 'niente selezionato: Copia spento, Incolla acceso');
+  d.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Escape' }));
+  ok(!aperto(), 'Esc lo chiude');
+  let inputs = 0;
+  qm.addEventListener('input', () => { inputs++; });
+  qm.value = '';
+  menu(qm);
+  d.getElementById('c-paste').click();
+  ok(pasteCalls.length === 1 && !aperto(), 'Incolla: gli appunti si chiedono a Ruby (panel_paste)');
+  w.eval('incolla("velocità\\r\\n")');
+  ok(qm.value === 'velocità' && inputs === 1, 'il testo entra nella casella e la ricerca riparte come scrivendo');
+  const nbm = d.querySelector('.nbox');
+  ok(nbm && menu(nbm) && aperto(), 'anche nelle caselle dei valori');
+  d.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Escape' }));
 });

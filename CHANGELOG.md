@@ -10,6 +10,34 @@ Il numero sta in un posto solo, `VERSION` in `dagawasd.rb`;
 
 ## [Non ancora uscito]
 
+### Aggiunto
+- **Pannello della sfera**: doppio clic su una sfera di un percorso, o Invio
+  con la sfera selezionata, apre una finestra con tutte le sue impostazioni:
+  posizione (X, Y, Z, occhi da terra), sguardo (direzione a bussola,
+  inclinazione, rollio), zoom (campo visivo o ingrandimento), sosta e
+  velocità del tratto fino alla prossima (o quella del percorso), con la
+  durata del tratto e il momento d'arrivo. Accanto a ogni campo − e +
+  cambiano il valore di un passo (0,1 m, 5° la direzione, 1° gli altri
+  angoli…); tenuti premuti lo fanno scorrere. Col destro il valore cambia da
+  solo, un centesimo alla volta (un'unità al secondo), con SketchUp che lo
+  segue dal vivo, finché un altro clic lo ferma lì. Nel pannello non compare
+  il menu del browser (in inglese): nelle caselle il destro apre un menu
+  tradotto con Taglia, Copia e Incolla. Lo stesso nel pannello delle
+  impostazioni, dove prima il destro mostrava il menu del browser in
+  inglese, con le voci per sviluppatori. Ogni modifica si annulla con
+  Ctrl+Z (uno scorrimento intero con un solo Ctrl+Z) e la sfera cambia
+  subito. «Anteprima dalla sfera» porta la camera
+  in dolly dentro ciò che vede la sfera (le sfere si spengono) e la segue a
+  ogni modifica; tolta, torna in dolly alla vista di prima. ◀ ▶ passano alla
+  sfera precedente o successiva, sempre in dolly: con l'anteprima lungo il
+  percorso vero. In più «Prendi dalla vista», «Inserisci dopo», «Elimina».
+  Riproduzione, scene e video rispettano soste e velocità di ogni sfera.
+
+### Corretto
+- I numeri delle sfere si vedevano attraverso i muri (il «9» di una sfera
+  dietro la casa finiva sul tetto): ora si scrivono solo per le sfere in
+  vista.
+
 ## [1.0.1] — 2026-10-17
 
 ### Aggiunto

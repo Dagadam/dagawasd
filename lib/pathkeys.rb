@@ -183,12 +183,16 @@ module DagaWASD
     end
 
     # Scala e specchiature dell'istanza non contano: assi riportati a versori.
+    # Posizione dell'istanza: i 10 valori di un fotogramma, più la sosta (s)
+    # e la velocità del tratto verso la prossima (m/s; 0 = quella del percorso),
+    # che il pannello della sfera (lib/keyedit.rb) può dare a ogni sfera.
     def self.key_of(e)
       m = e.transformation.to_a
       w = m[15].to_f
       w = 1.0 if w.abs < 1e-12
       path_orthonormal!([m[12] / w, m[13] / w, m[14] / w, m[0], m[1], m[2], m[8], m[9], m[10],
-                         (e.get_attribute(KEY_DICT, 'fov') || 60.0).to_f])
+                         (e.get_attribute(KEY_DICT, 'fov') || 60.0).to_f,
+                         e.get_attribute(KEY_DICT, 'sosta').to_f, e.get_attribute(KEY_DICT, 'v').to_f])
     end
 
     def self.key_dist3(a, b, o = 0)
@@ -292,10 +296,10 @@ module DagaWASD
     # Per tratto: lunghezze cumulate dei KEY_SUB pezzi e durata (s) =
     # lunghezza alla velocità v (m/s), o il tempo per girarsi se è di più.
     def self.key_timing(sp, v_m)
-      v = v_m * M_TO_IN
       w = KEY_TURN * Math::PI / 180
       ks = sp[:k]
       Array.new(ks.size - 1) do |i|
+        v = (ks[i][11].to_f > 0 ? ks[i][11].to_f : v_m) * M_TO_IN   # velocità propria del tratto, se c'è
         cum = [0.0]
         prev = ks[i]
         (1..KEY_SUB).each do |j|
@@ -322,21 +326,48 @@ module DagaWASD
     end
 
     def self.key_duration(keys, v_m)
-      keys.size < 2 ? 0.0 : key_timing(key_spline(keys), v_m).sum { |s| s[:dur] }
+      keys.size < 2 ? 0.0 : key_schedule(keys, v_m).last[:leave]
     end
 
-    # Fotogrammi a PATH_HZ (come path_frames), dall'una all'altra posizione.
+    # La linea del tempo: su ogni sfera la sua sosta, poi il tratto verso la
+    # prossima. Per sfera: arrivo e partenza (s dall'inizio) e durata del
+    # tratto che parte da lì (nil per l'ultima).
+    def self.key_schedule(keys, v_m, tm = nil)
+      tm ||= keys.size < 2 ? [] : key_timing(key_spline(keys), v_m)
+      t = 0.0
+      keys.each_with_index.map do |k, i|
+        arrive = t
+        t += k[10].to_f
+        leave = t
+        seg = tm[i] && tm[i][:dur]
+        t += seg.to_f
+        { arrive: arrive, leave: leave, seg: seg }
+      end
+    end
+
+    # Fotogrammi a PATH_HZ (come path_frames), dall'una all'altra posizione,
+    # fermi sulle soste.
     def self.key_frames(keys, v_m)
       sp = key_spline(keys)
       tm = key_timing(sp, v_m)
-      total = tm.sum { |s| s[:dur] }
-      i = 0; t0 = 0.0
-      frames = Array.new((total * PATH_HZ).floor + 1) do |k|
-        t = k / PATH_HZ
-        while i < tm.size - 1 && t > t0 + tm[i][:dur]
-          t0 += tm[i][:dur]; i += 1
+      parts = []
+      keys.each_with_index do |k, i|
+        parts << [:sosta, k[10].to_f, i] if k[10].to_f > 0
+        parts << [:tratto, tm[i][:dur], i] if i < tm.size
+      end
+      total = parts.sum { |p| p[1] }
+      j = 0; t0 = 0.0
+      frames = Array.new((total * PATH_HZ).floor + 1) do |n|
+        t = n / PATH_HZ
+        while j < parts.size - 1 && t > t0 + parts[j][1]
+          t0 += parts[j][1]; j += 1
         end
-        key_eval(sp, i, key_u(tm[i][:cum], ((t - t0) / tm[i][:dur]).clamp(0.0, 1.0)))
+        kind, dur, i = parts[j]
+        if kind == :sosta
+          path_orthonormal!(keys[i][0, 10].dup)
+        else
+          key_eval(sp, i, key_u(tm[i][:cum], ((t - t0) / dur).clamp(0.0, 1.0)))
+        end
       end
       frames << path_orthonormal!(keys.last[0, 10].dup) if (frames.size - 1) / PATH_HZ < total - 1e-6
       frames
@@ -428,6 +459,8 @@ module DagaWASD
         e.set_attribute(KEY_DICT, 'path', name)
         e.set_attribute(KEY_DICT, 'i', i)
         e.set_attribute(KEY_DICT, 'fov', k[9].to_f.round(2))
+        e.set_attribute(KEY_DICT, 'sosta', k[10].to_f.round(2)) if k[10].to_f > 0
+        e.set_attribute(KEY_DICT, 'v', k[11].to_f.round(2)) if k[11].to_f > 0
       end
       key_purge(model)
     end
@@ -528,6 +561,7 @@ module DagaWASD
           next if @active || @path_job || !model.valid?
           key_fix_order(model) if fix
           path_push_changed
+          ke_refresh                       # lib/keyedit.rb: il pannello della sfera, se è aperto
         rescue => fps_err
           log_error(:key_changed, fps_err)
         end
@@ -578,6 +612,7 @@ module DagaWASD
         end
         c[2].each_with_index do |pt, i|
           next if (pt.x - eye.x) * dir.x + (pt.y - eye.y) * dir.y + (pt.z - eye.z) * dir.z <= 0
+          next unless key_seen?(model, eye, pt)
           sc = view.screen_coords(pt)
           view.draw_text(Geom::Point3d.new(sc.x + 10, sc.y - 22, 0), (i + 1).to_s,
                          size: 11, bold: true, color: Sketchup::Color.new(255, 140, 0))
@@ -585,6 +620,26 @@ module DagaWASD
       end
     rescue => fps_err
       log_error(__method__, fps_err)
+    end
+
+    # draw_text sta sopra a tutto: il numero di una sfera dietro la casa
+    # finiva sul tetto. Un raggio dall'occhio al centro della sfera: la si
+    # vede se non tocca nulla prima della sua superficie. Sfere, frecce e
+    # riquadri non coprono (il raggio prosegue oltre), le cose nascoste nemmeno.
+    def self.key_seen?(model, eye, pt)
+      v = eye.vector_to(pt)
+      d = v.length.to_f
+      return true if d <= KEY_R
+      from = eye
+      5.times do
+        hit = model.raytest([from, v], true) or return true
+        return true if eye.distance(hit[0]).to_f >= d - KEY_R * 1.05
+        return false unless hit[1].any? { |e| e.respond_to?(:definition) && e.definition.get_attribute(KEY_DICT, 'def') }
+        from = hit[0].offset(v, 0.01)                   # un'altra sfera davanti: oltre
+      end
+      true
+    rescue StandardError
+      true                                              # nel dubbio il numero si scrive
     end
 
     class KeyModelObserver < Sketchup::ModelObserver

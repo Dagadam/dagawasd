@@ -159,6 +159,10 @@ module DagaWASD
         @dialog.execute_script("showLog(#{js_json(read_log)})")
       end
       @dialog.add_action_callback('import_settings') { |_ctx, _| import_settings }
+      # «Incolla» del menu del destro: la pagina non può leggere gli appunti (lib/keyedit.rb)
+      @dialog.add_action_callback('panel_paste') do |_ctx, _|
+        @dialog.execute_script("incolla(#{js_json(ke_clipboard)})")
+      end
       @dialog.add_action_callback('weather_preset') { |_ctx, id| weather_preset(id) }
       # Percorsi: {cmd, name} (play, stop, scenes, frames, rename, delete)
       @dialog.add_action_callback('path_cmd') do |_ctx, json|

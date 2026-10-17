@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>DagaWASD</title>
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   PANNELLO DELLA SFERA — lo apre lib/keyedit.rb (doppio clic su una
+   sfera di un percorso, o Invio con la sfera selezionata). Ruby manda
+   init (testi ke.*, lingua, aspetto) e show (i valori della sfera);
+   la pagina rimanda set {f, v} a ogni campo confermato, nav ±1,
+   preview true/false e act (from_view, insert, delete).
+   Colori: tema e accento del pannello (Sistema › Aspetto).
+═══════════════════════════════════════════════════════════════ */
+:root{
+  --bg:#151515;--fg:#dcdcdc;--mut:#8a8a8a;--line:#2c2c2c;--in:#1f1f1f;
+  --acc:#00c9a7;--acc-ink:#0d0d0d;--dg:#c04747;--dg-ink:#fff;--btn:#353535;
+  --font:'Segoe UI',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font:14px/1.4 var(--font);display:flex;flex-direction:column;user-select:none}
+body.attende{visibility:hidden}
+body.rtl{direction:rtl}
+header{padding:12px 14px 8px;border-bottom:1px solid var(--line)}
+.capo{display:flex;align-items:center;gap:8px}
+.capo h1{flex:1 1 auto;font-size:15px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.btn{border:0;border-radius:7px;background:var(--btn);color:var(--fg);font:inherit;padding:6px 11px;cursor:pointer}
+.btn:hover{filter:brightness(1.15)}
+.btn:disabled{opacity:.35;cursor:default;filter:none}
+.btn:focus-visible{box-shadow:0 0 0 2px var(--acc);outline:0}
+.btn.go{background:var(--acc);color:var(--acc-ink)}
+.btn.dg{background:var(--dg);color:var(--dg-ink)}
+.ante{display:flex;align-items:flex-start;gap:9px;margin-top:10px;cursor:pointer}
+.ante input{margin-top:3px;accent-color:var(--acc);width:16px;height:16px}
+.ante b{font-weight:600}
+.ante small{display:block;color:var(--mut);font-size:12px}
+main{flex:1 1 auto;overflow:auto;padding:4px 14px 10px}
+fieldset{border:0;border-top:1px solid var(--line);padding:9px 0 4px}
+fieldset:first-child{border-top:0}
+legend{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);padding:0 4px 0 0}
+.riga{display:grid;grid-template-columns:1fr 136px 30px;align-items:center;gap:6px;margin:5px 0}
+/* − campo + : un clic un passo, tenuto premuto scorre (a Ruby al rilascio) */
+.num{display:flex;align-items:stretch;gap:3px}
+.num input{min-width:0;flex:1 1 auto}
+.pm{flex:0 0 26px;border:0;border-radius:6px;background:var(--btn);color:var(--fg);font:600 15px/1 var(--font);
+  cursor:pointer;touch-action:none}
+.pm:hover{filter:brightness(1.2)}
+.pm:active{background:var(--acc);color:var(--acc-ink)}
+.pm:disabled{opacity:.35;cursor:default;filter:none;background:var(--btn);color:var(--fg)}
+.pm:focus-visible{outline:0;box-shadow:0 0 0 2px var(--acc)}
+/* col destro il valore scorre da solo finché non si clicca ancora */
+.pm.corre{background:var(--acc);color:var(--acc-ink);animation:corre 1s ease-in-out infinite}
+@keyframes corre{50%{filter:brightness(1.35)}}
+.riga label{min-width:0}
+.riga small{display:block;color:var(--mut);font-size:11.5px;line-height:1.25}
+.riga input[type=text]{width:100%;background:var(--in);color:var(--fg);border:1px solid var(--line);border-radius:6px;
+  padding:5px 7px;font:inherit;text-align:end;user-select:text}
+.riga input[type=text]:focus{outline:0;border-color:var(--acc)}
+.riga input:disabled{opacity:.45}
+.u{color:var(--mut);font-size:12.5px}
+.auto{display:flex;align-items:center;gap:7px;margin:2px 0 6px;color:var(--mut);font-size:12.5px;cursor:pointer}
+.auto input{accent-color:var(--acc)}
+.info{color:var(--mut);font-size:12.5px;margin:4px 0}
+footer{display:flex;gap:7px;flex-wrap:wrap;padding:10px 14px 12px;border-top:1px solid var(--line)}
+footer .sp{flex:1 1 auto}
+body.occupato main,body.occupato footer,body.occupato .ante{opacity:.4;pointer-events:none}
+/* menu del destro nelle caselle: Taglia, Copia, Incolla nella lingua del pannello */
+.menuctx{position:fixed;z-index:10;min-width:170px;padding:4px;border-radius:8px;background:var(--btn);
+  border:1px solid var(--line);box-shadow:0 8px 24px rgba(0,0,0,.35);display:none}
+.menuctx.aperto{display:block}
+.menuctx button{display:flex;width:100%;gap:18px;justify-content:space-between;border:0;border-radius:5px;
+  background:none;color:var(--fg);font:inherit;padding:6px 10px;text-align:start;cursor:pointer}
+.menuctx button:hover:not(:disabled),.menuctx button:focus-visible{background:var(--acc);color:var(--acc-ink);outline:0}
+.menuctx button:disabled{opacity:.4;cursor:default}
+.menuctx kbd{font:inherit;opacity:.65}
+</style>
+</head>
+<body class="attende">
+<header>
+  <div class="capo">
+    <button class="btn" id="b-prev" onclick="nav(-1)">◀</button>
+    <h1 id="titolo"></h1>
+    <button class="btn" id="b-next" onclick="nav(1)">▶</button>
+  </div>
+  <label class="ante"><input type="checkbox" id="anteprima" onchange="preview(this.checked)">
+    <span><b id="t-preview"></b><small id="t-preview-h"></small></span></label>
+</header>
+<main id="campi"></main>
+<div class="menuctx" id="menuctx" role="menu">
+  <button role="menuitem" id="c-cut" data-a="cut"><span id="t-cut"></span><kbd>Ctrl+X</kbd></button>
+  <button role="menuitem" id="c-copy" data-a="copy"><span id="t-copy"></span><kbd>Ctrl+C</kbd></button>
+  <button role="menuitem" id="c-paste" data-a="paste"><span id="t-paste"></span><kbd>Ctrl+V</kbd></button>
+</div>
+<footer>
+  <button class="btn" id="b-view" onclick="act('from_view')"></button>
+  <button class="btn" id="b-insert" onclick="act('insert')"></button>
+  <span class="sp"></span>
+  <button class="btn dg" id="b-delete" onclick="act('delete')"></button>
+</footer>
+<script>
+let L = {}, LANG = 'en', V = null;
+const $ = id => document.getElementById(id);
+const T = k => L[k] || k;
+const fill = (s, o) => s.replace(/\{(\w+)\}/g, (m, k) => k in o ? o[k] : m);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+const nf = (x, d) => new Intl.NumberFormat(LANG, { maximumFractionDigits: d, minimumFractionDigits: d, useGrouping: false }).format(x);
+const num = s => { const x = Number(String(s).trim().replace(',', '.')); return isFinite(x) ? x : null; };
+const rb = (n, a) => { try { sketchup[n](a); } catch(e){} };
+
+// campi: [chiave, etichetta, aiuto, unità, decimali, passo dei pulsanti − +]
+const GRUPPI = [
+  ['ke.g.pos',  [['x', 'X', null, 'm', 2, 0.1], ['y', 'Y', null, 'm', 2, 0.1], ['z', 'Z', null, 'm', 2, 0.1],
+                 ['ground', 'ke.ground', null, 'm', 2, 0.1]]],
+  ['ke.g.look', [['az', 'ke.az', 'ke.az.h', '°', 1, 5], ['pitch', 'ke.pitch', 'ke.pitch.h', '°', 1, 1],
+                 ['roll', 'ke.roll', 'ke.roll.h', '°', 1, 1]]],
+  ['ke.g.zoom', [['fov', 'ke.fov', null, '°', 1, 1], ['zoom', 'ke.mag', null, '×', 2, 0.1]]],
+  ['ke.g.time', [['pause', 'ke.pause', 'ke.pause.h', 's', 1, 0.5], ['v', 'ke.speed', null, 'm/s', 2, 0.1]]]
+];
+const CAMPO = {};
+GRUPPI.forEach(([, campi]) => campi.forEach(c => { CAMPO[c[0]] = c; }));
+
+function costruisci(){
+  $('campi').innerHTML = GRUPPI.map(([g, campi]) =>
+    `<fieldset><legend>${esc(T(g))}</legend>` + campi.map(([k, et, aiuto, u]) =>
+      `<div class="riga"><label for="f-${k}">${esc(et.startsWith('ke.') ? T(et) : et)}` +
+      (aiuto ? `<small>${esc(T(aiuto))}</small>` : '') + `</label>` +
+      `<div class="num"><button class="pm" id="m-${k}" data-k="${k}" data-d="-1" tabindex="-1">−</button>` +
+      `<input type="text" inputmode="decimal" id="f-${k}" data-k="${k}">` +
+      `<button class="pm" id="p-${k}" data-k="${k}" data-d="1" tabindex="-1">+</button></div>` +
+      `<span class="u">${esc(u)}</span></div>` +
+      (k === 'v' ? `<label class="auto"><input type="checkbox" id="f-vauto" onchange="manda('vauto', this.checked)"><span id="t-auto"></span></label>` +
+                   `<div class="info" id="t-seg"></div><div class="info" id="t-arrive"></div>` : '')
+    ).join('') + `</fieldset>`).join('');
+  document.querySelectorAll('.riga input').forEach(inp => {
+    inp.addEventListener('change', () => { delete inp.dataset.modificato; conferma(inp); });
+    // cambiato dal menu (Taglia, Incolla): il browser non manda change, si conferma uscendo
+    inp.addEventListener('blur', () => { if(inp.dataset.modificato){ delete inp.dataset.modificato; conferma(inp); } });
+    inp.addEventListener('keydown', ev => { if(ev.key === 'Enter'){ ev.preventDefault(); conferma(inp); } });
+  });
+  document.querySelectorAll('.pm').forEach(b => {
+    b.addEventListener('pointerdown', ev => {
+      if(ev.button === 0) premi(b);
+      else if(ev.button === 2){ ev.preventDefault(); avviaCorsa(b); }
+    });
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach(n => b.addEventListener(n, () => rilascia(b)));
+  });
+}
+
+// Mai il menu del browser (in inglese, con Ricarica, Ispeziona…): nelle
+// caselle di testo uno nostro, tradotto, con Taglia, Copia, Incolla.
+document.addEventListener('contextmenu', ev => {
+  ev.preventDefault();
+  const t = ev.target;
+  if(t.tagName === 'INPUT' && t.type === 'text' && !t.disabled) apriMenu(t, ev.clientX, ev.clientY);
+});
+
+let menuDi = null;                                  // { inp, a, b }: casella e selezione all'apertura
+function apriMenu(inp, x, y){
+  inp.focus();
+  const a = inp.selectionStart, b = inp.selectionEnd;
+  menuDi = { inp: inp, a: a, b: b };
+  $('c-cut').disabled = $('c-copy').disabled = a === b;
+  const m = $('menuctx');
+  m.classList.add('aperto');
+  const r = m.getBoundingClientRect();
+  m.style.left = Math.max(4, Math.min(x, innerWidth - r.width - 4)) + 'px';
+  m.style.top = Math.max(4, Math.min(y, innerHeight - r.height - 4)) + 'px';
+}
+function chiudiMenu(){ $('menuctx').classList.remove('aperto'); }
+document.addEventListener('pointerdown', ev => { if(!ev.target.closest('#menuctx')) chiudiMenu(); }, true);
+document.addEventListener('keydown', ev => { if(ev.key === 'Escape') chiudiMenu(); });
+window.addEventListener('blur', chiudiMenu);
+$('menuctx').addEventListener('click', ev => {
+  const b = ev.target.closest('button');
+  if(!b || b.disabled || !menuDi) return;
+  const { inp, a, b: z } = menuDi;
+  chiudiMenu();
+  inp.focus();
+  inp.setSelectionRange(a, z);
+  if(b.dataset.a === 'paste'){ rb('paste'); return; }        // gli appunti li legge Ruby: incolla(testo)
+  const testo = inp.value.slice(a, z);
+  let fatto = false;
+  try { fatto = document.execCommand(b.dataset.a); } catch(e){}   // copy / cut del browser
+  if(!fatto){                                                       // non concesso: a mano
+    if(navigator.clipboard) navigator.clipboard.writeText(testo).catch(() => {});
+    if(b.dataset.a === 'cut') inp.setRangeText('', a, z, 'end');
+  }
+  if(b.dataset.a === 'cut') inp.dataset.modificato = 1;
+});
+
+// Ruby risponde a paste con il testo degli appunti
+function incolla(testo){
+  if(!menuDi) return;
+  const { inp, a, b } = menuDi;
+  inp.focus();
+  inp.setRangeText(String(testo).replace(/[\r\n]+/g, ' ').trim(), a, b, 'end');
+  inp.dataset.modificato = 1;                       // si conferma con Invio o uscendo dalla casella
+  menuDi = null;
+}
+
+// Col destro su − o +: il valore scorre da solo, un centesimo alla volta,
+// un'unità al secondo, finché un altro clic (destro o sinistro, ovunque)
+// lo ferma lì. SketchUp lo segue dal vivo, ~10 volte al secondo; Ruby fonde
+// gli invii della stessa corsa ('run') in un'operazione sola: un Ctrl+Z.
+let corsa = null;
+function avviaCorsa(b){
+  if(b.disabled) return;
+  const k = b.dataset.k, inp = $('f-' + k);
+  const ora = num(inp.value);
+  const base = ora === null ? (k === 'v' ? V.v_auto : V[k]) : ora;
+  if(base === null || base === undefined) return;
+  corsa = { b: b, k: k, base: base, d: Number(b.dataset.d), t0: performance.now(), id: String(Date.now()), inviato: 0 };
+  b.classList.add('corre');
+  corsa.timer = setInterval(passoCorsa, 10);
+}
+function valoreCorsa(){
+  return Math.round((corsa.base + corsa.d * (performance.now() - corsa.t0) / 1000) * 100) / 100;
+}
+function passoCorsa(){
+  const x = valoreCorsa();
+  $('f-' + corsa.k).value = nf(x, Math.max(CAMPO[corsa.k][4], 2));
+  const ora = performance.now();
+  if(ora - corsa.inviato >= 100){ corsa.inviato = ora; mandaCorsa(x); }
+}
+function mandaCorsa(x){ rb('set', JSON.stringify({ f: corsa.k, v: x, run: corsa.id })); }
+function fermaCorsa(){
+  if(!corsa) return;
+  clearInterval(corsa.timer);
+  const x = valoreCorsa();                          // il valore del momento: quello mostrato è quello mandato
+  $('f-' + corsa.k).value = nf(x, Math.max(CAMPO[corsa.k][4], 2));
+  mandaCorsa(x);
+  corsa.b.classList.remove('corre');
+  $('f-' + corsa.k).dataset.inviato = 1;
+  corsa = null;
+}
+// Il clic che ferma serve solo a fermare: non arriva a ciò che c'è sotto
+// (◀ ▶, Elimina, l'anteprima reagiscono a click, che viene dopo pointerdown)
+let ingoia = false;
+document.addEventListener('pointerdown', ev => {
+  if(!corsa) return;
+  ev.preventDefault(); ev.stopPropagation();
+  fermaCorsa();
+  ingoia = true;
+  setTimeout(() => { ingoia = false; }, 600);
+}, true);
+['click', 'contextmenu', 'pointerup'].forEach(n => document.addEventListener(n, ev => {
+  if(!ingoia) return;
+  ev.preventDefault(); ev.stopPropagation();
+  if(n !== 'pointerup') ingoia = false;
+}, true));
+
+// − e +: un passo subito; tenuto premuto, dopo un attimo un passo ogni 90 ms.
+// A Ruby solo al rilascio: un'operazione sola (un Ctrl+Z) per tutto lo scorrimento.
+let tieni = null;
+function passo(b){
+  const k = b.dataset.k, c = CAMPO[k], inp = $('f-' + k);
+  const ora = num(inp.value);
+  const base = ora === null ? (k === 'v' ? V.v_auto : V[k]) : ora;
+  if(base === null || base === undefined) return false;
+  const f = 10 ** c[4];
+  inp.value = nf(Math.round((base + c[5] * Number(b.dataset.d)) * f) / f, c[4]);
+  return true;
+}
+function premi(b){
+  if(b.disabled) return;
+  rilascia(null);
+  if(!passo(b)) return;
+  tieni = { b: b, t: setTimeout(function giro(){ passo(b); tieni.t = setTimeout(giro, 90); }, 400) };
+}
+function rilascia(b){
+  if(!tieni || (b && tieni.b !== b)) return;
+  clearTimeout(tieni.t);
+  const inp = $('f-' + tieni.b.dataset.k);
+  tieni = null;
+  conferma(inp);
+}
+
+function conferma(inp){
+  const x = num(inp.value);
+  inp.dataset.inviato = 1;
+  if(x === null){ show(V); return; }          // non è un numero: torna il valore di prima
+  manda(inp.dataset.k, x);
+}
+function manda(f, v){ rb('set', JSON.stringify({ f: f, v: v })); }
+function nav(d){ rb('nav', d); }
+function preview(on){ rb('preview', on); }
+function act(a){ rb('act', a); }
+
+// ── Chiamate da Ruby ─────────────────────────────────────────────
+const rgb = h => { const m = /^#?([0-9a-f]{6})$/i.exec(h || ''); if(!m) return null; const n = parseInt(m[1], 16); return [n >> 16, n >> 8 & 255, n & 255]; };
+const mix = (a, b, t) => '#' + a.map((x, i) => Math.round(x + (b[i] - x) * t).toString(16).padStart(2, '0')).join('');
+const lum = c => (0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]) / 255;
+function applyLook(o){
+  const r = document.documentElement.style, set = (n, v) => r.setProperty('--' + n, v);
+  const light = o.theme === 'light' || (o.theme === 'auto' && matchMedia('(prefers-color-scheme: light)').matches);
+  const B = rgb(o.bg) || (light ? [240, 240, 239] : [21, 21, 21]);
+  const F = rgb(o.text) || (light ? [30, 30, 30] : [220, 220, 220]);
+  const A = rgb(o.accent) || [0, 201, 167];
+  set('bg', mix(B, B, 0)); set('fg', mix(F, F, 0)); set('mut', mix(B, F, .55));
+  set('line', mix(B, F, light ? .14 : .12)); set('in', mix(B, F, light ? .04 : .05));
+  set('btn', mix(B, F, light ? .1 : .14));
+  set('acc', mix(A, A, 0)); set('acc-ink', lum(A) > .5 ? '#0d0d0d' : '#ffffff');
+  const D = rgb(o.danger);
+  if(D){ set('dg', mix(D, D, 0)); set('dg-ink', lum(D) > .5 ? '#111111' : '#ffffff'); }
+}
+
+function init(d){
+  L = d.strings || {};
+  LANG = d.lang || 'en';
+  document.documentElement.lang = LANG;
+  document.documentElement.dir = d.rtl ? 'rtl' : 'ltr';
+  document.body.classList.toggle('rtl', !!d.rtl);
+  applyLook(d.look || {});
+  document.title = T('ke.title');
+  $('t-preview').textContent = T('ke.preview');
+  $('t-preview-h').textContent = T('ke.preview.h');
+  $('b-prev').title = T('ke.prev'); $('b-next').title = T('ke.next');
+  $('b-prev').textContent = d.rtl ? '▶' : '◀'; $('b-next').textContent = d.rtl ? '◀' : '▶';
+  $('b-view').textContent = T('ke.from_view'); $('b-view').title = T('ke.from_view.h');
+  $('b-insert').textContent = T('ke.insert');
+  $('b-delete').textContent = T('ke.delete');
+  $('t-cut').textContent = T('ke.cut'); $('t-copy').textContent = T('ke.copy'); $('t-paste').textContent = T('ke.paste');
+  costruisci();
+}
+
+function show(v){
+  if(!v) return;
+  V = v;
+  $('titolo').textContent = fill(T('ke.head'), { path: v.path, i: v.i, n: v.n });
+  $('b-prev').disabled = v.i <= 1;
+  $('b-next').disabled = v.i >= v.n;
+  $('anteprima').checked = !!v.preview;
+  GRUPPI.forEach(([, campi]) => campi.forEach(([k, , , , dec]) => {
+    const inp = $('f-' + k);
+    // chi sta scrivendo non va interrotto; dopo l'invio il valore torna da Ruby (corretto nei limiti)
+    const x = k === 'v' ? (v.v > 0 ? v.v : v.v_auto) : v[k];
+    const spento = k === 'ground' && (x === null || x === undefined);
+    inp.disabled = $('m-' + k).disabled = $('p-' + k).disabled = spento;
+    if(tieni && tieni.b.dataset.k === k) return;          // sta scorrendo con − o +
+    if(corsa && corsa.k === k) return;                    // scorre da solo (destro)
+    if(document.activeElement === inp && !inp.dataset.inviato) return;
+    delete inp.dataset.inviato;
+    inp.value = x === null || x === undefined ? '—' : nf(x, dec);
+  }));
+  const auto = !(v.v > 0);
+  $('f-vauto').checked = auto;
+  $('f-v').disabled = $('m-v').disabled = $('p-v').disabled = auto;
+  $('t-auto').textContent = fill(T('ke.auto'), { v: nf(v.v_auto, 2) });
+  $('t-seg').textContent = v.seg === null || v.seg === undefined ? T('ke.last') : fill(T('ke.seg'), { s: nf(v.seg, 1) });
+  $('t-arrive').textContent = fill(T('ke.arrive'), { t: nf(v.arrive, 1) + ' s' });
+  document.body.classList.toggle('occupato', !!v.busy);
+  document.body.classList.remove('attende');
+}
+
+window.addEventListener('load', () => rb('ready'));
+</script>
+</body>
+</html>

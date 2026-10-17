@@ -97,6 +97,7 @@ if errorlevel 1 (
   )
   node "%ROOT%\tests\panel\test_panel.js" || set "FAIL=1"
   node "%ROOT%\tests\panel\test_attesa.js" || set "FAIL=1"
+  node "%ROOT%\tests\panel\test_keyedit.js" || set "FAIL=1"
 )
 
 echo.

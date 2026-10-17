@@ -23,6 +23,9 @@
 #                                   con le Overlay (cielo, nuvole) che write_image salta; con
 #                                   L A la vista misura esattamente LxA (la finestra si allarga
 #                                   per il tempo della cattura, anche oltre lo schermo)
+#   clicca <x> <y> [singolo|doppio|destro]   clic vero in un punto dello schermo
+#   clicca vista <x> <y> [tipo]     clic vero in un punto della vista 3D (coordinate
+#                                   di view.screen_coords dal ponte: oggetti del modello)
 #   tasti <passi...>                tastiera e mouse simulati verso SketchUp, es.
 #       tieni:W+LShift:3000  premi:Esc  muovi:300,0  aspetta:500  ruota:120
 #
@@ -142,6 +145,35 @@ public static class FinW {
     i[0].u.k.scan = (ushort)MapVirtualKey(vk, 0);
     i[0].u.k.flags = (uint)((up ? 2 : 0) | (Extended(vk) ? 1 : 0));
     SendInput(1, i, Marshal.SizeOf(typeof(INPUT)));
+  }
+
+  // ── Clic veri (comando clicca) ──
+  [StructLayout(LayoutKind.Sequential)] public struct PT { public int X, Y; }
+  [DllImport("user32.dll")] static extern IntPtr WindowFromPoint(PT p);
+  [DllImport("user32.dll")] public static extern bool SetCursorPos(int x, int y);
+  [DllImport("user32.dll")] static extern bool GetCursorPos(out PT p);
+  // Processo della finestra che sta sotto il punto (chi riceverebbe il clic)
+  public static uint PidAt(int x, int y) {
+    PT p; p.X = x; p.Y = y;
+    uint pid; GetWindowThreadProcessId(WindowFromPoint(p), out pid); return pid;
+  }
+  public static bool CursorAt(int x, int y) {
+    PT p; GetCursorPos(out p); return Math.Abs(p.X - x) <= 2 && Math.Abs(p.Y - y) <= 2;
+  }
+  static void Btn(uint flags) {
+    INPUT[] i = new INPUT[1];
+    i[0].type = 0; i[0].u.m.flags = flags;
+    SendInput(1, i, Marshal.SizeOf(typeof(INPUT)));
+  }
+  // singolo, doppio (due clic entro il tempo del doppio clic) o destro
+  public static void Click(string kind) {
+    uint down = 0x0002, up = 0x0004;                      // LEFTDOWN, LEFTUP
+    if (kind == "destro") { down = 0x0008; up = 0x0010; } // RIGHTDOWN, RIGHTUP
+    int n = kind == "doppio" ? 2 : 1;
+    for (int k = 0; k < n; k++) {
+      Btn(down); Thread.Sleep(30); Btn(up);
+      if (k < n - 1) Thread.Sleep(80);
+    }
   }
 
   public static void Mouse(int dx, int dy, int wheel) {
@@ -618,6 +650,38 @@ switch ($Comando) {
     $w = Trova-Finestra $Arg[0]
     if (-not [FinW]::Focus([IntPtr]$w.Current.NativeWindowHandle)) { Fail 'Windows non ha concesso il primo piano' }
     "in primo piano: «$($w.Current.Name)»"
+  }
+  'clicca' {
+    # Clic veri, dove UI Automation non arriva (la vista 3D è una superficie
+    # disegnata: una sfera esiste solo come pixel). Prima del clic: SketchUp
+    # in primo piano, cursore sul punto (con la cornice se il mouse si vede),
+    # sotto il punto una finestra di SketchUp, il mouse non spostato da altri.
+    $vista = $Arg.Count -gt 0 -and $Arg[0] -eq 'vista'
+    $a = @(if ($vista) { $Arg | Select-Object -Skip 1 } else { $Arg })
+    if ($a.Count -lt 2) { Fail 'clicca <x> <y> [singolo|doppio|destro]   oppure   clicca vista <x> <y> [tipo]' }
+    $x = [int][math]::Round([double]($a[0] -replace ',', '.'))
+    $y = [int][math]::Round([double]($a[1] -replace ',', '.'))
+    $tipo = if ($a.Count -ge 3) { $a[2].ToLowerInvariant() } else { 'singolo' }
+    if (@('singolo', 'doppio', 'destro') -notcontains $tipo) { Fail "tipo di clic sconosciuto: $tipo (singolo, doppio, destro)" }
+    [void](Su-Finestre)
+    $hMain = [IntPtr]$script:MainH
+    if (-not [FinW]::Focus($hMain)) { Fail 'Windows non ha concesso il primo piano a SketchUp' }
+    if ($vista) {
+      # coordinate della vista (view.screen_coords del ponte) → schermo
+      Start-Sleep -Milliseconds 150
+      $v = [FinW]::Viewport($hMain)
+      if ($x -lt 0 -or $y -lt 0 -or $x -ge ($v.R - $v.L) -or $y -ge ($v.B - $v.T)) { Fail "il punto $x,$y è fuori dalla vista ($($v.R - $v.L)x$($v.B - $v.T))" }
+      $x += $v.L; $y += $v.T
+    }
+    $suPid = [uint32](Su-Pid).Id
+    if ([FinW]::PidAt($x, $y) -ne $suPid) { Fail "nel punto $x,$y non c'è una finestra di SketchUp: non clicco" }
+    $f = Indica ([Drawing.Rectangle]::new($x - 14, $y - 14, 28, 28))
+    if ($f) { [Indicatore]::Chiudi($f, 250) } else { [void][FinW]::SetCursorPos($x, $y) }   # la cornice si toglie prima del clic
+    if (-not [FinW]::CursorAt($x, $y)) { Fail 'il mouse si è spostato nel frattempo: non clicco' }
+    if ([FinW]::ForegroundPid() -ne $suPid) { Fail 'SketchUp non è più in primo piano: non clicco' }
+    if ([FinW]::PidAt($x, $y) -ne $suPid) { Fail "nel punto $x,$y ora c'è un'altra finestra: non clicco" }
+    [FinW]::Click($tipo)
+    "clic $tipo in $x,$y$(if ($vista) { ' (vista 3D)' })"
   }
   'mostra' {
     # Rimostra senza fuoco una finestra ridotta a icona: una vista a icona

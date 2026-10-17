@@ -294,6 +294,21 @@ F.key_draw(view)
 ok(view.drawn.size == 1 && view.drawn[0][0] == GL_LINE_STRIP && view.drawn[0][1].size == (ord.size - 1) * F::KEY_SUB + 1,
    'Overlay: la curva fra le sfere')
 ok(view.texts.map { |x| x[1] } == (1..ord.size).map(&:to_s), 'e il numero d\'ordine accanto a ognuna')
+# Un muro fra l'occhio e le sfere: draw_text starebbe sopra a tutto (il «9»
+# di una sfera dietro casa finiva sul tetto, 2026-10-17); la curva ha la profondità, resta
+muro = Object.new
+pm.define_singleton_method(:raytest) { |ray, *_| o, v = ray; [o.offset(v, 1 * M), [muro]] }
+view.drawn.clear; view.texts.clear
+F.key_draw(view)
+ok(view.texts.empty? && view.drawn.size == 1, 'un muro davanti: niente numeri, la curva sì')
+# davanti c'è solo un'altra sfera: il raggio prosegue oltre, il numero si scrive
+altra = F.key_instances(pm).values.flatten.first
+occhio = view.camera.eye
+pm.define_singleton_method(:raytest) { |ray, *_| o, v = ray; o.distance(occhio) < 1 ? [o.offset(v, 1 * M), [altra]] : nil }
+view.drawn.clear; view.texts.clear
+F.key_draw(view)
+ok(view.texts.size == ord.size, 'davanti solo un\'altra sfera (o la sua freccia): il numero si scrive')
+pm.singleton_class.send(:remove_method, :raytest)
 view.drawn.clear; view.texts.clear
 view.camera.set(Geom::Point3d.new(20 * M, 0, 66), Geom::Point3d.new(30 * M, 0, 66), Geom::Vector3d.new(0, 0, 1))
 F.key_draw(view)
@@ -379,6 +394,216 @@ ok(!pm.definitions.include?(vecchio) && sf.all? { |e| e.definition.get_attribute
 ok(pm.definitions.all? { |d| !d.instances.empty? }, 'nessun componente delle sfere rimasto vuoto (quelli di 70° e 2×, senza sfere, tolti)')
 F.path_command('delete', 'Giro lungo')
 ok(pm.definitions.empty?, 'eliminato l\'ultimo percorso: via anche i suoi componenti')
+
+# ══ Pannello della sfera (lib/keyedit.rb) ══════════════════════════════
+module Attrs; def delete_attribute(d, k); attrs.fetch(d, {}).delete(k); end; end
+class Inst; def model; $pm; end; end
+class FakeView; def show_frame; end; end
+class Sel < Array; def add(e); self << e unless include?(e); end; end
+class FakeModel
+  attr_accessor :active_path, :tool_id
+  def selection; @sel ||= Sel.new; end
+  def tools; id = @tool_id || F::KE_SELECT; o = Object.new; o.define_singleton_method(:active_tool_id) { id }; o; end
+  def close_active; @active_path = nil; true; end
+end
+module Sketchup
+  class Camera < ::Cam
+    attr_accessor :height
+    def initialize(e, t, u, persp = true, fov = 60.0); super(); set(e, t, u); @perspective = persp; @fov = fov; end
+  end
+end
+module UI
+  class HtmlDialog
+    def initialize(_o); @scripts = []; @cb = {}; @visible = false; end
+    def set_file(_f); end
+    def add_action_callback(n, &b); @cb[n] = b; end
+    def set_on_closed(&b); @closed = b; end
+    def show; @visible = true; end
+    def visible?; @visible; end
+    def close; return unless @visible; @visible = false; @closed&.call; end
+    def bring_to_front; end
+    def execute_script(s); @scripts << s; end
+    def call(n, arg = ''); @cb[n].call(nil, arg); end
+    def last(fn); s = @scripts.reverse.find { |x| x.start_with?("#{fn}(") } or return nil; JSON.parse(s[(fn.size + 1)...-1]); end
+  end
+end
+fine_dolly = lambda do
+  a = view.anim
+  a.instance_variable_set(:@t0, -1e9)        # tempo scaduto: l'ultimo fotogramma
+  a.nextFrame(view)
+end
+near1 = ->(a, b, eps = 1e-6) { (a - b).abs < eps }
+
+# Angoli: bussola dall'asse verde, inclinazione, rollio con la testa a destra
+k = F.ke_from_angles(Array.new(12, 0.0), 30.0, 10.0, 15.0)
+az, pitch, roll = F.ke_angles(k)
+ok(near1.(az, 30) && near1.(pitch, 10) && near1.(roll, 15), "angoli → sguardo e alto → angoli: #{[az, pitch, roll].map { |x| x.round(3) }}")
+k = F.ke_from_angles(Array.new(12, 0.0), 90.0, 0.0, 20.0)
+ok(near1.(k[3], 1) && near1.(k[4], 0) && near1.(k[7], -Math.sin(20 * Math::PI / 180)) && near1.(k[8], Math.cos(20 * Math::PI / 180)),
+   'direzione 90° = verso l\'asse rosso; rollio positivo: l\'alto pende a destra')
+
+# Un percorso nuovo dalla vista: due sfere
+view.camera.set(Geom::Point3d.new(0, 0, 66), Geom::Point3d.new(100, 0, 66), Geom::Vector3d.new(0, 0, 1))
+view.camera.fov = 60.0
+F.path_command('new', '')
+nome = F.path_list.last['name']
+sf = F.key_instances(pm)[nome]
+e1, e2 = sf
+F.ke_open(e1)
+dlg = F.instance_variable_get(:@ke)[:dialog]
+dlg.call('ready')
+v = dlg.last('show')
+ok(dlg.visible? && dlg.last('init')['strings']['ke.title'] == F.t('ke.title') && v['i'] == 1 && v['n'] == 2,
+   'aperto: testi ke.*, posizione 1 di 2')
+ok(near1.(v['z'], 66 * F::IN_TO_M) && near1.(v['az'], 90) && near1.(v['fov'], 60) && v['ground'].nil? && v['seg'] && near1.(v['arrive'], 0),
+   'valori: quota, direzione 90° (verso il rosso), zoom, niente terreno sotto, tratto e arrivo')
+ok(pm.selection == [e1], 'la sfera aperta è selezionata')
+
+# Modifiche: ognuna un'operazione, la sfera cambia subito
+n_ops = pm.ops.size
+dlg.call('set', '{"f":"z","v":2.0}')
+ok(near1.(F.key_of(e1)[2], 2.0 * M) && pm.ops[n_ops][0, 3] == [:start, F.t('ke.op'), true] && pm.ops.last == [:commit],
+   'quota a 2 m: la sfera si sposta, in un\'operazione «Modifica posizione»')
+dlg.call('set', '{"f":"roll","v":"12,5"}')
+ok(near1.(F.ke_angles(F.key_of(e1))[2], 12.5) && near1.(F.ke_angles(F.key_of(e1))[0], 90), 'rollio 12,5° (con la virgola): la direzione resta')
+dlg.call('set', '{"f":"zoom","v":2}')
+fov2 = 2 * Math.atan(Math.tan(F::KEY_FOV0 * Math::PI / 360) / 2) * 180 / Math::PI
+ok(near1.(F.key_of(e1)[9], fov2, 0.01) && e1.definition.get_attribute(F::KEY_DICT, 'fov') == fov2.round,
+   "ingrandimento 2×: campo visivo #{fov2.round(1)}°, la sfera passa al componente con la freccia lunga")
+prima = F.path_track(nome)[:dur]
+dlg.call('set', '{"f":"pause","v":2}')
+ok(e1.get_attribute(F::KEY_DICT, 'sosta') == 2.0 && near1.(F.path_track(nome)[:dur] - prima, 2.0, 0.05),
+   "sosta di 2 s: la riproduzione dura 2 s in più (#{prima.round(2)} → #{F.path_track(nome)[:dur].round(2)} s)")
+fr = F.path_track(nome)[:frames]
+ok(fr[0, (2.0 * F::PATH_HZ).floor].all? { |f| near1.(f[2], 2.0 * M) && near1.(f[0], 0) }, 'durante la sosta la camera resta sulla sfera')
+d0 = F.path_track(nome)[:dur]
+dlg.call('set', '{"f":"v","v":0.5}')
+ok(e1.get_attribute(F::KEY_DICT, 'v') == 0.5 && F.path_track(nome)[:dur] > d0 + 1, 'velocità propria del tratto (0,5 m/s): il tratto dura di più')
+dlg.call('set', '{"f":"vauto","v":true}')
+ok(e1.get_attribute(F::KEY_DICT, 'v').nil? && near1.(F.path_track(nome)[:dur], d0, 0.05), '«Automatica»: torna la velocità del percorso')
+# Destro su − o +: il valore scorre e arriva ~10 volte al secondo con lo
+# stesso 'run'; la prima operazione è normale, le altre vi si fondono
+n_ops = pm.ops.size
+%w[0.1 0.2 0.3].each { |x| dlg.call('set', %({"f":"x","v":#{x},"run":"r1"})) }
+st = pm.ops[n_ops..].select { |o| o[0] == :start }
+ok(st.map(&:last) == [false, true, true] && near1.(F.key_of(e1)[0], 0.3 * M),
+   'variazione continua: tre invii, un\'operazione sola (le altre trasparenti, un Ctrl+Z)')
+dlg.call('set', '{"f":"x","v":0}')
+ok(pm.ops.reverse.find { |o| o[0] == :start }.last == false, 'il clic dopo: operazione nuova, normale')
+dlg.call('set', '{"f":"x","v":1}')
+n_ops = pm.ops.size
+dlg.call('set', '{"f":"x","v":"non un numero"}')
+ok(near1.(F.key_of(e1)[0], 1.0 * M) && pm.ops.size == n_ops, 'un valore che non è un numero: ignorato, nessuna operazione')
+dlg.call('set', '{"f":"x","v":0}')
+
+# Navigazione: dolly, selezione, pannello
+dlg.call('nav', '1')
+ke = F.instance_variable_get(:@ke)
+ok(ke[:inst].equal?(e2) && view.anim.is_a?(F::KeDolly) && pm.selection == [e2] && dlg.last('show')['i'] == 2,
+   'successiva: seleziona la seconda, il pannello la mostra, la camera va in dolly')
+dlg.call('nav', '1')
+ok(ke[:inst].equal?(e2), 'dopo l\'ultima non si va oltre')
+dlg.call('nav', '-1')
+ok(ke[:inst].equal?(e1), 'precedente: di nuovo la prima')
+
+# Anteprima: dolly dentro la sfera e fuori, alla vista di prima
+view.camera = Sketchup::Camera.new(Geom::Point3d.new(-100, -100, 200), Geom::Point3d.new(0, 0, 0), Geom::Vector3d.new(0, 0, 1), true, 40)
+dlg.call('preview', true)
+fine_dolly.()
+c = view.camera
+ok(ke[:preview] && near1.(c.eye.z, 2.0 * M, 1e-3) && near1.(c.fov, fov2, 1e-3), 'anteprima: alla fine del dolly la camera è quella della sfera')
+ok(!pm.layers[F::KEY_TAG].visible?, 'con l\'anteprima le sfere sono spente: la camera non finisce dentro la sua')
+ok(pm.selection.empty?, 'e niente selezionato: il contorno blu della selezione si vedrebbe anche col tag spento')
+dlg.call('set', '{"f":"z","v":3.0}')
+ok(near1.(view.camera.eye.z, 3.0 * M, 1e-3), 'con l\'anteprima la vista segue ogni modifica')
+dlg.call('nav', '1')
+ok(view.anim.is_a?(F::KeDolly) && view.anim.instance_variable_get(:@dur) <= F::KE_PATH, 'da sfera a sfera con l\'anteprima: dolly lungo il percorso, al più 1,5 s')
+fine_dolly.()
+ok(near1.(view.camera.eye.x, F.key_of(e2)[0], 1e-3), 'arrivato nella vista della seconda sfera')
+dlg.call('preview', false)
+fine_dolly.()
+ok(!ke[:preview] && near1.(view.camera.eye.x, -100) && near1.(view.camera.fov, 40), 'anteprima tolta: dolly e camera esattamente com\'era')
+ok(pm.layers[F::KEY_TAG].visible?, 'finito il dolly di ritorno le sfere si rivedono')
+ok(pm.selection == [e2], 'e la sfera del pannello torna selezionata')
+
+# Inserisci dopo, elimina
+dlg.call('nav', '-1')
+dlg.call('act', 'insert')
+sf = F.key_instances(pm)[nome]
+ok(sf.size == 3 && ke[:inst].equal?(sf[1]) && pm.selection == [sf[1]] && sf.map { |x| x.get_attribute(F::KEY_DICT, 'i') } == [0, 1, 2],
+   'inserita una sfera dopo la prima, fra le due: diventa la seconda e si apre')
+mezzo = F.key_of(sf[1])[0]
+ok(mezzo > F.key_of(sf[0])[0] && mezzo < F.key_of(sf[2])[0], 'sta a metà della curva')
+dlg.call('act', 'delete')
+sf = F.key_instances(pm)[nome]
+ok(sf.size == 2 && ke[:inst].equal?(sf[1]) && sf.map { |x| x.get_attribute(F::KEY_DICT, 'i') } == [0, 1], 'eliminata: resta la successiva, numerate di nuovo')
+nb = boxes.size
+dlg.call('act', 'delete')
+ok(F.key_instances(pm)[nome].size == 2 && boxes.size == nb + 1 && boxes.last == F.t('ke.min2'), 'con due sole sfere non si elimina: lo dice')
+dlg.call('act', 'from_view')
+ok(near1.(F.key_of(ke[:inst])[0], view.camera.eye.x, 1e-3), '«Prendi dalla vista»: la sfera va dov\'è la camera')
+
+# «Incolla» del menu del pannello: la pagina chiede, Ruby legge gli appunti
+# di Windows (qui finti: i test non toccano quelli veri) e li rimanda
+F.singleton_class.send(:alias_method, :ke_clipboard_vero, :ke_clipboard)
+F.define_singleton_method(:ke_clipboard) { "2,5 \"m\"" }
+dlg.call('paste')
+ok(dlg.instance_variable_get(:@scripts).last == 'incolla("2,5 \\"m\\"")', 'Incolla: il testo degli appunti torna alla pagina (incolla)')
+F.show_panel                                         # il pannello generale: stesso Incolla
+pd = F.instance_variable_get(:@dialog)
+pd.call('panel_paste')
+ok(pd.instance_variable_get(:@scripts).last == 'incolla("2,5 \\"m\\"")', 'Incolla anche nel pannello generale (panel_paste)')
+pd.close
+F.singleton_class.send(:alias_method, :ke_clipboard, :ke_clipboard_vero)
+w32 = F.ensure_win32 && F.instance_variable_get(:@w32)
+appunti = %i[IsClipboardFormatAvailable OpenClipboard CloseClipboard GetClipboardData GlobalLock GlobalUnlock GlobalSize]
+ok(w32 && appunti.all? { |m| w32.respond_to?(m) }, 'Win32 dichiarate per leggere gli appunti')
+
+# Chiuso e riaperto subito: la notizia della chiusura arriva dopo la
+# riapertura e non deve far dimenticare la finestra (2026-10-17)
+dlg.instance_variable_set(:@visible, false)          # chiusa, notizia non ancora arrivata
+dlg.show                                             # riaperta
+dlg.instance_variable_get(:@closed).call             # ora arriva la notizia
+ok(F.instance_variable_get(:@ke)[:dialog].equal?(dlg), 'chiusura notificata in ritardo, finestra già riaperta: resta')
+
+# La sfera cancellata da fuori (Canc, Ctrl+Z): il pannello si chiude
+ke[:inst].erase!
+F.ke_refresh
+ok(!dlg.visible?, 'sfera sparita: il pannello si chiude')
+
+# Aperture: doppio clic (si entra nel componente: se ne esce e si apre il pannello) e Invio
+sf = F.key_instances(pm)[nome]
+UI.singleton_class.send(:alias_method, :start_timer_vero, :start_timer)
+UI.define_singleton_method(:start_timer) { |*_a, &b| b&.call; 1 }
+pm.active_path = [sf[0]]
+F.ke_active_path(pm)
+ke = F.instance_variable_get(:@ke)
+ok(pm.active_path.nil? && ke[:dialog]&.visible? && ke[:inst].equal?(sf[0]), 'doppio clic: fuori dal componente, pannello sulla sfera')
+ke[:dialog].close
+UI.singleton_class.send(:alias_method, :start_timer, :start_timer_vero)
+pm.active_path = [Inst.new(FakeDefn.new('altro', pm), nil, pm)]
+F.ke_active_path(pm)
+ok(!pm.active_path.nil?, 'doppio clic su un altro componente: SketchUp fa il suo')
+pm.active_path = nil
+giu = true
+F.define_singleton_method(:async_down?) { |_vk| giu }
+F.define_singleton_method(:su_main_foreground?) { true }
+pm.selection.clear; pm.selection.add(sf[0])
+F.instance_variable_set(:@ke_enter, false)
+F.ke_poll_enter
+ok(ke[:dialog]&.visible? && ke[:inst].equal?(sf[0]), 'Invio con una sfera selezionata: si apre il suo pannello')
+ke[:dialog].close
+F.ke_poll_enter
+ok(!(ke[:dialog]&.visible?), 'Invio tenuto premuto: non si riapre a ripetizione')
+giu = false; F.ke_poll_enter; giu = true
+pm.tool_id = 21048                                  # Sposta: Invio conferma una misura
+F.ke_poll_enter
+ok(!(ke[:dialog]&.visible?), 'con un altro strumento attivo Invio non apre nulla')
+pm.tool_id = nil
+giu = false; F.ke_poll_enter; giu = true
+F.define_singleton_method(:su_main_foreground?) { false }
+F.ke_poll_enter
+ok(!(ke[:dialog]&.visible?), 'Invio dentro un dialogo (anche questo pannello): non conta')
 
 puts
 puts($fail.zero? ? 'TUTTI I TEST PASSATI' : "#{$fail} TEST FALLITI")

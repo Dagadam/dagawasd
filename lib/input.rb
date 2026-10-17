@@ -40,6 +40,13 @@ module DagaWASD
           extern 'int   ShowWindow(void*, int)'
           extern 'void* GetWindow(void*, int)'
           extern 'int   GetWindowTextW(void*, void*, int)'
+          extern 'int   IsClipboardFormatAvailable(int)'
+          extern 'int   OpenClipboard(void*)'
+          extern 'int   CloseClipboard()'
+          extern 'void* GetClipboardData(int)'
+          extern 'void* GlobalLock(void*)'
+          extern 'int   GlobalUnlock(void*)'
+          extern 'void* GlobalSize(void*)'
         end
         m.const_set(:WH_KEYBOARD_LL, 13)
         m.const_set(:WM_KEYDOWN,    0x0100)
@@ -245,6 +252,7 @@ module DagaWASD
 
     def self.poll_hotkey
       poll_panel_hotkey
+      ke_poll_enter                  # lib/keyedit.rb: Invio su una sfera selezionata
       down = async_down?(VK_CONTROL) && async_down?(VK_PRIOR)
       fire = down && !@prev_hotkey
       # Aggiornato anche da attivi: altrimenti, dopo l'uscita, il primo

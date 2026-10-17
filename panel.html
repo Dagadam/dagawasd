@@ -436,6 +436,16 @@ body.rtl .row .lbl .name,body.rtl .row .lbl .hint{text-align:right}
 body.rtl .langgrid button{text-align:right}
 body.rtl table.keys td{text-align:right}
 body.rtl .note{border-left:none;border-right:3px solid var(--acc);border-radius:calc(5px*var(--rk)) 0 0 calc(5px*var(--rk))}
+/* menu del destro nelle caselle: Taglia, Copia, Incolla nella lingua del pannello
+   (quello del browser è in inglese, con Ispeziona e DevTools) */
+.menuctx{position:fixed;z-index:50;min-width:170px;padding:4px;border-radius:8px;background:var(--s4);
+  border:1px solid var(--l3);box-shadow:0 8px 24px rgba(0,0,0,.35);display:none}
+.menuctx.aperto{display:block}
+.menuctx button{display:flex;width:100%;gap:18px;justify-content:space-between;border:0;border-radius:5px;
+  background:none;color:var(--t0);font:inherit;padding:6px 10px;text-align:start;cursor:pointer}
+.menuctx button:hover:not(:disabled),.menuctx button:focus-visible{background:var(--acc);color:var(--acc-ink);outline:0}
+.menuctx button:disabled{opacity:.4;cursor:default}
+.menuctx kbd{font:inherit;opacity:.65}
 </style>
 </head>
 <body data-lv="1">
@@ -480,6 +490,11 @@ body.rtl .note{border-left:none;border-right:3px solid var(--acc);border-radius:
   <span class="status" id="status"></span>
   <button class="btn btn-sm" id="btnReset" onclick="resetAll()">—</button>
   <button class="btn btn-go" id="btnSave" onclick="saveNow()">—</button>
+</div>
+<div class="menuctx" id="menuctx" role="menu">
+  <button role="menuitem" id="c-cut" data-a="cut"><span id="t-cut"></span><kbd>Ctrl+X</kbd></button>
+  <button role="menuitem" id="c-copy" data-a="copy"><span id="t-copy"></span><kbd>Ctrl+C</kbd></button>
+  <button role="menuitem" id="c-paste" data-a="paste"><span id="t-paste"></span><kbd>Ctrl+V</kbd></button>
 </div>
 
 <script>
@@ -2295,6 +2310,63 @@ window.onload = () => {
   window.addEventListener('resize', () => renderHudPreview(LOOK_CACHE));
   sketchup.request_settings();   // Ruby risponde con applyLang + loadSettings + setRunning
 };
+
+/* ═══════════════════════════════════════════════════════════════
+   MENU DEL DESTRO — mai quello del browser (in inglese, con Ispeziona
+   e DevTools); nelle caselle di testo uno nostro, tradotto, con Taglia,
+   Copia e Incolla. Gli appunti li legge Ruby (panel_paste → incolla):
+   la pagina non può. Come nel pannello della sfera (keyedit.html).
+═══════════════════════════════════════════════════════════════ */
+let menuDi = null;                                  // { inp, a, b }: casella e selezione all'apertura
+document.addEventListener('contextmenu', ev => {
+  ev.preventDefault();
+  const t = ev.target;
+  if(t.tagName === 'INPUT' && (t.type === 'text' || t.type === 'search') && !t.disabled && !t.readOnly) apriMenu(t, ev.clientX, ev.clientY);
+});
+function apriMenu(inp, x, y){
+  inp.focus();
+  const a = inp.selectionStart, b = inp.selectionEnd;
+  menuDi = { inp: inp, a: a, b: b };
+  const $m = id => document.getElementById(id);
+  $m('t-cut').textContent = T('ke.cut'); $m('t-copy').textContent = T('ke.copy'); $m('t-paste').textContent = T('ke.paste');
+  $m('c-cut').disabled = $m('c-copy').disabled = a === b;
+  const m = $m('menuctx');
+  m.classList.add('aperto');
+  const r = m.getBoundingClientRect();
+  m.style.left = Math.max(4, Math.min(x, innerWidth - r.width - 4)) + 'px';
+  m.style.top = Math.max(4, Math.min(y, innerHeight - r.height - 4)) + 'px';
+}
+function chiudiMenu(){ document.getElementById('menuctx').classList.remove('aperto'); }
+document.addEventListener('pointerdown', ev => { if(!(ev.target.closest && ev.target.closest('#menuctx'))) chiudiMenu(); }, true);
+document.addEventListener('keydown', ev => { if(ev.key === 'Escape') chiudiMenu(); });
+window.addEventListener('blur', chiudiMenu);
+// testo cambiato da qui: la casella reagisce come quando si scrive
+const cambiata = inp => inp.dispatchEvent(new Event('input', { bubbles: true }));
+document.getElementById('menuctx').addEventListener('click', ev => {
+  const b = ev.target.closest('button');
+  if(!b || b.disabled || !menuDi) return;
+  const { inp, a, b: z } = menuDi;
+  chiudiMenu();
+  inp.focus();
+  inp.setSelectionRange(a, z);
+  if(b.dataset.a === 'paste'){ sketchup.panel_paste(); return; }
+  const testo = inp.value.slice(a, z);
+  let fatto = false;
+  try { fatto = document.execCommand(b.dataset.a); } catch(e){}   // copy / cut del browser
+  if(!fatto){                                                       // non concesso: a mano
+    if(navigator.clipboard) navigator.clipboard.writeText(testo).catch(() => {});
+    if(b.dataset.a === 'cut'){ inp.setRangeText('', a, z, 'end'); cambiata(inp); }
+  }
+});
+// Ruby risponde a panel_paste con il testo degli appunti
+function incolla(testo){
+  if(!menuDi) return;
+  const { inp, a, b } = menuDi;
+  inp.focus();
+  inp.setRangeText(String(testo).replace(/[\r\n]+/g, ' ').trim(), a, b, 'end');
+  cambiata(inp);
+  menuDi = null;
+}
 </script>
 </body>
 </html>
