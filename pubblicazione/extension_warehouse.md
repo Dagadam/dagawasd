@@ -48,7 +48,10 @@ AVI video or PNG images. Fine-tune it right in the model: each key position
 is a sphere with an arrow (its length shows the zoom) and the camera frame
 with a triangle on top (it tilts when you roll the camera); move and rotate
 them with SketchUp's own tools, Ctrl+Move to add one, or start a new path
-from the current view.
+from the current view. Double-click a sphere (or select it and press Enter)
+to open its panel: position, look direction, roll, zoom, pause and speed,
+with − and + buttons, a live preview from the sphere and smooth dolly moves
+to the previous or next one.
 While the video is being written, a little character keeps you company with
 a progress bar, statistics about your walk and model, and jokes made from
 those numbers.
@@ -66,8 +69,14 @@ Settings are stored in `%APPDATA%\DagaWASD`, so updates never erase them.
   registers, does not load, and says so once.
 - **Hotkey timer.** A 50 ms timer checks two shortcuts with
   GetAsyncKeyState: Ctrl+PgUp (start walking, only when SketchUp is the
-  foreground window) and Ctrl+Home (open the settings panel). It reads no
-  other keys and does nothing else.
+  foreground window) and Ctrl+Home (open the settings panel), plus Enter,
+  which opens a path sphere's panel only when SketchUp's main window is in
+  front, the Select tool is active and exactly one sphere is selected. It
+  reads no other keys and does nothing else.
+- **Clipboard.** The panels replace the browser context menu with their own
+  translated Cut/Copy/Paste menu. Paste reads the clipboard text
+  (CF_UNICODETEXT) only when the user picks Paste, and inserts it into the
+  text box; it is never stored or sent anywhere.
 - **Keyboard hook only while walking.** During first-person mode a
   low-level keyboard hook keeps the movement keys from reaching SketchUp's
   shortcuts. It is installed when walking starts and removed when it stops.
@@ -85,6 +94,9 @@ Settings are stored in `%APPDATA%\DagaWASD`, so updates never erase them.
   (definitions «DagaWASD camera <fov>°», one per zoom level, with materials
   «DagaWASD …») on the tag «DagaWASD percorsi», in one undoable operation;
   deleting the path or reverting removes them and any definition left unused.
+  Edits made in a sphere's panel are undoable operations too; a model
+  observer (onActivePathChanged) only notices a double-click into a sphere,
+  closes it again and opens the panel.
 - **Loading.** All files are loaded with `Sketchup.require`; the package
   works signed and encrypted (.rbe). Checked with rubocop-sketchup 1.5.0:
   no offences.

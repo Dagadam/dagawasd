@@ -8,7 +8,7 @@ che chiedono qualcosa a chi aggiorna.
 Il numero sta in un posto solo, `VERSION` in `dagawasd.rb`;
 `tools/crea_rbz.rb` rifiuta di fare il pacchetto se qui manca la sua sezione.
 
-## [Non ancora uscito]
+## [1.1.0] — 2026-10-17
 
 ### Aggiunto
 - **Pannello della sfera**: doppio clic su una sfera di un percorso, o Invio
