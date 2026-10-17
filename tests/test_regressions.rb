@@ -196,7 +196,7 @@ F.instance_variable_set(:@active, false)
 F.instance_variable_set(:@on_ground, true)
 F.instance_variable_set(:@bob_phase, 0.0)
 cfg = F.instance_variable_get(:@cfg)
-bob_cfg = cfg.slice('move_speed', 'head_bob_amp', 'head_bob_side')
+bob_cfg = cfg.slice('move_speed', 'head_bob_amp', 'head_bob_side', 'head_bob_freq')
 cfg.merge!('move_speed' => 4.4, 'head_bob_amp' => 0.15, 'head_bob_side' => 0.12)   # anche coi valori vecchi del pannello
 top_z = top_s = 0.0
 [4.4, 10.6, 30.0].each do |v|
@@ -212,6 +212,26 @@ cfg.merge!('head_bob_amp' => 0.02)
 top_z = 0.0
 600.times { top_z = [top_z, F.head_bob(1.0 / 60, 4.4)[0].abs].max }
 ok((top_z * F::IN_TO_M - 0.02).abs < 0.001, 'sotto il tetto, camminando, l\'ampiezza resta quella del pannello')
+
+# Frequenza: su e giù al secondo, contati sulla quota (10 s a 240 passi al
+# secondo). Prima andavano al doppio del pannello e correndo arrivavano a 7.
+su_giu = lambda do |v|
+  F.instance_variable_set(:@bob_phase, 0.0)
+  prima = 0.0; n = 0
+  2400.times do
+    z = F.head_bob(1.0 / 240, v)[0]
+    n += 1 if prima < 0 && z >= 0
+    prima = z
+  end
+  n / 10.0
+end
+cfg.merge!('head_bob_freq' => 2.0, 'head_bob_amp' => 0.035)
+cammina = su_giu.(4.4)
+ok((cammina - 2.0).abs <= 0.1, "camminando la testa va su e giù quanto dice il pannello (#{cammina} al secondo, 2,0 impostati)")
+corre = su_giu.(4.4 * 2.4)
+ok(corre > cammina && corre <= F::BOB_HZ_MAX + 0.1, "correndo più spesso, ma al più #{F::BOB_HZ_MAX} volte al secondo (#{corre})")
+cfg.merge!('head_bob_freq' => 6.0)                  # valore vecchio del pannello, oltre il nuovo massimo
+ok(su_giu.(30.0) <= F::BOB_HZ_MAX + 0.1, 'anche con la frequenza al massimo vecchio (6 Hz) e a 30 m/s: tetto rispettato')
 cfg.merge!(bob_cfg)
 
 # ── Voce d'annullamento della fisica ────────────────────────────────

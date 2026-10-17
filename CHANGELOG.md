@@ -10,6 +10,8 @@ Il numero sta in un posto solo, `VERSION` in `dagawasd.rb`;
 
 ## [Non ancora uscito]
 
+## [1.0.1] — 2026-10-17
+
 ### Aggiunto
 - **Percorsi da ritoccare**: il pulsante «Modifica» di un percorso lo mette
   nel modello come posizioni, sfere con una freccia (lo sguardo, lunga
@@ -19,8 +21,8 @@ Il numero sta in un posto solo, `VERSION` in `dagawasd.rb`;
   levigata (una sfera dove la strada, lo sguardo o lo zoom della rotella
   cambiano; zoomare sul posto prende il suo tempo, un raddoppio al secondo).
   Sfere fatte prima si aggiornano alla prossima «Modifica». Si spostano e si
-  ruotano con Sposta e Ruota;
-  Ctrl+Sposta su una sfera ne aggiunge una, Canc la toglie. Riproduzione,
+  ruotano con Sposta e Ruota; Ctrl+Sposta su una sfera ne aggiunge una, Canc
+  la toglie. Riproduzione,
   scene e video seguono le sfere su una curva morbida a velocità costante
   (quella media della registrazione, soste escluse; girarsi sul posto a
   45°/s). Un'Overlay disegna la curva e il numero d'ordine di ogni sfera.
@@ -47,6 +49,12 @@ Il numero sta in un posto solo, `VERSION` in `dagawasd.rb`;
 - Correndo, l'oscillazione della testa (head bob) cresceva con la velocità
   fino a ±7,7 cm, irreale. Ora non supera ±4,5 cm in verticale e ±3 cm di
   lato, qualunque sia la velocità; i cursori del pannello arrivano lì.
+- Anche la frequenza aveva lo stesso difetto: la testa andava su e giù al
+  doppio del valore del pannello (4,4 volte al secondo camminando a 2 Hz) e
+  correndo fino a 7, che con pochi fotogrammi al secondo diventava un
+  saltellare a caso. Ora il valore del pannello sono i passi al secondo
+  camminando; correndo crescono fino a un massimo di 3, la cadenza di una
+  corsa vera. Il cursore arriva a 3 Hz.
 
 ## [1.0.0] — 2026-10-09
 

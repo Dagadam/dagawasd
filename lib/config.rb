@@ -23,6 +23,7 @@ module DagaWASD
     MAX_OMEGA     = 25.0   # rad/s — cap sulla velocità angolare dei corpi
     BOB_Z_MAX     = 0.045  # m — head bob verticale massimo, anche correndo (±4,5 cm)
     BOB_SIDE_MAX  = 0.03   # m — head bob laterale massimo
+    BOB_HZ_MAX    = 3.0    # passi al secondo (su e giù della testa), anche correndo: la cadenza di una corsa vera
     THROW_SPIN_ZONE = 0.9  # frazione di carica oltre la quale il lancio ha topspin
     CONTACT_EPS   = 0.25   # pollici: spigoli entro questa quota sono "a contatto"
 

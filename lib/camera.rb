@@ -16,10 +16,11 @@ module DagaWASD
     def self.fwd_flat;   [Math.cos(@yaw),  Math.sin(@yaw)]; end
     def self.right_flat; [Math.sin(@yaw), -Math.cos(@yaw)]; end
 
-    # Head bob (pollici): [verticale, laterale]. Il verticale oscilla al
-    # doppio della frequenza del laterale (passo). Frequenza e ampiezza
-    # seguono la velocità reale, ma l'ampiezza si ferma a BOB_Z_MAX e
-    # BOB_SIDE_MAX: correndo forte la testa andava su e giù di 15 cm.
+    # Head bob (pollici): [verticale, laterale]. Il verticale sale e scende
+    # una volta per passo, il laterale una volta ogni due. Frequenza e
+    # ampiezza seguono la velocità reale, con un tetto: BOB_HZ_MAX passi al
+    # secondo, BOB_Z_MAX e BOB_SIDE_MAX di ampiezza (correndo forte la testa
+    # andava su e giù di 15 cm, 7 volte al secondo).
     def self.head_bob(dt, h_speed)
       return [0.0, 0.0] unless cf('head_bob_enabled')
       amp  = cf('head_bob_amp').to_f
@@ -27,7 +28,12 @@ module DagaWASD
       if h_speed > 0.15 && @on_ground
         ref   = [cf('move_speed').to_f, 0.1].max
         ratio = (h_speed / ref).clamp(0.0, 2.2)
-        @bob_phase += cf('head_bob_freq').to_f * PI2 * dt * (0.55 + ratio * 0.55)
+        # Passi al secondo: il valore del pannello alla velocità di camminata,
+        # di più correndo, mai oltre BOB_HZ_MAX. Prima il su e giù andava al
+        # doppio del valore (4,4 Hz camminando, 7 correndo: con pochi
+        # fotogrammi al secondo la testa saltava a caso).
+        passi = (cf('head_bob_freq').to_f * (0.55 + ratio * 0.45)).clamp(0.0, BOB_HZ_MAX)
+        @bob_phase += passi * Math::PI * dt     # un giro ogni due passi: il laterale; il verticale al doppio
         @bob_phase %= PI2
         amp *= ratio; side *= ratio
       else
