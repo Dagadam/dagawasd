@@ -252,26 +252,7 @@ module DagaWASD
       end
 
       # ── Head bob + dip d'atterraggio + roll ──────────────────────
-      bob_z = 0.0; bob_side = 0.0
-      h_speed = Math.sqrt(@vh_x**2 + @vh_y**2)
-      if cf('head_bob_enabled')
-        if h_speed > 0.15 && @on_ground
-          # Frequenza e ampiezza seguono la velocità reale: correre "pompa" di più
-          ref   = [cf('move_speed').to_f, 0.1].max
-          ratio = (h_speed / ref).clamp(0.0, 2.2)
-          @bob_phase += cf('head_bob_freq').to_f * PI2 * dt * (0.55 + ratio * 0.55)
-          @bob_phase %= PI2
-          amp   = cf('head_bob_amp').to_f * ratio
-          side  = cf('head_bob_side').to_f * ratio
-          # Il verticale oscilla al doppio della frequenza del laterale (passo)
-          bob_z    = Math.sin(@bob_phase * 2.0) * amp * M_TO_IN
-          bob_side = Math.sin(@bob_phase) * side * M_TO_IN
-        else
-          @bob_phase *= 0.85
-          bob_z    = Math.sin(@bob_phase * 2.0) * cf('head_bob_amp').to_f * M_TO_IN * 0.12
-          bob_side = Math.sin(@bob_phase) * cf('head_bob_side').to_f * M_TO_IN * 0.12
-        end
-      end
+      bob_z, bob_side = head_bob(dt, Math.sqrt(@vh_x**2 + @vh_y**2))   # camera.rb
 
       # Molla smorzata per il dip d'atterraggio (m)
       if @land_off.abs > 1e-5 || @land_vel.abs > 1e-5

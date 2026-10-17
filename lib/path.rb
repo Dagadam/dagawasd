@@ -1,5 +1,6 @@
 # DagaWASD — Percorsi: registra la camera mentre si cammina, la riproduce,
-# ne fa scene di SketchUp o immagini per un video.
+# ne fa scene di SketchUp o immagini per un video. Le posizioni da ritoccare
+# nel modello (sfere con freccia) stanno in lib/pathkeys.rb.
 # Parte di DagaWASD::FPSWalk, caricata da main.rb (che elenca tutti i file e il loro ordine).
 module DagaWASD
   module FPSWalk
@@ -21,21 +22,54 @@ module DagaWASD
       model&.attribute_dictionary(PATH_DICT)
     end
 
+    # 's' può essere vuoto: percorso fatto solo di posizioni (lib/pathkeys.rb).
+    # Letto una volta per testo: il pannello rifà l'elenco a ogni operazione.
     def self.path_data(name, model = Sketchup.active_model)
       raw = path_dict(model)&.[](name)
-      d = raw.is_a?(String) ? JSON.parse(raw) : nil
-      d.is_a?(Hash) && d['s'].is_a?(Array) && d['s'].size >= 2 ? d : nil
+      return nil unless raw.is_a?(String)
+      c = (@path_parsed ||= {})[name]
+      return c[1] if c && c[0] == raw
+      d = JSON.parse(raw)
+      d = nil unless d.is_a?(Hash) && d['s'].is_a?(Array)
+      @path_parsed[name] = [raw, d]
+      d
     rescue JSON::ParserError
       nil
     end
 
-    # Per il pannello: nome, durata (s), data; i più vecchi prima.
+    # Per il pannello: nome, durata (s), data, posizioni nel modello (quante,
+    # se si vedono), se c'è la registrazione; i più vecchi prima.
     def self.path_list(model = Sketchup.active_model)
       d = path_dict(model) or return []
+      by = key_instances(model)
       d.keys.filter_map do |k|
         p = path_data(k, model) or next
-        { 'name' => k, 'dur' => p['s'].last[0].to_f.round(1), 'date' => p['date'].to_s }
+        list = by[k] || []
+        rec = p['s'].size >= 2
+        dur = if list.size >= 2 then key_duration(list.map { |e| key_of(e) }, key_speed(p))
+              elsif rec then p['s'].last[0].to_f
+              else 0.0
+              end
+        { 'name' => k, 'dur' => dur.round(1), 'date' => p['date'].to_s, 'keys' => list.size,
+          'shown' => list.any? { |e| !e.hidden? }, 'rec' => rec }
       end.sort_by { |p| [p['date'], p['name']] }
+    end
+
+    # Fotogrammi e durata: dalle posizioni nel modello se ce ne sono almeno
+    # due, se no dalla registrazione levigata; nil se nessuna delle due.
+    def self.path_track(name, model = Sketchup.active_model)
+      data = path_data(name, model) or return nil
+      keys = key_read(name, model)
+      if keys.size >= 2
+        fr = key_frames(keys, key_speed(data))
+        return { frames: fr, dur: (fr.size - 1) / PATH_HZ, keys: keys.size }
+      end
+      s = data['s']
+      s.size >= 2 ? { frames: path_frames(s), dur: s.last[0].to_f, keys: 0 } : nil
+    end
+
+    def self.path_track_err(name)
+      path_data(name) ? format(t('path.no_keys'), name: name) : t('path.missing')
     end
 
     def self.path_push
@@ -204,15 +238,16 @@ module DagaWASD
     def self.path_busy?; !@path_job.nil?; end
 
     # kind :play o :frames. Ritorna un messaggio d'errore o nil.
-    def self.path_start(kind, name, extra = {})
+    def self.path_start(kind, name, extra = {}, tr = nil)
       return t('path.busy') if @path_job
-      data = path_data(name) or return t('path.missing')
+      tr ||= path_track(name) or return path_track_err(name)
       stop if @active                 # la camera la guida il percorso, non il giocatore
       model = Sketchup.active_model
       view = model.active_view
       speed = cf('path_speed').to_f.clamp(0.1, 10.0)
-      @path_job = { kind: kind, name: name, frames: path_frames(data['s']), speed: speed,
-                    dur: data['s'].last[0].to_f, t0: nil, k: 0, view: view, done: false }.merge(extra)
+      @path_job = { kind: kind, name: name, frames: tr[:frames], speed: speed,
+                    dur: tr[:dur], t0: nil, k: 0, view: view, done: false }.merge(extra)
+      @path_job[:keys_hidden] = key_hide(model)   # le sfere non devono finire nella vista
       model.select_tool(PathTool.new)
       view.animation = PathAnimation.new(@path_job)
       nil
@@ -255,6 +290,7 @@ module DagaWASD
       view = job[:view]
       view.animation = nil if view && !anim_gone
       Sketchup.active_model&.select_tool(nil) unless job[:tool_gone]
+      key_unhide(Sketchup.active_model, job[:keys_hidden])
       if job[:kind] == :frames
         path_frames_done(job, why)
       else
@@ -271,10 +307,10 @@ module DagaWASD
     # (lib/avi.rb); PNG: una cartella di immagini più crea_video.bat.
     def self.path_export_frames(name)
       return t('path.busy') if @path_job
-      data = path_data(name) or return t('path.missing')
+      tr = path_track(name) or return path_track_err(name)
       fps = cf('path_video_fps').to_i.clamp(10, 60)
       speed = cf('path_speed').to_f.clamp(0.1, 10.0)
-      total = (data['s'].last[0].to_f / speed * fps).floor + 1
+      total = (tr[:dur] / speed * fps).floor + 1
       view = Sketchup.active_model.active_view
       w, h = PATH_VIDEO_SIZES[cf('path_video_size')] || [view.vpwidth, view.vpheight]
       extra = { fps: fps, total: total, w: w, h: h }
@@ -293,7 +329,7 @@ module DagaWASD
         extra[:avi] = MjpegAvi.new(file, w, h, fps)
         extra[:jpg] = File.join(Dir.tmpdir, "dagawasd_fotogramma_#{Process.pid}.jpg")
       end
-      err = path_start(:frames, name, extra.merge(bytes: 0))
+      err = path_start(:frames, name, extra.merge(bytes: 0), tr)
       attesa_open(@path_job) unless err      # lib/attesa.rb: personaggio, avanzamento, battute
       err
     end
@@ -398,12 +434,12 @@ module DagaWASD
     # percorso. Rifarle sostituisce quelle dello stesso percorso.
     def self.path_make_scenes(name)
       return t('path.busy') if @path_job
-      data = path_data(name) or return t('path.missing')
+      tr = path_track(name) or return path_track_err(name)
       stop if @active
       model = Sketchup.active_model
       view = model.active_view
-      frames = path_frames(data['s'])
-      dur = data['s'].last[0].to_f
+      frames = tr[:frames]
+      dur = tr[:dur]
       step = cf('path_scene_step').to_f.clamp(0.2, 30.0)
       speed = cf('path_speed').to_f.clamp(0.1, 10.0)
       times = (0..(dur / step).floor).map { |i| i * step }
@@ -440,6 +476,9 @@ module DagaWASD
             when 'stop'   then path_abort
             when 'rename' then path_rename(name)
             when 'delete' then path_delete(name)
+            when 'edit'   then key_edit(name)       # lib/pathkeys.rb: posizioni nel modello
+            when 'revert' then key_revert(name)
+            when 'new'    then key_new
             end
       UI.messagebox(err) if err.is_a?(String)
     rescue => fps_err
@@ -453,9 +492,14 @@ module DagaWASD
       nuovo = res[0].to_s.strip[0, 60]
       return nil if nuovo.empty? || nuovo == name
       return t('path.exists') if path_dict.keys.include?(nuovo)
+      list = key_instances[name] || []
       path_write(t('path.op_edit')) do |m|
         m.set_attribute(PATH_DICT, nuovo, raw)
         m.attribute_dictionary(PATH_DICT).delete_key(name)
+        list.each do |e|
+          e.set_attribute(KEY_DICT, 'path', nuovo)
+          e.name = nuovo
+        end
       end
       nil
     end
@@ -463,7 +507,12 @@ module DagaWASD
     def self.path_delete(name)
       return t('path.missing') unless path_dict&.[](name)
       return nil unless UI.messagebox(format(t('path.ask_delete'), name: name), MB_YESNO) == IDYES
+      list = key_instances[name] || []
       path_write(t('path.op_edit')) do |m|
+        unless list.empty?
+          m.entities.erase_entities(list) # rubocop:disable SketchupSuggestions/ModelEntities
+          key_purge(m)                    # lib/pathkeys.rb: componenti rimasti senza sfere
+        end
         d = m.attribute_dictionary(PATH_DICT)
         d.delete_key(name)
         m.attribute_dictionaries.delete(d) if d.keys.empty?
@@ -471,13 +520,19 @@ module DagaWASD
       nil
     end
 
-    # Il pannello aperto segue il modello attivo.
+    # Il pannello aperto e le posizioni (osservatore, Overlay) seguono il modello attivo.
     class PathAppObserver < Sketchup::AppObserver
-      def onNewModel(_model);  UI.start_timer(0, false) { DagaWASD::FPSWalk.path_push }; end
-      def onOpenModel(_model); UI.start_timer(0, false) { DagaWASD::FPSWalk.path_push }; end
+      def onNewModel(model);  UI.start_timer(0, false) { DagaWASD::FPSWalk.path_follow(model) }; end
+      def onOpenModel(model); UI.start_timer(0, false) { DagaWASD::FPSWalk.path_follow(model) }; end
+    end
+
+    def self.path_follow(model)
+      key_attach(model)
+      path_push
     end
 
     def self.path_observe
+      key_attach(Sketchup.active_model)
       return if @path_observer
       @path_observer = PathAppObserver.new
       Sketchup.add_observer(@path_observer)

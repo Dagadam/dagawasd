@@ -66,6 +66,7 @@ echo  == Gamepad ==
 echo.
 echo  == Percorsi ==
 "%RUBY%" -E UTF-8 "%ROOT%\tests\test_path.rb" || set "FAIL=1"
+"%RUBY%" -E UTF-8 "%ROOT%\tests\test_pathkeys.rb" || set "FAIL=1"
 
 echo.
 echo  == Traduzioni ==

@@ -45,6 +45,7 @@ module DagaWASD
       @attesa = d
       job[:att][:dialog] = d
       d.show
+      dialog_on_screen(d)
     rescue => fps_err
       log_error(__method__, fps_err)
       @attesa = nil

@@ -76,6 +76,8 @@ class FakeModel
   def select_tool(t); @tools_sel << t; end
   def options; @opts; end
   def path; ''; end
+  def layers; {}; end            # niente posizioni nel modello: quelle le prova tests/test_pathkeys.rb
+  def definitions; []; end
 end
 pm = FakeModel.new
 Sketchup.define_singleton_method(:active_model) { pm }
@@ -293,12 +295,32 @@ module UI
     def last(fn); (sent.reverse.find { |f, _| f == fn } || [])[1]; end
   end
 end
+
+# Posizione ricordata dove non c'è più un monitor (2026-10-17: il pannello a
+# x = -1241 "aperto" ma invisibile, e il menu faceva solo bring_to_front)
+if F.ensure_win32
+  pos = Class.new(UI::HtmlDialog) do
+    attr_reader :centered
+    def initialize(xy); super({}); @xy = xy; end
+    def get_position; @xy; end
+    def get_size; [620, 880]; end
+    def center; @centered = true; end
+  end
+  fuori = pos.new([-30_000, 260])
+  F.dialog_on_screen(fuori)
+  ok(fuori.centered, 'finestra ricordata fuori da ogni monitor: rimessa al centro')
+  dentro = pos.new([100, 100])
+  F.dialog_on_screen(dentro)
+  ok(!dentro.centered, 'finestra sullo schermo: resta dov\'è')
+  UI::HtmlDialog.all.clear
+end
 class FakeEnts < Array
   def grep(k); select { |e| e.is_a?(k) }; end
 end
 FakeDef = Struct.new(:entities, :group, :image) do
   def group?; group; end
   def image?; image; end
+  def get_attribute(*); nil; end
 end
 pm.define_singleton_method(:entities) { FakeEnts.new(Array.new(3) { Sketchup::Face.allocate }) }
 pm.define_singleton_method(:definitions) do

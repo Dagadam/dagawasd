@@ -68,7 +68,8 @@ module DagaWASD
     # tasti): lingua e livello del pannello restano quelli di chi importa.
     # Il ponte per Claude esegue codice: un file ricevuto da altri non deve
     # poterlo accendere.
-    PANEL_ONLY = %w[language panel_level bridge_enabled bridge_live bridge_step_delay bridge_detail].freeze
+    PANEL_ONLY = %w[language panel_level bridge_enabled bridge_live bridge_step_delay bridge_detail
+                    bridge_windows bridge_windows_mouse bridge_mouse_time].freeze
 
     def self.export_settings
       path = UI.savepanel(t('bk.export'), '', 'DagaWASD.json')
@@ -131,6 +132,7 @@ module DagaWASD
       load_cfg
       load_lang
       if @dialog && @dialog.visible?
+        dialog_on_screen(@dialog)    # "aperto" ma fuori dallo schermo: il menu non farebbe nulla
         @dialog.bring_to_front; return
       end
       @dialog = UI::HtmlDialog.new(
@@ -195,6 +197,7 @@ module DagaWASD
         rescue => fps_err; log_error(__method__, fps_err); end
       end
       @dialog.show
+      dialog_on_screen(@dialog)
     end
 
   end

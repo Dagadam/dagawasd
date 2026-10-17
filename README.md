@@ -18,7 +18,9 @@ https://youtu.be/w6xE86y7iEw?is=7Gh12tF7atE_N9_K
 - **Cielo e meteo**: sole, luna e stelle secondo data, ora e luogo; pioggia,
   neve, nuvole, temporali, neve al suolo.
 - **Percorsi**: registra la camera mentre cammini, riproducila, esportala in
-  scene o in video AVI.
+  scene o in video AVI. Ritoccala nel modello spostando e ruotando le sue
+  posizioni (sfere con una freccia lunga quanto lo zoom e il riquadro
+  dell'inquadratura), o costruiscine una da zero.
 - **Gamepad** XInput e visuale con il tastierino numerico.
 - Pannello delle impostazioni in 36 lingue.
 
@@ -59,6 +61,16 @@ aggiornamento non le cancella.
   (`pubblicazione/icona_512.png`).
 - La scheda per l'Extension Warehouse (testi in inglese e note per i
   revisori) sta in `pubblicazione/extension_warehouse.md`.
+- Nel SketchUp aperto, col ponte acceso e con «Finestre e tasti» acceso nel
+  pannello (strumenti per Claude Code, non installati):
+  - `tools\finestre.ps1` arriva dove il Ruby non arriva: finestre native,
+    avvisi, menu, cattura della vista con cielo e nuvole, tasti simulati;
+  - `tools\collaudo.rb` prova dal vivo pulsante e menu del pannello, la
+    conferma di «Elimina» e un video fino alla finestra finale;
+  - `tools\schermate.rb` fa le immagini della scheda in
+    `pubblicazione/schermate/` (1920×1080 con uno schermo almeno così);
+  - `tools\prova_fps.rb` cammina e corre in modalità FPS e misura
+    l'oscillazione della testa.
 
 ## Licenza
 

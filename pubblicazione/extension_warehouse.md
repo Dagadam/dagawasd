@@ -42,8 +42,13 @@ shelter under roofs, drifting clouds, thunderstorms with lightning, and snow
 that settles on roofs and terrain and then melts. Seven ready-made scenes,
 such as "Summer storm" and "Snowy night".
 
-**Camera paths.** Press R while walking to record what you see. Replay it,
-turn it into SketchUp scenes, or export it as an AVI video or PNG images.
+**Camera paths.** Press R while walking to record what you see (mouse-wheel
+zoom included). Replay it, turn it into SketchUp scenes, or export it as an
+AVI video or PNG images. Fine-tune it right in the model: each key position
+is a sphere with an arrow (its length shows the zoom) and the camera frame
+with a triangle on top (it tilts when you roll the camera); move and rotate
+them with SketchUp's own tools, Ctrl+Move to add one, or start a new path
+from the current view.
 While the video is being written, a little character keeps you company with
 a progress bar, statistics about your walk and model, and jokes made from
 those numbers.
@@ -75,7 +80,11 @@ Settings are stored in `%APPDATA%\DagaWASD`, so updates never erase them.
   extension folder.
 - **Model changes.** Physics moves are wrapped in operations and undone with
   Ctrl+Z. Recorded camera paths are stored in an attribute dictionary of the
-  model (`DagaWASD_percorsi`).
+  model (`DagaWASD_percorsi`). Only when the user clicks Edit (or New from
+  view) on a path, its key positions are added as component instances
+  (definitions «DagaWASD camera <fov>°», one per zoom level, with materials
+  «DagaWASD …») on the tag «DagaWASD percorsi», in one undoable operation;
+  deleting the path or reverting removes them and any definition left unused.
 - **Loading.** All files are loaded with `Sketchup.require`; the package
   works signed and encrypted (.rbe). Checked with rubocop-sketchup 1.5.0:
   no offences.

@@ -309,6 +309,14 @@ w.addEventListener('load', () => {
   ok(!off('bridge_orbit') && !off('bridge_orbit_speed'), 'costruzione dal vivo accesa: dolly e velocità normali');
   d.getElementById('bridge_orbit').click();
   ok(!off('bridge_orbit') && off('bridge_orbit_speed'), 'dolly spento: solo la velocità attenuata');
+  // Finestre e tasti (tools/finestre.ps1): spento di default, il mouse e la sua durata lo seguono
+  w.eval(`loadSettings({bridge_windows:false, bridge_windows_mouse:true})`);
+  ok(RB_DEF.bridge_windows === false && off('bridge_windows_mouse') && off('bridge_mouse_time'),
+     'finestre e tasti spenti (default): «Mostra il mouse» e durata attenuati');
+  d.getElementById('bridge_windows').click();
+  ok(!off('bridge_windows_mouse') && !off('bridge_mouse_time'), 'accesi: mouse e durata normali');
+  d.getElementById('bridge_windows_mouse').click();
+  ok(off('bridge_mouse_time'), 'mouse nascosto: solo la durata attenuata');
   // Camera › Visuale: sguardo col tastierino, velocità attenuate se spento
   const padRows = [...d.querySelectorAll('#pane_camera_view .row')].map(r => r.dataset.k).filter(k => k.startsWith('pad_look'));
   ok(padRows.join() === 'pad_look,pad_look_speed,pad_look_speed_v,pad_look_accel', `Camera › Visuale: gruppo Tastierino con 4 righe (${padRows.join()})`);
@@ -442,6 +450,22 @@ w.addEventListener('load', () => {
   rows[0].querySelector('button.pgo').click();
   ok(JSON.stringify(pathCalls) === JSON.stringify([{ cmd: 'frames', name: 'Scala "a" <b>' }, { cmd: 'play', name: 'Giro del faro' }]),
      'i pulsanti mandano a Ruby comando e nome');
+  // Posizioni nel modello (lib/pathkeys.rb): «Modifica», poi Nascondi/Mostra, ↺ solo se c'è la registrazione
+  const btns = r => [...r.querySelectorAll('button')].map(x => x.textContent.trim());
+  ok(btns(rows[0]).includes('◆ ' + it['path.edit']) && !btns(rows[0]).includes('↺') && !rows[0].querySelector('.pk'),
+     'senza posizioni: il pulsante «Modifica», niente ↺');
+  w.eval(`setPaths(${JSON.stringify([{ name: 'Giro', dur: 12, date: '1', keys: 7, shown: true, rec: true },
+                                     { name: 'Nuovo', dur: 2, date: '2', keys: 2, shown: false, rec: false }])})`);
+  const r2 = pl().querySelectorAll('.prow');
+  ok(btns(r2[0]).includes(it['path.hide']) && btns(r2[0]).includes('↺') && r2[0].querySelector('.pk').textContent.includes('7'),
+     'con le posizioni visibili: «Nascondi», ↺ e quante sono');
+  ok(btns(r2[1]).includes(it['path.show']) && !btns(r2[1]).includes('↺'), 'nascoste: «Mostra»; senza registrazione niente ↺');
+  pathCalls.length = 0;
+  [...r2[0].querySelectorAll('button')].find(x => x.textContent.trim() === it['path.hide']).click();
+  [...r2[0].querySelectorAll('button')].find(x => x.textContent.trim() === '↺').click();
+  d.querySelector('.pnew button').click();
+  ok(JSON.stringify(pathCalls) === JSON.stringify([{ cmd: 'edit', name: 'Giro' }, { cmd: 'revert', name: 'Giro' }, { cmd: 'new', name: '' }]),
+     'Nascondi, ↺ e «Nuovo dalla vista» arrivano a Ruby');
   ok(!!d.getElementById('path_video_size') && !!d.getElementById('path_smooth'), 'sotto l\'elenco le impostazioni dei percorsi');
   const all = w.eval('Object.keys(FIELDS).length');
   const lv = n => w.eval(`Object.values(FIELDS).filter(f => f.lv === ${n}).length`);

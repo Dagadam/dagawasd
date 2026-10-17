@@ -281,6 +281,7 @@ module DagaWASD
 
     def self.bridge_eval_live(sock, code, op)
       model = Sketchup.active_model
+      su_to_front          # una costruzione dal vivo è fatta per essere guardata (lib/input.rb)
       ctx   = @bridge_ctx
       op = op.to_s.strip.empty? ? 'Claude' : "Claude: #{op.to_s[0, 60]}"
       # disable_ui = true anche dal vivo: con false SketchUp aggiorna i suoi

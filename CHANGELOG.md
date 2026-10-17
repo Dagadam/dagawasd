@@ -10,6 +10,44 @@ Il numero sta in un posto solo, `VERSION` in `dagawasd.rb`;
 
 ## [Non ancora uscito]
 
+### Aggiunto
+- **Percorsi da ritoccare**: il pulsante «Modifica» di un percorso lo mette
+  nel modello come posizioni, sfere con una freccia (lo sguardo, lunga
+  quanto lo zoom: il doppio a ingrandimento 2×) e davanti il riquadro
+  dell'inquadratura col triangolo sul lato alto, che si inclina quando la
+  sfera ruota attorno alla freccia (rollio), ricavate dalla registrazione
+  levigata (una sfera dove la strada, lo sguardo o lo zoom della rotella
+  cambiano; zoomare sul posto prende il suo tempo, un raddoppio al secondo).
+  Sfere fatte prima si aggiornano alla prossima «Modifica». Si spostano e si
+  ruotano con Sposta e Ruota;
+  Ctrl+Sposta su una sfera ne aggiunge una, Canc la toglie. Riproduzione,
+  scene e video seguono le sfere su una curva morbida a velocità costante
+  (quella media della registrazione, soste escluse; girarsi sul posto a
+  45°/s). Un'Overlay disegna la curva e il numero d'ordine di ogni sfera.
+  Lo stesso pulsante nasconde e rimostra le sfere, «↺» le toglie e torna alla
+  registrazione; «Nuovo dalla vista» crea un percorso di due sfere senza
+  registrare. Le sfere hanno il tag «DagaWASD percorsi», spento da solo in
+  modalità FPS e durante riproduzione e video.
+
+- **Finestre e tasti per Claude** (Sistema › Ponte Claude, solo nel pacchetto
+  completo): permesso, spento di default, perché Claude Code prema pulsanti,
+  apra menu, risponda agli avvisi, catturi la vista e simuli tasti in
+  SketchUp. Con «Mostra il mouse» (acceso di default) il cursore va sul
+  pulsante, incorniciato di verde, prima che venga premuto; la durata del
+  viaggio si sceglie. Come il ponte, non si importa da un file.
+- Una costruzione dal vivo del ponte porta SketchUp in primo piano (e lo
+  rimostra se era ridotto a icona): prima la si poteva perdere dietro altre
+  finestre.
+
+### Corretto
+- Il pannello (e la finestra del video) non si apriva se SketchUp ricordava
+  una posizione dove ora non c'è più un monitor, per esempio dopo aver
+  staccato uno schermo o usato una sessione remota: la finestra c'era ma
+  fuori dallo schermo. Ora in quel caso si riapre al centro.
+- Correndo, l'oscillazione della testa (head bob) cresceva con la velocità
+  fino a ±7,7 cm, irreale. Ora non supera ±4,5 cm in verticale e ±3 cm di
+  lato, qualunque sia la velocità; i cursori del pannello arrivano lì.
+
 ## [1.0.0] — 2026-10-09
 
 Prima versione distribuita.

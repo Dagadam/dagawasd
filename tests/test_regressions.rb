@@ -190,6 +190,30 @@ end
 orig.each { |n, m| F.define_singleton_method(n, m) }
 F.instance_variable_set(:@active, false)
 
+# ── Head bob con un tetto ────────────────────────────────────────────
+# Prima: l'ampiezza cresceva con la velocità fino a 2,2 volte; con la corsa
+# a 2,4× la testa andava su e giù di ±7,7 cm (2026-10-17, "inverosimile").
+F.instance_variable_set(:@on_ground, true)
+F.instance_variable_set(:@bob_phase, 0.0)
+cfg = F.instance_variable_get(:@cfg)
+bob_cfg = cfg.slice('move_speed', 'head_bob_amp', 'head_bob_side')
+cfg.merge!('move_speed' => 4.4, 'head_bob_amp' => 0.15, 'head_bob_side' => 0.12)   # anche coi valori vecchi del pannello
+top_z = top_s = 0.0
+[4.4, 10.6, 30.0].each do |v|
+  600.times do
+    z, s = F.head_bob(1.0 / 60, v)
+    top_z = [top_z, z.abs].max; top_s = [top_s, s.abs].max
+  end
+end
+ok(top_z <= F::BOB_Z_MAX * F::M_TO_IN + 1e-9 && top_z > 0.9 * F::BOB_Z_MAX * F::M_TO_IN,
+   "head bob verticale fermo a #{F::BOB_Z_MAX} m anche correndo (#{(top_z * F::IN_TO_M).round(3)} m)")
+ok(top_s <= F::BOB_SIDE_MAX * F::M_TO_IN + 1e-9, "head bob laterale fermo a #{F::BOB_SIDE_MAX} m")
+cfg.merge!('head_bob_amp' => 0.02)
+top_z = 0.0
+600.times { top_z = [top_z, F.head_bob(1.0 / 60, 4.4)[0].abs].max }
+ok((top_z * F::IN_TO_M - 0.02).abs < 0.001, 'sotto il tetto, camminando, l\'ampiezza resta quella del pannello')
+cfg.merge!(bob_cfg)
+
 # ── Voce d'annullamento della fisica ────────────────────────────────
 # Prima: dopo la prima mossa la fisica si accodava sempre all'operazione in
 # cima alla cronologia. Un Ctrl+Z in modalità FPS, o un disegno durante

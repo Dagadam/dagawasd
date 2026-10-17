@@ -21,6 +21,8 @@ module DagaWASD
       return unless view
       watch_ops(Sketchup.active_model)   # voce d'annullamento della fisica (physics.rb)
 
+      @keys_hidden = key_hide(Sketchup.active_model)   # posizioni dei percorsi: né viste né ostacoli
+
       cam = view.camera
       init_angles(cam)
       @eye_x = cam.eye.x; @eye_y = cam.eye.y; @eye_z = cam.eye.z
@@ -131,6 +133,8 @@ module DagaWASD
       Sketchup.active_model&.select_tool(nil)
       Sketchup.status_text = t('rt.off')
       path_rec_stop                    # registrazione in corso: salvata (e lo dice)
+      key_unhide(Sketchup.active_model, @keys_hidden)
+      @keys_hidden = false
       @dialog&.execute_script('setRunning(false)') rescue nil
     end
 

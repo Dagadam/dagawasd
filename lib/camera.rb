@@ -16,6 +16,28 @@ module DagaWASD
     def self.fwd_flat;   [Math.cos(@yaw),  Math.sin(@yaw)]; end
     def self.right_flat; [Math.sin(@yaw), -Math.cos(@yaw)]; end
 
+    # Head bob (pollici): [verticale, laterale]. Il verticale oscilla al
+    # doppio della frequenza del laterale (passo). Frequenza e ampiezza
+    # seguono la velocità reale, ma l'ampiezza si ferma a BOB_Z_MAX e
+    # BOB_SIDE_MAX: correndo forte la testa andava su e giù di 15 cm.
+    def self.head_bob(dt, h_speed)
+      return [0.0, 0.0] unless cf('head_bob_enabled')
+      amp  = cf('head_bob_amp').to_f
+      side = cf('head_bob_side').to_f
+      if h_speed > 0.15 && @on_ground
+        ref   = [cf('move_speed').to_f, 0.1].max
+        ratio = (h_speed / ref).clamp(0.0, 2.2)
+        @bob_phase += cf('head_bob_freq').to_f * PI2 * dt * (0.55 + ratio * 0.55)
+        @bob_phase %= PI2
+        amp *= ratio; side *= ratio
+      else
+        @bob_phase *= 0.85
+        amp *= 0.12; side *= 0.12
+      end
+      [Math.sin(@bob_phase * 2.0) * amp.clamp(0.0, BOB_Z_MAX) * M_TO_IN,
+       Math.sin(@bob_phase) * side.clamp(0.0, BOB_SIDE_MAX) * M_TO_IN]
+    end
+
     # Applica la camera con bob verticale/laterale e inclinazione (roll).
     def self.apply_camera(view, bob_z, bob_side)
       cp = Math.cos(@pitch); sp = Math.sin(@pitch); dist = 200.0

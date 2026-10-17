@@ -21,6 +21,8 @@ module DagaWASD
     PI2           = Math::PI * 2.0
     DEG           = Math::PI / 180.0
     MAX_OMEGA     = 25.0   # rad/s — cap sulla velocità angolare dei corpi
+    BOB_Z_MAX     = 0.045  # m — head bob verticale massimo, anche correndo (±4,5 cm)
+    BOB_SIDE_MAX  = 0.03   # m — head bob laterale massimo
     THROW_SPIN_ZONE = 0.9  # frazione di carica oltre la quale il lancio ha topspin
     CONTACT_EPS   = 0.25   # pollici: spigoli entro questa quota sono "a contatto"
 
@@ -221,6 +223,12 @@ module DagaWASD
       'bridge_detail'       => 'solids', # solids = solidi finiti, ops = operazioni, anim = animata
       'bridge_orbit'        => false,  # dolly rotante: la camera gira attorno a ciò che si costruisce
       'bridge_orbit_speed'  => 8.0,    # gradi al secondo (negativo = senso orario)
+      # Finestre e tasti (tools/finestre.ps1, fuori da SketchUp: legge questi
+      # valori da settings.json): premere pulsanti, scrivere, aprire menu,
+      # catturare la vista, simulare tasti. Spento = può solo elencare.
+      'bridge_windows'       => false,
+      'bridge_windows_mouse' => true,  # il cursore va sul controllo prima di premerlo
+      'bridge_mouse_time'    => 0.6,   # secondi del viaggio del cursore
       # ── Meteo: cielo (lib/sky.rb) ────────────────────────────────
       'sky_enabled'         => false,  # sole, luna, stelle e colori del cielo secondo data e ora
       'sky_now'             => false,  # data e ora attuali invece di quelle qui sotto

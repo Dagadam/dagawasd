@@ -196,7 +196,7 @@ body.ti-icons .tabs2 button{padding-inline:11px}
 
 /* ══ PERCORSI ══ */
 .plist{margin:4px 10px 12px;display:flex;flex-direction:column;gap:6px}
-.prow{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--s2);
+.prow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 10px;background:var(--s2);
   border:1px solid var(--l2);border-radius:calc(6px*var(--rk))}
 .prow .pn{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
 .prow .pd{font-size:.867rem;color:var(--m1);white-space:nowrap}
@@ -204,6 +204,12 @@ body.ti-icons .tabs2 button{padding-inline:11px}
   padding:5px 9px;cursor:pointer;font:inherit;font-size:.933rem}
 .prow button:hover{background:var(--s5)}
 .prow button.pgo{background:var(--acc);color:var(--acc-ink)}
+.prow button.pon{box-shadow:inset 0 0 0 1px var(--acc)}
+.prow .pk{font-size:.867rem;color:var(--acc);white-space:nowrap}
+.pnew{margin:-4px 10px 12px}
+.pnew button{background:var(--s4);color:var(--t2);border:none;border-radius:calc(5px*var(--rk));
+  padding:5px 10px;cursor:pointer;font:inherit;font-size:.933rem}
+.pnew button:hover{background:var(--s5)}
 .pempty{margin:4px 10px 12px;color:var(--m1);font-size:.933rem}
 
 /* ══ TOGGLE ══ */
@@ -649,8 +655,8 @@ const SPEC = [
     { id:'bobstep', fields:[
       {k:'head_bob_enabled', type:'bool'},
       {k:'head_bob_freq', u:'Hz', min:0.5,   max:6,    step:0.1, lv:2},
-      {k:'head_bob_amp',  u:'m',  min:0.003, max:0.15, step:0.003, lv:2},
-      {k:'head_bob_side', u:'m',  min:0,     max:0.12, step:0.002, lv:2},
+      {k:'head_bob_amp',  u:'m',  min:0.003, max:0.045, step:0.003, lv:2},
+      {k:'head_bob_side', u:'m',  min:0,     max:0.03, step:0.002, lv:2},
     ]},
     { id:'landing', fields:[
       {k:'land_dip', u:'', min:0, max:0.5, step:0.01, lv:2},
@@ -892,6 +898,12 @@ const SPEC = [
       {k:'bridge_detail', type:'choice', opts:['solids','ops','anim'], lv:2},
       {k:'bridge_orbit', type:'bool', lv:2, dep:'bridge_live'},
       {k:'bridge_orbit_speed', u:'°/s', min:-45, max:45, step:1, lv:3, dep:'bridge_orbit'},
+    ]},
+    /* tools/finestre.ps1: legge questi valori da settings.json */
+    { id:'bwin', fields:[
+      {k:'bridge_windows', type:'bool', lv:2},
+      {k:'bridge_windows_mouse', type:'bool', lv:2, dep:'bridge_windows'},
+      {k:'bridge_mouse_time', u:'s', min:0.1, max:2, step:0.1, lv:2, dep:'bridge_windows_mouse'},
     ]},
   ]},
   { id:'backup', special:'backup' },
@@ -1669,23 +1681,32 @@ function setBridge(b){
 }
 
 /* ═══ Percorsi ═══
-   L'elenco arriva da Ruby (setPaths: [{name, dur, date}]) all'apertura, dopo
-   ogni registrazione o modifica e al cambio di modello. I comandi tornano a
-   Ruby come {cmd, name}: le finestre di conferma e di scelta le apre lui. */
+   L'elenco arriva da Ruby (setPaths: [{name, dur, date, keys, shown, rec}])
+   all'apertura, dopo ogni registrazione o modifica e al cambio di modello.
+   keys = posizioni nel modello (lib/pathkeys.rb), shown = se si vedono,
+   rec = se c'è la registrazione a cui tornare. I comandi tornano a Ruby
+   come {cmd, name}: le finestre di conferma e di scelta le apre lui. */
 let PATHS = [];
 function pathsHTML(s){
   return `<div class="note">${esc(T('path.note'))}</div><div id="pathList">${pathRows()}</div>`
+    + `<div class="pnew"><button title="${escA(T('path.new.h'))}" onclick="pathCmd('new', -1)">+ ${esc(T('path.new'))}</button></div>`
+    + `<div class="note">${esc(T('path.keys_note'))}</div>`
     + (s.groups || []).map(g => `<div class="grp" data-lv="${g.lv}"><h3>${esc(T('grp.' + g.id))}</h3>`
       + `${g.fields.map(fieldHTML).join('')}</div>`).join('');
 }
 function pathClock(sec){ sec = Math.round(sec); return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0'); }
 function pathRows(){
   if(!PATHS.length) return `<div class="pempty">${esc(T('path.empty'))}</div>`;
-  const b = (cmd, i, lbl, cls) => `<button${cls ? ` class="${cls}"` : ''} title="${escA(T('path.' + cmd + '.h'))}" onclick="pathCmd('${cmd}', ${i})">${lbl}</button>`;
+  const b = (cmd, i, lbl, cls, h) => `<button${cls ? ` class="${cls}"` : ''} title="${escA(T('path.' + (h || cmd) + '.h'))}" onclick="pathCmd('${cmd}', ${i})">${lbl}</button>`;
+  /* «Modifica» crea le posizioni; poi lo stesso pulsante le nasconde e le rimostra */
+  const ed = (p, i) => !p.keys ? b('edit', i, '◆ ' + esc(T('path.edit')))
+    : p.shown ? b('edit', i, esc(T('path.hide')), 'pon', 'hide') : b('edit', i, esc(T('path.show')), '', 'show');
   return '<div class="plist">' + PATHS.map((p, i) => `<div class="prow">
-    <span class="pn" title="${escA(p.date)}">${esc(p.name)}</span><span class="pd">${pathClock(p.dur)}</span>
+    <span class="pn" title="${escA(p.date)}">${esc(p.name)}</span>`
+    + (p.keys ? `<span class="pk" title="${escA(T('path.keys.h'))}">◆ ${p.keys}</span>` : '')
+    + `<span class="pd">${pathClock(p.dur)}</span>
     ${b('play', i, '▶ ' + esc(T('path.play')), 'pgo')}${b('scenes', i, esc(T('path.scenes')))}${b('frames', i, esc(T('path.frames')))}
-    ${b('rename', i, '✎')}${b('delete', i, '✕')}</div>`).join('') + '</div>';
+    ${ed(p, i)}${p.keys && p.rec ? b('revert', i, '↺') : ''}${b('rename', i, '✎')}${b('delete', i, '✕')}</div>`).join('') + '</div>';
 }
 function setPaths(list){
   PATHS = Array.isArray(list) ? list : [];
@@ -1693,6 +1714,7 @@ function setPaths(list){
   if(el) el.innerHTML = pathRows();
 }
 function pathCmd(cmd, i){
+  if(cmd === 'new') return sketchup.path_cmd(JSON.stringify({ cmd, name: '' }));
   const p = PATHS[i];
   if(p) sketchup.path_cmd(JSON.stringify({ cmd, name: p.name }));
 }

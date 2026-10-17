@@ -72,7 +72,7 @@ X_AXIS = Geom::Vector3d.new(1, 0, 0)
 Y_AXIS = Geom::Vector3d.new(0, 1, 0)
 Z_AXIS = Geom::Vector3d.new(0, 0, 1)
 module Sketchup
-  class Face; end; class Edge; end; class Group; end; class ComponentInstance; end
+  class Face; end; class Edge; end; class Group; end; class ComponentInstance; end; class ComponentDefinition; end
   def self.status_text=(s); end
   def self.get_locale; 'it'; end
   # Come in SketchUp: percorso senza estensione, carica .rb (o .rbe cifrato)
@@ -168,6 +168,9 @@ module Sketchup
     def path; ''; end
     def options; { 'UnitsOptions' => { 'LengthUnit' => 4 } }; end
     def active_view; View.new; end
+    def add_observer(_o); true; end
+    def layers; {}; end
+    def definitions; []; end
   end
 end
 

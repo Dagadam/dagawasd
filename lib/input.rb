@@ -32,6 +32,14 @@ module DagaWASD
           extern 'int   GetCurrentProcessId()'
           extern 'void* GetAncestor(void*, int)'
           extern 'void  keybd_event(int, int, int, void*)'
+          extern 'void* MonitorFromRect(void*, int)'
+          extern 'int   EnumWindows(void*, void*)'
+          extern 'int   IsWindowVisible(void*)'
+          extern 'int   GetWindowRect(void*, void*)'
+          extern 'int   IsIconic(void*)'
+          extern 'int   ShowWindow(void*, int)'
+          extern 'void* GetWindow(void*, int)'
+          extern 'int   GetWindowTextW(void*, void*, int)'
         end
         m.const_set(:WH_KEYBOARD_LL, 13)
         m.const_set(:WM_KEYDOWN,    0x0100)
@@ -54,6 +62,19 @@ module DagaWASD
       @w32.GetCursorPos(buf)
       buf.unpack('l<2')
     rescue => fps_err; log_error(__method__, fps_err); [0, 0]; end
+
+    # Una finestra che ricorda la sua posizione (preferences_key) si riapre
+    # dov'era, anche se lì ora non c'è più un monitor (staccato, o la
+    # sessione remota ne aveva un altro): sembra che non si apra. Se la
+    # barra del titolo non cade su nessun monitor la si rimette al centro.
+    def self.dialog_on_screen(d)
+      return unless d.respond_to?(:get_position) && ensure_win32   # get_position: SketchUp 2021+
+      x, y = d.get_position
+      w, = d.get_size
+      s = UI.respond_to?(:scale_factor) ? UI.scale_factor : 1.0
+      rect = [x + 40, y, x + w - 40, y + 24].map { |v| (v * s).round }.pack('l<4')
+      d.center if @w32.MonitorFromRect(rect, 0).to_i == 0          # 0: MONITOR_DEFAULTTONULL
+    rescue => fps_err; log_error(__method__, fps_err); end
 
     def self.viewport_center
       hwnd = @main_hwnd || @w32.GetForegroundWindow
@@ -115,6 +136,52 @@ module DagaWASD
       root = @w32.GetAncestor(fg, 3)
       root && root.to_i != 0 ? root.to_i : fg.to_i
     rescue => fps_err; log_error(__method__, fps_err); nil; end
+
+    # Finestra principale di SketchUp anche quando non è in primo piano
+    # (find_main_window parte da quella che lo è): fra le finestre di primo
+    # livello del processo, visibili (anche a icona), senza proprietaria (i
+    # dialoghi ce l'hanno) e con «SketchUp» nel titolo, la più grande.
+    def self.su_main_window
+      return nil unless ensure_win32
+      require 'fiddle/closure'
+      pid = @w32.GetCurrentProcessId
+      best = nil
+      area = -1
+      own = [0].pack('L')
+      rect = "\0" * 16
+      txt = "\0" * 1024
+      cb = Fiddle::Closure::BlockCaller.new(Fiddle::TYPE_INT, [Fiddle::TYPE_VOIDP, Fiddle::TYPE_VOIDP]) do |h, _|
+        @w32.GetWindowThreadProcessId(h, own)
+        if own.unpack1('L') == pid && @w32.IsWindowVisible(h) != 0 && @w32.GetWindow(h, 4).to_i.zero?   # GW_OWNER
+          n = @w32.GetWindowTextW(h, txt, 512)
+          if txt.byteslice(0, n * 2).force_encoding('UTF-16LE').encode('UTF-8').include?('SketchUp')
+            @w32.GetWindowRect(h, rect)
+            l, t, r, b = rect.unpack('l<4')
+            a = (r - l) * (b - t)
+            (best = h.to_i; area = a) if a > area
+          end
+        end
+        1
+      end
+      @w32.EnumWindows(cb.to_i, nil)
+      best
+    rescue => fps_err; log_error(__method__, fps_err); nil; end
+
+    # SketchUp davanti (e rimostrato se è a icona), per guardare una
+    # costruzione dal vivo del ponte. Windows concede il primo piano solo a
+    # chi ha ricevuto l'ultimo input: un Alt premuto e rilasciato (firmato:
+    # FPS lo ignora) sblocca il cambio. Ritorna true se ci è riuscito.
+    def self.su_to_front
+      h = su_main_window or return false
+      @w32.ShowWindow(h, 9) if @w32.IsIconic(h) != 0      # SW_RESTORE
+      return true if @w32.GetForegroundWindow.to_i == h
+      @w32.SetForegroundWindow(h)
+      return true if @w32.GetForegroundWindow.to_i == h
+      @w32.keybd_event(VK_ALT, 0, 0, INJECT_TAG)
+      @w32.keybd_event(VK_ALT, 0, 2, INJECT_TAG)            # KEYEVENTF_KEYUP
+      @w32.SetForegroundWindow(h)
+      @w32.GetForegroundWindow.to_i == h
+    rescue => fps_err; log_error(__method__, fps_err); false; end
 
     # Avviato dal pannello, il primo piano resta al dialogo: lo si riporta
     # alla finestra principale, altrimenti mouse e tasti non arriverebbero

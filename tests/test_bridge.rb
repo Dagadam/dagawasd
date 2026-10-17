@@ -114,12 +114,30 @@ end
 r = call(info, post("step 'non fa nulla'\n5"))
 ok(body[r]['result'] == '5' && !body[r].key?('steps'), 'senza costruzione dal vivo step non fa nulla')
 
+# Finestra principale cercata fra quelle del processo: qui (nessuna finestra
+# «SketchUp») non c'è, e la ricerca non deve andare in errore (2026-10-17:
+# mancava la dichiarazione di GetWindowRect e finiva nel registro)
+log0 = F.log_count
+ok(F.su_main_window.nil? && F.su_to_front == false && F.log_count == log0,
+   'senza finestra di SketchUp: nessuna principale, niente primo piano, nessun errore')
+# qui nessun titolo contiene «SketchUp», quindi metà delle chiamate non parte:
+# che siano almeno tutte dichiarate
+w32 = F.instance_variable_get(:@w32)
+usate = %i[EnumWindows GetWindowThreadProcessId GetCurrentProcessId IsWindowVisible GetWindow GetWindowTextW
+           GetWindowRect IsIconic ShowWindow GetForegroundWindow SetForegroundWindow keybd_event]
+ok(w32 && usate.all? { |m| w32.respond_to?(m) }, "Win32 dichiarate per il primo piano (#{w32 ? (usate.reject { |m| w32.respond_to?(m) }.join(', ').then { |s| s.empty? ? 'tutte' : "mancano #{s}" }) : 'nessuna'})")
+
 cfg['bridge_live'] = true
 $stub_ops = []; $timers = []
+fronte = 0
+F.singleton_class.send(:alias_method, :su_to_front_vero, :su_to_front)
+F.define_singleton_method(:su_to_front) { fronte += 1; true }
 code = "puts 'via'\n@pezzi = []\n3.times { |i| @pezzi << i; step \"pezzo \#{i}\" }\n@pezzi.size"
 r = call_live(info, post(code, 'Dal vivo'))
 b = body[r]
 ok(b['ok'] && b['result'] == '3' && b['steps'] == 3 && b['output'] == "via\n", "dal vivo: 3 passi, risultato e output (#{b['steps']} passi)")
+ok(fronte == 1, 'dal vivo: SketchUp portato in primo piano una volta, all\'inizio')
+F.singleton_class.send(:alias_method, :su_to_front, :su_to_front_vero)
 ok($stub_ops == %i[start commit], 'dal vivo: una sola operazione, confermata alla fine')
 ok(F.instance_variable_get(:@bridge_job).nil?, 'lavoro concluso: nessuna costruzione in sospeso')
 
@@ -212,6 +230,16 @@ cfg['bridge_live'] = false
 cfg['bridge_enabled'] = false
 F.import_values('settings' => { 'bridge_enabled' => true })
 ok(cfg['bridge_enabled'] == false, 'bridge_enabled non viene importato')
+
+# Finestre e tasti (tools/finestre.ps1): spento di default, mai da un file
+ok(F::DEFAULT['bridge_windows'] == false && F::DEFAULT['bridge_windows_mouse'] == true,
+   'finestre e tasti spenti di default; quando accesi, il mouse si vede')
+cfg['bridge_windows'] = false
+F.import_values('settings' => { 'bridge_windows' => true, 'bridge_windows_mouse' => false })
+ok(cfg['bridge_windows'] == false && cfg['bridge_windows_mouse'] != false,
+   'bridge_windows e bridge_windows_mouse non vengono importati')
+ok(!F.instance_variable_get(:@cfg).merge('materials' => []).reject { |k, _| F::PANEL_ONLY.include?(k) }.key?('bridge_windows'),
+   'né esportati')
 
 cfg['bridge_enabled'] = false
 F.bridge_sync
