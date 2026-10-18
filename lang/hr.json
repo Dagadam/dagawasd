@@ -755,5 +755,8 @@
 "path.op_keys":"Položaji putanje",
 "path.op_show":"Prikaži položaje",
 "path.op_hide":"Sakrij položaje",
-"path.keys_made":"Položaji za „%{name}” u modelu: %{n}"
+"path.keys_made":"Položaji za „%{name}” u modelu: %{n}",
+"path.pts.h":"Prikaži ili sakrij popis položaja putanje",
+"path.pt.h":"Otvara postavke ovog položaja, kao dvostruki klik na kuglu",
+"path.pt.t":"Dosegnut u ovom trenutku od početka"
 }

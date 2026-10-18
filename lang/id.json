@@ -755,5 +755,8 @@
 "path.op_keys":"Posisi jalur",
 "path.op_show":"Tampilkan posisi",
 "path.op_hide":"Sembunyikan posisi",
-"path.keys_made":"%{n} posisi untuk “%{name}” di model"
+"path.keys_made":"%{n} posisi untuk “%{name}” di model",
+"path.pts.h":"Tampilkan atau sembunyikan daftar posisi jalur",
+"path.pt.h":"Membuka pengaturan posisi ini, seperti klik ganda pada bola",
+"path.pt.t":"Dicapai pada waktu ini sejak awal"
 }

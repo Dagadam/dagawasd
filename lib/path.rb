@@ -38,20 +38,26 @@ module DagaWASD
     end
 
     # Per il pannello: nome, durata (s), data, posizioni nel modello (quante,
-    # se si vedono), se c'è la registrazione; i più vecchi prima.
+    # se si vedono, e per ognuna arrivo e sosta in s, velocità propria in m/s
+    # o 0, ingrandimento), se c'è la registrazione; i più vecchi prima.
     def self.path_list(model = Sketchup.active_model)
       d = path_dict(model) or return []
       by = key_instances(model)
       d.keys.filter_map do |k|
         p = path_data(k, model) or next
         list = by[k] || []
+        keys = list.map { |e| key_of(e) }
+        sch = key_schedule(keys, key_speed(p))
         rec = p['s'].size >= 2
-        dur = if list.size >= 2 then key_duration(list.map { |e| key_of(e) }, key_speed(p))
+        dur = if list.size >= 2 then sch.last[:leave]
               elsif rec then p['s'].last[0].to_f
               else 0.0
               end
+        pts = keys.each_with_index.map do |q, i|
+          { 't' => sch[i][:arrive].round(1), 'p' => q[10].round(1), 'v' => q[11].round(2), 'z' => key_zoom(q[9]).round(1) }
+        end
         { 'name' => k, 'dur' => dur.round(1), 'date' => p['date'].to_s, 'keys' => list.size,
-          'shown' => list.any? { |e| !e.hidden? }, 'rec' => rec }
+          'shown' => list.any? { |e| !e.hidden? }, 'rec' => rec, 'pts' => pts }
       end.sort_by { |p| [p['date'], p['name']] }
     end
 
@@ -248,6 +254,7 @@ module DagaWASD
       @path_job = { kind: kind, name: name, frames: tr[:frames], speed: speed,
                     dur: tr[:dur], t0: nil, k: 0, view: view, done: false }.merge(extra)
       @path_job[:keys_hidden] = key_hide(model)   # le sfere non devono finire nella vista
+      @path_job[:back] = path_cam_save(view.camera) if kind == :play
       model.select_tool(PathTool.new)
       view.animation = PathAnimation.new(@path_job)
       nil
@@ -294,10 +301,27 @@ module DagaWASD
       if job[:kind] == :frames
         path_frames_done(job, why)
       else
+        # arrivata in fondo si torna alla vista di partenza (se no resterebbe
+        # dentro l'ultima sfera); fermata con Esc o un clic resta dov'è
+        path_cam_restore(view, job[:back]) if why == :fine && view && job[:back]
         Sketchup.status_text = why == :fine ? t('rt.path_end') : ''
       end
     rescue => fps_err
       log_error(__method__, fps_err)
+    end
+
+    # La camera com'è, anche parallela, e di nuovo com'era
+    def self.path_cam_save(c)
+      [c.eye, c.target, c.up, c.perspective?, c.perspective? ? c.fov : nil, c.perspective? ? nil : c.height]
+    end
+
+    def self.path_cam_restore(view, saved)
+      eye, target, up, persp, fov, height = saved
+      cam = view.camera
+      cam.set(eye, target, up)
+      cam.perspective = persp
+      persp ? cam.fov = fov : cam.height = height
+      view.invalidate
     end
 
     # ── Video (AVI) o immagini (PNG) ──────────────────────────────
@@ -468,7 +492,7 @@ module DagaWASD
     end
 
     # ── Comandi dal pannello ──────────────────────────────────────
-    def self.path_command(cmd, name)
+    def self.path_command(cmd, name, i = nil)
       err = case cmd
             when 'play'   then path_start(:play, name)
             when 'scenes' then path_make_scenes(name)
@@ -479,6 +503,7 @@ module DagaWASD
             when 'edit'   then key_edit(name)       # lib/pathkeys.rb: posizioni nel modello
             when 'revert' then key_revert(name)
             when 'new'    then key_new
+            when 'key'    then key_open_nth(name, i.to_i)
             end
       UI.messagebox(err) if err.is_a?(String)
     rescue => fps_err

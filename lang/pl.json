@@ -755,5 +755,8 @@
 "path.op_keys":"Pozycje trasy",
 "path.op_show":"Pokaż pozycje",
 "path.op_hide":"Ukryj pozycje",
-"path.keys_made":"Pozycje trasy „%{name}” w modelu: %{n}"
+"path.keys_made":"Pozycje trasy „%{name}” w modelu: %{n}",
+"path.pts.h":"Pokaż lub ukryj listę pozycji ścieżki",
+"path.pt.h":"Otwiera ustawienia tej pozycji, jak dwukrotne kliknięcie kuli",
+"path.pt.t":"Osiągana w tym czasie od początku"
 }

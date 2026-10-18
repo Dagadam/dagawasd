@@ -755,5 +755,8 @@
 "path.op_keys":"Reitin sijainnit",
 "path.op_show":"Näytä sijainnit",
 "path.op_hide":"Piilota sijainnit",
-"path.keys_made":"%{n} sijaintia reitille ”%{name}” mallissa"
+"path.keys_made":"%{n} sijaintia reitille ”%{name}” mallissa",
+"path.pts.h":"Näytä tai piilota reitin sijaintien luettelo",
+"path.pt.h":"Avaa tämän sijainnin asetukset, kuten pallon kaksoisnapsautus",
+"path.pt.t":"Saavutetaan tällä ajalla alusta"
 }

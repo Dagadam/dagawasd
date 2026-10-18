@@ -242,6 +242,9 @@ ok(pm.ops.include?([:start, F.t('path.op_keys'), true]) && pm.ops.last == [:comm
 ok((JSON.parse(pm.attribute_dictionary(F::PATH_DICT)['Giro'])['v'] - 1.0).abs < 0.05, 'la velocità della registrazione resta nel percorso')
 pl = F.path_list.first
 ok(pl['keys'] == inst.size && pl['shown'] && pl['rec'], 'pannello: quante posizioni, visibili, registrazione c\'è')
+ok(pl['pts'].size == inst.size && pl['pts'].first['t'].zero? && pl['pts'].each_cons(2).all? { |a, b| b['t'] > a['t'] } &&
+   pl['pts'].last['t'] <= pl['dur'] && pl['pts'].all? { |q| q['p'].zero? && q['v'].zero? && q['z'] > 0 },
+   'pannello: per ogni posizione l\'arrivo (crescente), niente sosta né velocità propria, lo zoom')
 tk = F.path_track('Giro')
 ok(tk[:keys] == inst.size && (tk[:dur] - 14.0).abs < 0.3,
    "riproduzione dalle posizioni: #{tk[:dur].round(1)} s = 12 m a 1 m/s + 90° a 45°/s (registrata #{t_rec.round(1)} s)")
@@ -471,6 +474,11 @@ ok(dlg.visible? && dlg.last('init')['strings']['ke.title'] == F.t('ke.title') &&
 ok(near1.(v['z'], 66 * F::IN_TO_M) && near1.(v['az'], 90) && near1.(v['fov'], 60) && v['ground'].nil? && v['seg'] && near1.(v['arrive'], 0),
    'valori: quota, direzione 90° (verso il rosso), zoom, niente terreno sotto, tratto e arrivo')
 ok(pm.selection == [e1], 'la sfera aperta è selezionata')
+F.path_command('key', nome, 1)
+ok(F.instance_variable_get(:@ke)[:inst].equal?(e2) && pm.selection == [e2], 'dall\'elenco del pannello (cmd key, i 1): la seconda sfera')
+F.path_command('key', nome, 9)
+ok(F.instance_variable_get(:@ke)[:inst].equal?(e2), 'posizione che non c\'è più: niente')
+F.path_command('key', nome, 0)
 
 # Modifiche: ognuna un'operazione, la sfera cambia subito
 n_ops = pm.ops.size

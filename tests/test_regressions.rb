@@ -305,6 +305,67 @@ ok(cfg['kick_force_min'] == 8.0 && cfg['crouch_height'] == 1.5 && cfg['kick_forc
    'settings.json con minimo oltre il massimo: il minimo scende al massimo')
 ok(cfg['throw_force_min'] <= cfg['throw_force_max'], 'le coppie già in ordine restano com\'erano')
 
+# ── Avvio: la vista parte esattamente dalla camera del modello ───────
+# Prima: all'avvio gli occhi saltavano a eye_height sopra il pavimento e lo
+# zoom a quello del pannello (2026-10-18, "vengo spostato un po'"). Ora quota
+# e zoom restano finché non ci si muove, poi si recuperano morbidi.
+class StartCam
+  attr_reader :eye, :target, :up
+  attr_accessor :fov, :perspective
+  def initialize(e, t); set(e, t, Geom::Vector3d.new(0, 0, 1)); @fov = 35.0; @perspective = true; end
+  def set(e, t, u); @eye = e; @target = t; @up = u; end
+  def perspective?; @perspective; end
+end
+File.write(settings, JSON.generate('fov' => 70.0, 'eye_height' => 1.7))
+m2i = F::M_TO_IN
+start_cam  = StartCam.new(Geom::Point3d.new(100.0, 50.0, 1.2 * m2i), Geom::Point3d.new(200.0, 50.0, 1.0 * m2i))
+start_view = Object.new
+start_view.define_singleton_method(:camera) { start_cam }
+def start_view.invalidate; end
+start_model = Object.new
+start_model.define_singleton_method(:active_view) { start_view }
+def start_model.select_tool(_t); end
+Sketchup.define_singleton_method(:active_model) { start_model }
+walk = false
+w32 = Object.new
+def w32.SetCursorPos(*); end
+stubs = { ensure_win32: -> { true }, watch_ops: ->(_m) {}, key_hide: ->(_m) { false }, install_hook: -> { true },
+          find_main_window: -> { 1 }, focus_main_window: -> {}, viewport_center: -> { [0, 0] }, hide_cursor: -> {},
+          restart_timer: -> {}, hud_text: -> { '' }, main_focused?: -> { false }, key?: ->(_v) { false },
+          pressed?: ->(a) { walk && a == 'forward' }, can_uncrouch?: -> { true }, step_physics: ->(_dt) {},
+          detect_ceiling: -> { nil },
+          ray: ->(ox, oy, oz, _dx, _dy, dz) { dz < 0 && oz > 0 ? [Geom::Point3d.new(ox, oy, 0.0), [floor_face]] : nil } }
+orig = stubs.keys.to_h { |n| [n, F.method(n)] }
+stubs.each { |n, l| F.define_singleton_method(n, &l) }
+F.instance_variable_set(:@w32, w32)
+F.instance_variable_set(:@active, false)
+eye0 = [start_cam.eye.x, start_cam.eye.y, start_cam.eye.z]
+dir0 = start_cam.target - start_cam.eye
+dir0.normalize!
+same_view = lambda do
+  d = start_cam.target - start_cam.eye
+  d.normalize!
+  [start_cam.eye.x, start_cam.eye.y, start_cam.eye.z].zip(eye0).all? { |a, b| (a - b).abs < 1e-6 } &&
+    (d.x - dir0.x).abs < 1e-6 && (d.z - dir0.z).abs < 1e-6 && start_cam.fov == 35.0
+end
+F.start
+ok(F.instance_variable_get(:@active) && same_view.(), 'avvio con gli occhi a 1,2 m e zoom 35°: la camera resta dov\'è')
+step = lambda do |n|
+  n.times do
+    F.instance_variable_set(:@last_tick, Time.now.to_f - 1.0 / 30)
+    F.tick
+  end
+end
+step.(30)
+ok(same_view.(), 'un secondo fermi: ancora la stessa vista, quota e zoom')
+walk = true
+step.(45)
+ok((start_cam.eye.z - 1.7 * m2i).abs < 0.5 && (start_cam.fov - 70.0).abs < 0.5 && start_cam.eye.x > eye0[0] + 0.5 * m2i,
+   "camminando: occhi a 1,7 m (#{(start_cam.eye.z / m2i).round(2)}) e zoom del pannello (#{start_cam.fov.round(1)}°)")
+walk = false
+F.instance_variable_set(:@active, false)
+orig.each { |n, m| F.define_singleton_method(n, m) }
+
 # ── Fuori da Windows ─────────────────────────────────────────────────
 # Prima: su Mac main.rb caricava lib/input.rb (user32) e si rompeva all'avvio.
 # Ora non carica nulla e avvisa una volta sola. In un processo a parte, perché

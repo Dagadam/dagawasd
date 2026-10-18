@@ -755,5 +755,8 @@
 "path.op_keys":"Yol konumları",
 "path.op_show":"Konumları göster",
 "path.op_hide":"Konumları gizle",
-"path.keys_made":"Modelde “%{name}” için %{n} konum"
+"path.keys_made":"Modelde “%{name}” için %{n} konum",
+"path.pts.h":"Yolun konum listesini göster veya gizle",
+"path.pt.h":"Bu konumun ayarlarını açar, küreye çift tıklamak gibi",
+"path.pt.t":"Başlangıçtan bu sürede ulaşılır"
 }

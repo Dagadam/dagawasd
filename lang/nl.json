@@ -755,5 +755,8 @@
 "path.op_keys":"Routeposities",
 "path.op_show":"Posities tonen",
 "path.op_hide":"Posities verbergen",
-"path.keys_made":"%{n} posities voor ‘%{name}’ in het model"
+"path.keys_made":"%{n} posities voor ‘%{name}’ in het model",
+"path.pts.h":"Lijst met posities van de route tonen of verbergen",
+"path.pt.h":"Opent de instellingen van deze positie, zoals dubbelklikken op de bol",
+"path.pt.t":"Bereikt op dit tijdstip vanaf het begin"
 }

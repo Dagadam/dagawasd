@@ -755,5 +755,8 @@
 "path.op_keys":"Teekonna asukohad",
 "path.op_show":"Näita asukohti",
 "path.op_hide":"Peida asukohad",
-"path.keys_made":"%{n} asukohta teekonnale „%{name}“ mudelis"
+"path.keys_made":"%{n} asukohta teekonnale „%{name}“ mudelis",
+"path.pts.h":"Näita või peida teekonna asukohtade loend",
+"path.pt.h":"Avab selle asukoha seaded, nagu topeltklõps keral",
+"path.pt.t":"Saavutatakse selle ajaga algusest"
 }

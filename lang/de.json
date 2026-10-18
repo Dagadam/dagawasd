@@ -755,5 +755,8 @@
 "path.op_keys":"Pfadpositionen",
 "path.op_show":"Positionen einblenden",
 "path.op_hide":"Positionen ausblenden",
-"path.keys_made":"%{n} Positionen für „%{name}“ im Modell"
+"path.keys_made":"%{n} Positionen für „%{name}“ im Modell",
+"path.pts.h":"Liste der Positionen des Pfads ein- oder ausblenden",
+"path.pt.h":"Öffnet die Einstellungen dieser Position, wie ein Doppelklick auf die Kugel",
+"path.pt.t":"Zu diesem Zeitpunkt ab Beginn erreicht"
 }

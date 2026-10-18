@@ -755,5 +755,8 @@
 "path.op_keys":"Pozițiile traseului",
 "path.op_show":"Arată pozițiile",
 "path.op_hide":"Ascunde pozițiile",
-"path.keys_made":"%{n} poziții pentru „%{name}” în model"
+"path.keys_made":"%{n} poziții pentru „%{name}” în model",
+"path.pts.h":"Afișează sau ascunde lista pozițiilor traseului",
+"path.pt.h":"Deschide setările acestei poziții, ca dublu clic pe sferă",
+"path.pt.t":"Atinsă la acest moment de la început"
 }

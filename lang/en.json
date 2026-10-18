@@ -755,5 +755,8 @@
 "path.op_keys":"Path positions",
 "path.op_show":"Show positions",
 "path.op_hide":"Hide positions",
-"path.keys_made":"%{n} positions for “%{name}” in the model"
+"path.keys_made":"%{n} positions for “%{name}” in the model",
+"path.pts.h":"Show or hide the list of the path's positions",
+"path.pt.h":"Open the settings of this position, like double-clicking its sphere",
+"path.pt.t":"Reached at this time from the start"
 }

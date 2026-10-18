@@ -265,6 +265,22 @@ module DagaWASD
       # Residuo dello stair smoothing (già in pollici)
       bob_z += @step_smooth
 
+      # Partenza (lifecycle.rb, start): la camera resta dov'era nel modello,
+      # quota e zoom, finché non ci si sposta, si salta, si cade o ci si
+      # accovaccia o si prende qualcosa (la presa mira dall'occhio vero); poi
+      # raggiunge morbida la quota degli occhi e lo zoom del pannello (se nel
+      # frattempo non si è zoomato con la rotella).
+      if @start_hold && (@vh_x.abs + @vh_y.abs > 0.05 || !@on_ground || @grab_state != :idle ||
+                         (@cur_h_m - cf('eye_height').to_f).abs > 0.01)
+        @start_hold = false
+        @zoom_target = @base_fov if @zoom_target == @zoom_fov
+      end
+      unless @start_hold
+        @start_dz *= 1.0 - (6.0 * dt).clamp(0.0, 1.0)
+        @start_dz = 0.0 if @start_dz.abs < 0.04
+      end
+      bob_z += @start_dz
+
       # Roll: inclinazione laterale proporzionale allo strafe
       roll_max = cf('cam_roll').to_f * DEG
       lat      = @vh_x * rx + @vh_y * ry          # componente laterale (m/s)
@@ -392,7 +408,7 @@ module DagaWASD
       @floor_z_in = z; @on_ground = true
       @vh_x = @vh_y = @vv = 0.0
       @jumps_used = 0; @coyote = 0.0; @jump_buf = 0.0; @jump_cut = false
-      @land_off = @land_vel = 0.0; @step_smooth = 0.0
+      @land_off = @land_vel = 0.0; @step_smooth = 0.0; @start_dz = 0.0
       @fall_time = 0.0; @left_ground_at = nil; @fall_in = 0.0
       @ground_time = 0.0; @respawn_streak += 1
       Sketchup.status_text = t('rt.respawn')

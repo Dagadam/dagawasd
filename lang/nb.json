@@ -755,5 +755,8 @@
 "path.op_keys":"Ruteposisjoner",
 "path.op_show":"Vis posisjoner",
 "path.op_hide":"Skjul posisjoner",
-"path.keys_made":"%{n} posisjoner for «%{name}» i modellen"
+"path.keys_made":"%{n} posisjoner for «%{name}» i modellen",
+"path.pts.h":"Vis eller skjul listen over rutens posisjoner",
+"path.pt.h":"Åpner innstillingene for denne posisjonen, som dobbeltklikk på kulen",
+"path.pt.t":"Nås på dette tidspunktet fra starten"
 }

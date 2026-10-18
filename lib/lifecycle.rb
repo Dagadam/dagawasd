@@ -72,8 +72,13 @@ module DagaWASD
       if fl
         @floor_z_in = fl[0]; @floor_n = fl[1]; @on_ground = true
         @eye_z      = fl[0] + @cur_h_m * M_TO_IN
-        apply_camera(view, 0.0, 0.0)
       end
+      # La vista parte esattamente da dov'è la camera del modello: la differenza
+      # di quota (occhi a un'altezza diversa da eye_height sopra il pavimento) e
+      # di zoom restano finché non ci si muove, poi si recuperano (tick.rb).
+      @start_dz   = cam.eye.z - @eye_z
+      @start_hold = true
+      @zoom_fov = @zoom_target = cam.fov.to_f if cam.perspective? && cam.fov.to_f > 1.0
       # Punto di rientro di riserva, se si cade prima di aver mai toccato terra
       @spawn_point = [@eye_x, @eye_y, @eye_z - @cur_h_m * M_TO_IN]
 
@@ -125,8 +130,9 @@ module DagaWASD
       @grab_state     = :idle
       @kick_start     = nil
       start_settle
-      # Non lasciare il modello zoomato all'uscita
-      if (@zoom_fov - @base_fov).abs > 0.01
+      # Non lasciare il modello zoomato all'uscita (usciti senza muoversi lo
+      # zoom è ancora quello del modello: resta)
+      if !@start_hold && (@zoom_fov - @base_fov).abs > 0.01
         begin; Sketchup.active_model.active_view.camera.fov = @base_fov; rescue => fps_err; log_error(__method__, fps_err); end
       end
       @zoom_fov = @zoom_target = @base_fov

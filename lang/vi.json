@@ -755,5 +755,8 @@
 "path.op_keys":"Vị trí đường đi",
 "path.op_show":"Hiện vị trí",
 "path.op_hide":"Ẩn vị trí",
-"path.keys_made":"%{n} vị trí cho “%{name}” trong mô hình"
+"path.keys_made":"%{n} vị trí cho “%{name}” trong mô hình",
+"path.pts.h":"Hiện hoặc ẩn danh sách vị trí của đường đi",
+"path.pt.h":"Mở cài đặt của vị trí này, giống như nhấp đúp vào quả cầu",
+"path.pt.t":"Đạt tới vào thời điểm này tính từ đầu"
 }

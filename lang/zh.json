@@ -755,5 +755,8 @@
 "path.op_keys":"路径位置",
 "path.op_show":"显示位置",
 "path.op_hide":"隐藏位置",
-"path.keys_made":"已在模型中为“%{name}”放置 %{n} 个位置"
+"path.keys_made":"已在模型中为“%{name}”放置 %{n} 个位置",
+"path.pts.h":"显示或隐藏路径的位置列表",
+"path.pt.h":"打开此位置的设置，与双击球体相同",
+"path.pt.t":"从开始到达此处的时间"
 }

@@ -755,5 +755,8 @@
 "path.op_keys":"Posiciones del recorrido",
 "path.op_show":"Mostrar posiciones",
 "path.op_hide":"Ocultar posiciones",
-"path.keys_made":"%{n} posiciones para «%{name}» en el modelo"
+"path.keys_made":"%{n} posiciones para «%{name}» en el modelo",
+"path.pts.h":"Muestra u oculta la lista de posiciones del recorrido",
+"path.pt.h":"Abre los ajustes de esta posición, como el doble clic en la esfera",
+"path.pt.t":"Alcanzada en este tiempo desde el inicio"
 }

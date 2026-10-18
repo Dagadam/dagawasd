@@ -10,7 +10,23 @@ Il numero sta in un posto solo, `VERSION` in `dagawasd.rb`;
 
 ## [Non ancora uscito]
 
+### Aggiunto
+- In *Camera › Percorsi* il triangolo accanto al nome apre, rientrato sotto
+  al percorso, l'elenco delle sue posizioni: numero (lo stesso accanto alla
+  sfera), quando la camera ci arriva e, se ci sono, sosta, velocità propria e
+  zoom. Un clic su una posizione ne apre il pannello, come il doppio clic
+  sulla sfera. L'elenco resta aperto mentre si spostano, aggiungono o tolgono
+  sfere.
+
 ### Corretto
+- Entrando in modalità WASD la vista si spostava: gli occhi saltavano
+  all'altezza impostata sopra il pavimento e lo zoom passava a quello del
+  pannello. Ora si parte esattamente dalla vista in cui si era; altezza degli
+  occhi e zoom del pannello arrivano morbidi al primo passo (o salto,
+  accovacciamento, presa).
+- Finita la riproduzione di un percorso la vista restava all'arrivo, dentro
+  l'ultima sfera: ora torna dov'era quando la riproduzione è partita. Fermata
+  prima con Esc o con un clic resta dov'è arrivata.
 - Avviare la camminata stando dentro una sfera aperta in modifica scriveva
   un errore nel registro (le sfere restavano visibili): ora le sfere restano
   accese senza errori.

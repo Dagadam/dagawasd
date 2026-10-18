@@ -206,6 +206,20 @@ body.ti-icons .tabs2 button{padding-inline:11px}
 .prow button.pgo{background:var(--acc);color:var(--acc-ink)}
 .prow button.pon{box-shadow:inset 0 0 0 1px var(--acc)}
 .prow .pk{font-size:.867rem;color:var(--acc);white-space:nowrap}
+/* triangolo che apre e chiude l'elenco delle posizioni */
+.prow button.ptog{background:none;padding:2px 4px;margin-inline-end:-4px;color:var(--t2);font-size:1.15rem;line-height:1}
+.prow button.ptog:hover{background:none;color:var(--t1)}
+.prow button.ptog::before{content:'▸';display:inline-block;transition:transform .12s}
+body.rtl .prow button.ptog::before{content:'◂'}
+.prow button.ptog.open::before,body.rtl .prow button.ptog.open::before{content:'▸';transform:rotate(90deg)}
+.ppts{display:flex;flex-direction:column;gap:2px;margin-block:4px 2px;margin-inline-start:16px;
+  padding-inline-start:8px;border-inline-start:2px solid var(--l2)}
+.ppt{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;width:100%;text-align:start;
+  background:none;color:var(--t2);border:none;border-radius:calc(5px*var(--rk));
+  padding:4px 8px;cursor:pointer;font:inherit;font-size:.867rem}
+.ppt:hover{background:var(--s4)}
+.ppt b{min-width:2ch;color:var(--acc)}
+.ppt span{color:var(--m1);white-space:nowrap;direction:ltr;unicode-bidi:isolate}   /* «⏸ 2.5 s» anche in ar/he */
 .pnew{margin:-4px 10px 12px}
 .pnew button{background:var(--s4);color:var(--t2);border:none;border-radius:calc(5px*var(--rk));
   padding:5px 10px;cursor:pointer;font:inherit;font-size:.933rem}
@@ -1696,12 +1710,17 @@ function setBridge(b){
 }
 
 /* ═══ Percorsi ═══
-   L'elenco arriva da Ruby (setPaths: [{name, dur, date, keys, shown, rec}])
+   L'elenco arriva da Ruby (setPaths: [{name, dur, date, keys, shown, rec, pts}])
    all'apertura, dopo ogni registrazione o modifica e al cambio di modello.
    keys = posizioni nel modello (lib/pathkeys.rb), shown = se si vedono,
-   rec = se c'è la registrazione a cui tornare. I comandi tornano a Ruby
-   come {cmd, name}: le finestre di conferma e di scelta le apre lui. */
+   rec = se c'è la registrazione a cui tornare, pts = le posizioni in ordine
+   ({t arrivo, p sosta in s, v m/s propria o 0, z ingrandimento}), elencate
+   sotto al percorso aperto col triangolo. I comandi tornano a Ruby
+   come {cmd, name}: le finestre di conferma e di scelta le apre lui;
+   una posizione dell'elenco come {cmd:'key', name, i}, e si apre il
+   pannello della sfera (lib/keyedit.rb). */
 let PATHS = [];
+const PATH_OPEN = new Set();   // nomi dei percorsi aperti: restano aperti a ogni setPaths
 function pathsHTML(s){
   return `<div class="note">${esc(T('path.note'))}</div><div id="pathList">${pathRows()}</div>`
     + `<div class="pnew"><button title="${escA(T('path.new.h'))}" onclick="pathCmd('new', -1)">+ ${esc(T('path.new'))}</button></div>`
@@ -1716,22 +1735,45 @@ function pathRows(){
   /* «Modifica» crea le posizioni; poi lo stesso pulsante le nasconde e le rimostra */
   const ed = (p, i) => !p.keys ? b('edit', i, '◆ ' + esc(T('path.edit')))
     : p.shown ? b('edit', i, esc(T('path.hide')), 'pon', 'hide') : b('edit', i, esc(T('path.show')), '', 'show');
-  return '<div class="plist">' + PATHS.map((p, i) => `<div class="prow">
-    <span class="pn" title="${escA(p.date)}">${esc(p.name)}</span>`
+  return '<div class="plist">' + PATHS.map((p, i) => {
+    const pts = Array.isArray(p.pts) ? p.pts : [], open = pts.length > 0 && PATH_OPEN.has(p.name);
+    return `<div class="pitem"><div class="prow">`
+    + (pts.length ? `<button class="ptog${open ? ' open' : ''}" aria-expanded="${open}" title="${escA(T('path.pts.h'))}" onclick="pathFold(${i})"></button>` : '')
+    + `<span class="pn" title="${escA(p.date)}">${esc(p.name)}</span>`
     + (p.keys ? `<span class="pk" title="${escA(T('path.keys.h'))}">◆ ${p.keys}</span>` : '')
     + `<span class="pd">${pathClock(p.dur)}</span>
     ${b('play', i, '▶ ' + esc(T('path.play')), 'pgo')}${b('scenes', i, esc(T('path.scenes')))}${b('frames', i, esc(T('path.frames')))}
-    ${ed(p, i)}${p.keys && p.rec ? b('revert', i, '↺') : ''}${b('rename', i, '✎')}${b('delete', i, '✕')}</div>`).join('') + '</div>';
+    ${ed(p, i)}${p.keys && p.rec ? b('revert', i, '↺') : ''}${b('rename', i, '✎')}${b('delete', i, '✕')}</div>`
+    + (open ? `<div class="ppts">${pts.map((q, j) => pathPoint(q, i, j)).join('')}</div>` : '') + '</div>';
+  }).join('') + '</div>';
+}
+/* Una posizione: numero (come accanto alla sfera), arrivo dall'inizio, e solo
+   se ci sono sosta, velocità propria e ingrandimento */
+function pathPoint(q, i, j){
+  const s = (h, txt) => `<span title="${escA(T(h))}">${txt}</span>`;
+  return `<button class="ppt" title="${escA(T('path.pt.h'))}" onclick="pathCmd('key', ${i}, ${j})"><b>${j + 1}</b>`
+    + s('path.pt.t', pathClock(q.t))
+    + (q.p > 0 ? s('ke.pause', '⏸ ' + q.p + ' s') : '')
+    + (q.v > 0 ? s('ke.speed', q.v + ' m/s') : '')
+    + (q.z && Math.abs(q.z - 1) >= 0.05 ? s('ke.mag', '×' + q.z) : '') + '</button>';
+}
+function pathFold(i){
+  const p = PATHS[i];
+  if(!p) return;
+  if(PATH_OPEN.has(p.name)) PATH_OPEN.delete(p.name); else PATH_OPEN.add(p.name);
+  const el = document.getElementById('pathList');
+  if(el) el.innerHTML = pathRows();
 }
 function setPaths(list){
   PATHS = Array.isArray(list) ? list : [];
   const el = document.getElementById('pathList');
   if(el) el.innerHTML = pathRows();
 }
-function pathCmd(cmd, i){
+function pathCmd(cmd, i, j){
   if(cmd === 'new') return sketchup.path_cmd(JSON.stringify({ cmd, name: '' }));
   const p = PATHS[i];
-  if(p) sketchup.path_cmd(JSON.stringify({ cmd, name: p.name }));
+  if(!p) return;
+  sketchup.path_cmd(JSON.stringify(cmd === 'key' ? { cmd, name: p.name, i: j } : { cmd, name: p.name }));
 }
 
 /* ═══ Situazioni pronte ═══

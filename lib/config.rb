@@ -360,6 +360,8 @@ module DagaWASD
     @land_off      = 0.0    # offset camera da atterraggio (m)
     @land_vel      = 0.0
     @step_smooth   = 0.0    # residuo camera dopo un gradino (pollici)
+    @start_dz      = 0.0    # camera all'avvio: quota rispetto all'occhio a terra (pollici)
+    @start_hold    = false  # all'avvio, finché non ci si muove: quota e zoom della camera del modello
     @roll          = 0.0
     @coyote        = 0.0
     @jump_buf      = 0.0

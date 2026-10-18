@@ -755,5 +755,8 @@
 "path.op_keys":"Posições do percurso",
 "path.op_show":"Mostrar posições",
 "path.op_hide":"Ocultar posições",
-"path.keys_made":"%{n} posições para «%{name}» no modelo"
+"path.keys_made":"%{n} posições para «%{name}» no modelo",
+"path.pts.h":"Mostra ou oculta a lista de posições do percurso",
+"path.pt.h":"Abre as definições desta posição, como o duplo clique na esfera",
+"path.pt.t":"Alcançada neste tempo desde o início"
 }

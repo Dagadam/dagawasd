@@ -129,6 +129,8 @@ ok(F.path_frame_at(lev, 99.0) == lev.last, 'oltre la fine: l\'ultimo fotogramma'
 # ── Riproduzione ─────────────────────────────────────────────────────
 cfg['path_speed'] = 2.0
 F.instance_variable_set(:@active, false)
+view.camera.set(Geom::Point3d.new(-7 * M, 2 * M, 80), Geom::Point3d.new(-7 * M, 3 * M, 80), Geom::Vector3d.new(0, 0, 1))
+view.camera.fov = 45.0
 ok(F.path_start(:play, 'Percorso 1').nil? && view.anim && pm.tools_sel.last.is_a?(F::PathTool),
    'riproduzione: animazione nella vista e strumento che la ferma')
 job = F.instance_variable_get(:@path_job)
@@ -139,10 +141,15 @@ ok(view.anim.nextFrame(view) == true && (view.camera.eye.x / M - 1.0).abs < 0.05
 job[:t0] -= 10
 ok(view.anim.nextFrame(view) == false, 'finito: l\'animazione si ferma')
 ok(view.anim.nil? && pm.tools_sel.last.nil? && !F.path_busy?, 'e lascia il campo: niente animazione, strumento di selezione')
-ok((view.camera.eye.x - s.last[1]).abs < 1e-6, 'la camera resta all\'arrivo')
+ok((view.camera.eye.x + 7 * M).abs < 1e-6 && (view.camera.target.y - 3 * M).abs < 1e-6 && view.camera.fov == 45.0,
+   'arrivata in fondo: la camera torna dov\'era alla partenza, con lo stesso zoom')
 F.path_start(:play, 'Percorso 1')
+job = F.instance_variable_get(:@path_job)
+job[:t0] = Process.clock_gettime(Process::CLOCK_MONOTONIC) - 0.5
+view.anim.nextFrame(view)
 F::PathTool.new.onCancel(0, view)
 ok(!F.path_busy? && view.anim.nil?, 'Esc ferma la riproduzione')
+ok((view.camera.eye.x / M - 1.0).abs < 0.05, 'fermata con Esc: la camera resta dov\'è arrivata')
 F.path_start(:play, 'Percorso 1')
 altra = Object.new
 view.animation = altra                                      # es. le scene di SketchUp

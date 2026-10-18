@@ -755,5 +755,8 @@
 "path.op_keys":"Maršruta pozīcijas",
 "path.op_show":"Rādīt pozīcijas",
 "path.op_hide":"Paslēpt pozīcijas",
-"path.keys_made":"%{n} pozīcijas maršrutam “%{name}” modelī"
+"path.keys_made":"%{n} pozīcijas maršrutam “%{name}” modelī",
+"path.pts.h":"Rādīt vai paslēpt maršruta pozīciju sarakstu",
+"path.pt.h":"Atver šīs pozīcijas iestatījumus, tāpat kā dubultklikšķis uz sfēras",
+"path.pt.t":"Sasniegta šajā laikā no sākuma"
 }

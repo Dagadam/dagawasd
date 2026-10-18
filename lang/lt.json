@@ -755,5 +755,8 @@
 "path.op_keys":"Maršruto padėtys",
 "path.op_show":"Rodyti padėtis",
 "path.op_hide":"Slėpti padėtis",
-"path.keys_made":"%{n} padėtys maršrutui „%{name}“ modelyje"
+"path.keys_made":"%{n} padėtys maršrutui „%{name}“ modelyje",
+"path.pts.h":"Rodyti arba slėpti maršruto padėčių sąrašą",
+"path.pt.h":"Atveria šios padėties nustatymus, kaip dukart spustelėjus sferą",
+"path.pt.t":"Pasiekiama šiuo laiku nuo pradžios"
 }

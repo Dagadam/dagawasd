@@ -118,6 +118,14 @@ module DagaWASD
       log_error(__method__, fps_err)
     end
 
+    # Dall'elenco espanso del pannello: la i-esima posizione (da 0) del percorso
+    def self.key_open_nth(name, i)
+      list = key_instances[name] or return t('path.missing')
+      e = list[i] or return nil
+      ke_open(e)
+      nil
+    end
+
     def self.ke_dialog
       return @ke[:dialog] if @ke[:dialog]
       d = UI::HtmlDialog.new(

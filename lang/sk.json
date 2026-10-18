@@ -755,5 +755,8 @@
 "path.op_keys":"Polohy trasy",
 "path.op_show":"Zobraziť polohy",
 "path.op_hide":"Skryť polohy",
-"path.keys_made":"Polohy trasy „%{name}“ v modeli: %{n}"
+"path.keys_made":"Polohy trasy „%{name}“ v modeli: %{n}",
+"path.pts.h":"Zobrazí alebo skryje zoznam polôh trasy",
+"path.pt.h":"Otvorí nastavenia tejto polohy, rovnako ako dvojklik na guľu",
+"path.pt.t":"Dosiahnutá v tomto čase od začiatku"
 }

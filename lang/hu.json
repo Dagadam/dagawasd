@@ -755,5 +755,8 @@
 "path.op_keys":"Útvonal pozíciói",
 "path.op_show":"Pozíciók megjelenítése",
 "path.op_hide":"Pozíciók elrejtése",
-"path.keys_made":"%{n} pozíció a(z) „%{name}” útvonalhoz a modellben"
+"path.keys_made":"%{n} pozíció a(z) „%{name}” útvonalhoz a modellben",
+"path.pts.h":"Az útvonal pozícióinak listája megjelenítése vagy elrejtése",
+"path.pt.h":"Megnyitja ennek a pozíciónak a beállításait, mint a gömbre való dupla kattintás",
+"path.pt.t":"Ennyi idő alatt éri el a kezdettől"
 }

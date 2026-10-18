@@ -20,8 +20,10 @@ https://youtu.be/w6xE86y7iEw?is=7Gh12tF7atE_N9_K
 - **Percorsi**: registra la camera mentre cammini, riproducila, esportala in
   scene o in video AVI. Ritoccala nel modello spostando e ruotando le sue
   posizioni (sfere con una freccia lunga quanto lo zoom e il riquadro
-  dell'inquadratura), o costruiscine una da zero. Doppio clic su una sfera
-  (o Invio) apre le sue impostazioni, con l'anteprima di ciò che vede.
+  dell'inquadratura), o costruiscine una da zero. Nel pannello ogni percorso
+  si apre sull'elenco delle sue posizioni; un clic su una posizione, o un
+  doppio clic sulla sua sfera (o Invio), apre le sue impostazioni, con
+  l'anteprima di ciò che vede.
 - **Gamepad** XInput e visuale con il tastierino numerico.
 - Pannello delle impostazioni in 36 lingue.
 

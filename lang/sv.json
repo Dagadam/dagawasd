@@ -755,5 +755,8 @@
 "path.op_keys":"Ruttpositioner",
 "path.op_show":"Visa positioner",
 "path.op_hide":"Dölj positioner",
-"path.keys_made":"%{n} positioner för ”%{name}” i modellen"
+"path.keys_made":"%{n} positioner för ”%{name}” i modellen",
+"path.pts.h":"Visa eller dölj listan över ruttens positioner",
+"path.pt.h":"Öppnar inställningarna för den här positionen, som att dubbelklicka på klotet",
+"path.pt.t":"Nås vid denna tid från start"
 }

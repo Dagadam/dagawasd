@@ -164,10 +164,11 @@ module DagaWASD
         @dialog.execute_script("incolla(#{js_json(ke_clipboard)})")
       end
       @dialog.add_action_callback('weather_preset') { |_ctx, id| weather_preset(id) }
-      # Percorsi: {cmd, name} (play, stop, scenes, frames, rename, delete)
+      # Percorsi: {cmd, name} (play, stop, scenes, frames, rename, delete…);
+      # 'key' ha anche i, la posizione da aprire nell'elenco espanso
       @dialog.add_action_callback('path_cmd') do |_ctx, json|
         d = JSON.parse(json.to_s) rescue {}
-        path_command(d['cmd'].to_s, d['name'].to_s)
+        path_command(d['cmd'].to_s, d['name'].to_s, d['i'])
       end
       # "Ripristina tabella": torna al catalogo predefinito
       @dialog.add_action_callback('reset_materials') do |_ctx, _|

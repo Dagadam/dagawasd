@@ -468,6 +468,26 @@ w.addEventListener('load', () => {
   d.querySelector('.pnew button').click();
   ok(JSON.stringify(pathCalls) === JSON.stringify([{ cmd: 'edit', name: 'Giro' }, { cmd: 'revert', name: 'Giro' }, { cmd: 'new', name: '' }]),
      'Nascondi, ↺ e «Nuovo dalla vista» arrivano a Ruby');
+  // Elenco delle posizioni: il triangolo lo apre sotto al percorso, rientrato; resta aperto ai setPaths
+  ok(!r2[0].querySelector('.ptog'), 'senza pts niente triangolo');
+  const giro = pts => [{ name: 'Giro', dur: 12, date: '1', keys: pts.length, shown: true, rec: true, pts },
+                       { name: 'Nuovo', dur: 2, date: '2', keys: 2, shown: false, rec: false, pts: [{ t: 0, p: 0, v: 0, z: 1 }, { t: 2, p: 0, v: 0, z: 1 }] }];
+  w.eval(`setPaths(${JSON.stringify(giro([{ t: 0, p: 0, v: 0, z: 1 }, { t: 5.2, p: 2.5, v: 1.8, z: 2 }, { t: 75, p: 0, v: 0, z: 1 }]))})`);
+  ok(pl().querySelectorAll('.ptog').length === 2 && !pl().querySelector('.ppts'), 'con le posizioni: triangolo, elenco chiuso');
+  pl().querySelector('.ptog').click();
+  let pp = pl().querySelectorAll('.pitem')[0].querySelectorAll('.ppts .ppt');
+  ok(pp.length === 3 && pl().querySelector('.ptog').classList.contains('open') && pl().querySelectorAll('.ppts').length === 1,
+     'aperto il primo: tre posizioni sotto di lui, il secondo resta chiuso');
+  ok(pp[0].textContent === '10:00' && pp[1].textContent.includes('0:05') && pp[1].textContent.includes('⏸ 2.5 s')
+     && pp[1].textContent.includes('1.8 m/s') && pp[1].textContent.includes('×2') && pp[2].textContent === '31:15',
+     'numero e arrivo; sosta, velocità e zoom solo se ci sono');
+  pathCalls.length = 0;
+  pp[1].click();
+  ok(JSON.stringify(pathCalls) === JSON.stringify([{ cmd: 'key', name: 'Giro', i: 1 }]), 'clic su una posizione: Ruby ne apre il pannello');
+  w.eval(`setPaths(${JSON.stringify(giro([{ t: 0, p: 0, v: 0, z: 1 }, { t: 4, p: 0, v: 0, z: 1 }]))})`);
+  ok(pl().querySelectorAll('.ppts .ppt').length === 2, 'nuovo elenco da Ruby (sfera cancellata): resta aperto, con due posizioni');
+  pl().querySelector('.ptog').click();
+  ok(!pl().querySelector('.ppts'), 'di nuovo il triangolo: si richiude');
   ok(!!d.getElementById('path_video_size') && !!d.getElementById('path_smooth'), 'sotto l\'elenco le impostazioni dei percorsi');
   const all = w.eval('Object.keys(FIELDS).length');
   const lv = n => w.eval(`Object.values(FIELDS).filter(f => f.lv === ${n}).length`);

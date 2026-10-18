@@ -755,5 +755,8 @@
 "path.op_keys":"Posizioni del percorso",
 "path.op_show":"Mostra posizioni",
 "path.op_hide":"Nascondi posizioni",
-"path.keys_made":"%{n} posizioni per «%{name}» nel modello"
+"path.keys_made":"%{n} posizioni per «%{name}» nel modello",
+"path.pts.h":"Mostra o nasconde l'elenco delle posizioni del percorso",
+"path.pt.h":"Apre le impostazioni di questa posizione, come il doppio clic sulla sfera",
+"path.pt.t":"Raggiunta a questo tempo dall'inizio"
 }
