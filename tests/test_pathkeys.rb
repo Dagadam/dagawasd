@@ -291,6 +291,27 @@ ok(!pm.layers[F::KEY_TAG].visible?, 'se il tag era già spento resta spento')
 pm.layers[F::KEY_TAG].visible = true
 ok(F.key_hide(pm) && !pm.layers[F::KEY_TAG].visible? && (F.key_unhide(pm, true) || true) && pm.layers[F::KEY_TAG].visible?,
    'modalità FPS: stesso spegni e riaccendi')
+
+# Nel pannello la posizione in corso si accende, una dopo l'altra
+pannello = Struct.new(:scripts) do
+  def visible?; true; end
+  def execute_script(s); scripts << s; end
+end.new([])
+F.instance_variable_set(:@dialog, pannello)
+mk = F.path_track('Giro')[:mark]
+ok(mk.size == ord.size && mk[0].zero? && mk.each_cons(2).all? { |a, b| b > a } &&
+   mk[1] < F.path_list.first['pts'][1]['t'], 'ogni posizione è «in corso» da metà del tratto che porta a lei')
+F.path_start(:play, 'Giro')
+job = F.instance_variable_get(:@path_job)
+view.anim.nextFrame(view)
+mk.each_with_index { |s, i| F.path_mark(job, s + 0.01); F.path_mark(job, s + 0.02) if i == 1 }
+F::PathTool.new.onCancel(0, view)
+attese = (0...ord.size).map { |i| "pathMark(\"Giro\", #{i})" } + ['pathMark("Giro", null)']
+ok(pannello.scripts.grep(/\ApathMark/) == attese, "riproduzione: #{ord.size} posizioni accese in ordine, una volta ciascuna, poi spente")
+pannello.scripts.clear
+F.path_start(:play, 'Percorso inesistente')
+ok(pannello.scripts.grep(/\ApathMark/).empty?, 'senza posizioni niente')
+F.instance_variable_set(:@dialog, nil)
 # FPS avviato con una sfera aperta in modifica: SketchUp darebbe ArgumentError
 # («cannot hide layer that is a part of the active path», registro 2026-10-15)
 sfera = F.key_instances(pm).values.flatten.first
@@ -476,6 +497,57 @@ ok(near1.(v['z'], 66 * F::IN_TO_M) && near1.(v['az'], 90) && near1.(v['fov'], 60
 ok(pm.selection == [e1], 'la sfera aperta è selezionata')
 F.path_command('key', nome, 1)
 ok(F.instance_variable_get(:@ke)[:inst].equal?(e2) && pm.selection == [e2], 'dall\'elenco del pannello (cmd key, i 1): la seconda sfera')
+nuove = lambda do |j|
+  view.camera.set(Geom::Point3d.new(5 * M, 7 * M, 66), Geom::Point3d.new(5 * M, 8 * M, 66), Geom::Vector3d.new(0, 0, 1))
+  F.path_command('add', nome, j)
+  F.key_instances(pm)[nome]
+end
+ok(F.ke_dolly? && F.key_add_at(nome, 1).nil? && F.key_instances(pm)[nome].size == 2, 'mentre la camera va alla sfera aperta niente aggiunte')
+fine_dolly.()
+rosso = pm.materials.add('rosso'); altro = pm.layers.add('altro')
+e1.material = rosso; e1.layer = altro
+pannello = Struct.new(:scripts) do
+  def visible?; true; end
+  def execute_script(s); scripts << s; end
+end.new([])
+F.instance_variable_set(:@dialog, pannello)
+l3 = nuove.(1)
+F.instance_variable_set(:@dialog, nil)
+ok(pannello.scripts.last == 'pathAdded()', 'a posizione aggiunta il pannello lo sa (ignora il secondo clic di un doppio clic)')
+ok(l3[1].material.equal?(rosso) && l3[1].layer.equal?(altro) && l3[1].name == e1.name, 'come la vicina di prima: materiale, tag e nome')
+e1.material = l3[1].material = pm.materials['DagaWASD posizione']
+e1.layer = l3[1].layer = pm.layers[F::KEY_TAG]
+ok(l3.size == 3 && l3[0].equal?(e1) && l3[2].equal?(e2) && l3.map { |x| x.get_attribute(F::KEY_DICT, 'i') } == [0, 1, 2] &&
+   near1.(F.key_of(l3[1])[0], 5 * M) && near1.(F.key_of(l3[1])[1], 7 * M) && F.key_of(l3[1])[4] > 0.99,
+   'clic fra la prima e la seconda: una posizione nuova lì, dalla vista (occhio e sguardo)')
+ok(view.anim.is_a?(F::KeDolly) && fine_dolly.() == false && near1.(view.camera.eye.y, 6 * M, 1e-3) &&
+   near1.(view.camera.eye.x, 5 * M, 1e-3) && near1.(view.camera.eye.z, 66, 1e-3) && view.camera.direction.y > 0.99,
+   'poi la vista arretra in dolly di un metro, sguardo uguale: non resta dentro la sfera nuova')
+ok(pm.ops.last == [:commit] && F.path_list.find { |p| p['name'] == nome }['keys'] == 3, 'un\'operazione annullabile; il pannello ne conta tre')
+nuove.(0)
+ok(nuove.(0).size == 4 && F.ke_dolly?, 'secondo clic mentre la camera arretra (doppio clic): niente')
+fine_dolly.()
+muro = Object.new
+colpi = [[0.12, l3[1]], [0.5, muro]]                 # dietro: prima una sfera, poi un muro a mezzo metro
+pm.define_singleton_method(:raytest) do |_ray, _w|
+  c = colpi.shift
+  c && [Geom::Point3d.new(5 * M, 7 * M - c[0] * M, 66), [c[1]]]
+end
+l5 = nuove.(99)
+fine_dolly.()
+pm.singleton_class.send(:remove_method, :raytest)
+ok(near1.(view.camera.eye.y, 7 * M - (0.5 - 0.15) * M, 1e-3), 'un muro mezzo metro dietro: la vista arretra fino a 15 cm dal muro (la sfera non conta)')
+F.instance_variable_set(:@active, true)
+ok(F.key_add_at(nome, 0) == F.t('path.busy') && F.key_instances(pm)[nome].size == 5, 'in modalità FPS no: la camera è del giocatore')
+F.instance_variable_set(:@active, false)
+ok(F.key_add_at('Nessuno', 0) == F.t('path.missing'), 'percorso che non c\'è: «mancante»')
+pm.set_attribute(F::PATH_DICT, 'Vuoto', JSON.generate('date' => '2026-10-21', 's' => []))
+ok(F.key_add_at('Vuoto', 0) == format(F.t('path.no_keys'), name: 'Vuoto'), 'percorso senza sfere: lo dice, non «mancante»')
+pm.attribute_dictionary(F::PATH_DICT).delete_key('Vuoto')
+ok(l5.size == 5 && l5[1].equal?(l3[0]) && l5[3].equal?(e2) && l5.map { |x| x.get_attribute(F::KEY_DICT, 'i') } == (0..4).to_a,
+   'prima della prima e dopo l\'ultima (99 = in fondo)')
+pm.entities.erase_entities([l5[0], l5[2], l5[4]])
+F.instance_variable_set(:@key_defs, nil)
 F.path_command('key', nome, 9)
 ok(F.instance_variable_get(:@ke)[:inst].equal?(e2), 'posizione che non c\'è più: niente')
 F.path_command('key', nome, 0)
@@ -546,6 +618,56 @@ fine_dolly.()
 ok(!ke[:preview] && near1.(view.camera.eye.x, -100) && near1.(view.camera.fov, 40), 'anteprima tolta: dolly e camera esattamente com\'era')
 ok(pm.layers[F::KEY_TAG].visible?, 'finito il dolly di ritorno le sfere si rivedono')
 ok(pm.selection == [e2], 'e la sfera del pannello torna selezionata')
+# Spenta e riaccesa subito, prima della fine del dolly di ritorno
+dlg.call('preview', true)
+fine_dolly.()
+dlg.call('preview', false)
+dlg.call('preview', true)
+fine_dolly.()
+ok(ke[:preview] && !pm.layers[F::KEY_TAG].visible?, 'anteprima spenta e riaccesa al volo: sfere spente')
+dlg.call('preview', false)
+fine_dolly.()
+ok(pm.layers[F::KEY_TAG].visible? && near1.(view.camera.eye.x, -100), 'e di nuovo spenta: si riaccendono, vista di prima')
+# Aggiunta dall'elenco con l'anteprima accesa: conta la vista di prima
+view.camera = Sketchup::Camera.new(Geom::Point3d.new(-100, -100, 200), Geom::Point3d.new(-100, 0, 200), Geom::Vector3d.new(0, 0, 1), false)
+view.camera.height = 500
+dlg.call('preview', true)
+fine_dolly.()
+F.singleton_class.send(:alias_method, :key_insert_at_vero, :key_insert_at)
+F.define_singleton_method(:key_insert_at) { |*| raise 'prova' }
+nb = boxes.size
+F.path_command('add', nome, 99)
+F.singleton_class.send(:alias_method, :key_insert_at, :key_insert_at_vero)
+ok(ke[:preview] && !pm.layers[F::KEY_TAG].visible? && F.key_instances(pm)[nome].size == 2 && !F.ke_dolly? &&
+   pm.ops.last == [:abort] && boxes.size == nb + 1, 'aggiunta fallita: annullata e detta, anteprima e sfere com\'erano, la camera ferma')
+F.path_command('add', nome, 99)
+nuova = F.key_instances(pm)[nome].last
+ok(near1.(F.key_of(nuova)[0], -100) && near1.(F.key_of(nuova)[1], -100) && F.key_of(nuova)[4] > 0.99,
+   'con l\'anteprima accesa la posizione nuova viene dalla vista di prima, non dalla sfera')
+ok(!ke[:preview] && dlg.last('show')['preview'] == false && pm.selection == [e2], 'l\'anteprima si spegne, la sfera del pannello di nuovo selezionata')
+ok(!pm.layers[F::KEY_TAG].visible?, 'sfere spente finché la camera non è uscita…')
+fine_dolly.()
+c = view.camera
+ok(pm.layers[F::KEY_TAG].visible? && near1.(c.eye.y, -100 - M, 1e-3) && !c.perspective? && c.height == 500,
+   '…poi accese, la vista un metro dietro e di nuovo parallela com\'era')
+pm.entities.erase_entities([nuova])
+F.instance_variable_set(:@key_defs, nil)
+# «Precedente» durante il ritorno dall'anteprima: il ritorno finisce subito, poi si trasla da lì
+dlg.call('preview', true)
+fine_dolly.()
+dlg.call('preview', false)
+dlg.call('nav', '-1')
+ok(pm.layers[F::KEY_TAG].visible? && near1.(view.camera.eye.x, -100) && !view.camera.perspective?,
+   'ritorno dall\'anteprima interrotto da «precedente»: finito subito (vista di prima, sfere accese)')
+fine_dolly.()
+ok(near1.(view.camera.eye.x, -100 + F.key_of(e1)[0] - F.key_of(e2)[0], 1e-3) && !view.camera.perspective? && view.camera.height == 500,
+   'poi la camera trasla quanto la sfera, parallela com\'era')
+# Un dolly che SketchUp lascia cadere senza dirlo non blocca le aggiunte per sempre
+F.ke_dolly(view, ->(_s) { F.ke_cam_frame(view.camera) }, 1.0)
+ok(F.ke_dolly?, 'dolly appena partito: in corso')
+view.anim.instance_variable_set(:@t0, Process.clock_gettime(Process::CLOCK_MONOTONIC) - 10)
+ok(!F.ke_dolly?, 'scaduto da un pezzo senza arrivare alla fine: non più in corso')
+view.animation = nil
 
 # Inserisci dopo, elimina
 dlg.call('nav', '-1')

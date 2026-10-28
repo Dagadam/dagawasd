@@ -8,6 +8,7 @@ module DagaWASD
     #   leva sinistra  muoversi (analogica: poco inclinata = piano)
     #   leva destra    guardarsi intorno
     #   A salto · B accovacciarsi · X aziona (Alt) · Y afferra/lancia (G)
+    #   dorsale destro (RB)  foto (P, lib/gallery.rb)
     #   grilletto destro  calcio (tenere = caricare, come K)
     #   grilletto sinistro o leva sinistra premuta  correre
     #   croce su/giù   zoom · View (Back)  sblocca il mouse (F) · Menu (Start)  esce
@@ -23,7 +24,8 @@ module DagaWASD
     XI_B      = 0x2000
     XI_X      = 0x4000
     XI_Y      = 0x8000
-    PAD_BUTTON_ACTS = { 'jump' => XI_A, 'crouch' => XI_B, 'use' => XI_X, 'grab' => XI_Y }.freeze
+    XI_RB     = 0x0200
+    PAD_BUTTON_ACTS = { 'jump' => XI_A, 'crouch' => XI_B, 'use' => XI_X, 'grab' => XI_Y, 'photo' => XI_RB }.freeze
     PAD_SCAN_EVERY  = 2.0     # s fra una ricerca e l'altra quando non ce n'è uno collegato
 
     def self.ensure_xinput

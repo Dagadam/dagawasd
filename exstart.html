@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>DagaWASD</title>
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   AVVIO DELL'ESPLORATORE — lo apre lib/exprofiles.rb (xs_open) dal
+   pulsante con l'occhio o dal menu, quando l'esploratore è fermo. Ruby
+   manda init (testi xs.*, lingua, aspetto) e show (profili, quello in uso,
+   registrare o no, occupato); la pagina rimanda go {profile, record},
+   edit (la finestra dei profili) e cancel.
+   Tastiera: frecce per il profilo, Invio parte, Esc chiude.
+═══════════════════════════════════════════════════════════════ */
+:root{
+  --bg:#151515;--fg:#dcdcdc;--mut:#8a8a8a;--line:#2c2c2c;--in:#1f1f1f;
+  --acc:#00c9a7;--acc-ink:#0d0d0d;--btn:#353535;
+  --font:'Segoe UI',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font:14px/1.4 var(--font);display:flex;flex-direction:column;user-select:none}
+body.attende{visibility:hidden}
+header{padding:12px 16px 8px}
+header h1{font-size:15px;font-weight:600}
+header p{color:var(--mut);font-size:12.5px;margin-top:2px}
+#elenco{flex:1 1 auto;overflow:auto;padding:4px 16px 8px;outline:0}
+.prof{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:start;border:1px solid var(--line);border-radius:9px;
+  background:var(--in);color:var(--fg);font:inherit;padding:8px 11px;margin-bottom:6px;cursor:pointer}
+.prof:hover{border-color:var(--mut)}
+.prof.on{border-color:var(--acc);box-shadow:inset 0 0 0 1px var(--acc)}
+#elenco:focus-visible .prof.on{box-shadow:inset 0 0 0 1px var(--acc),0 0 0 2px var(--acc)}
+.prof i{flex:0 0 14px;height:14px;margin-top:3px;border-radius:50%;border:2px solid var(--mut)}
+.prof.on i{border-color:var(--acc);background:radial-gradient(var(--acc) 0 3px,transparent 3.5px)}
+.prof b{display:block;font-weight:600}
+.prof small{display:block;color:var(--mut);font-size:12px;line-height:1.3}
+.reg{display:flex;gap:10px;align-items:flex-start;padding:10px 16px;border-top:1px solid var(--line);cursor:pointer}
+.reg input{width:17px;height:17px;margin-top:2px;accent-color:var(--acc);flex:0 0 auto}
+.reg small{display:block;color:var(--mut);font-size:12px}
+.occ{display:none;margin:0 16px 8px;padding:6px 9px;border-radius:7px;background:var(--in);border-inline-start:3px solid var(--acc);font-size:12.5px}
+.occ.si{display:block}
+footer{display:flex;gap:7px;flex-wrap:wrap;padding:10px 16px 12px;border-top:1px solid var(--line)}
+footer .sp{flex:1 1 auto}
+.btn{border:0;border-radius:7px;background:var(--btn);color:var(--fg);font:inherit;padding:6px 12px;cursor:pointer}
+.btn:hover{filter:brightness(1.15)}
+.btn:disabled{opacity:.35;cursor:default;filter:none}
+.btn:focus-visible{box-shadow:0 0 0 2px var(--acc);outline:0}
+.btn.go{background:var(--acc);color:var(--acc-ink);font-weight:600}
+</style>
+</head>
+<body class="attende">
+<header>
+  <h1 id="titolo"></h1>
+  <p id="scegli"></p>
+</header>
+<div id="elenco" tabindex="0" role="radiogroup"></div>
+<label class="reg">
+  <input type="checkbox" id="rec">
+  <span><span id="t-rec"></span><small id="h-rec"></small></span>
+</label>
+<div class="occ" id="occ"></div>
+<footer>
+  <button class="btn" id="b-edit"></button>
+  <span class="sp"></span>
+  <button class="btn" id="b-cancel"></button>
+  <button class="btn go" id="b-go"></button>
+</footer>
+<script>
+let L = {}, S = null, scelto = null, toccato = false;
+const $ = id => document.getElementById(id);
+const T = k => L[k] || k;
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+const rb = (n, a) => { try { sketchup[n](a); } catch(e){} };
+
+function scegli(id){
+  scelto = id;
+  document.querySelectorAll('.prof').forEach(b => {
+    const on = b.dataset.id === id;
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-checked', on);
+    if(on) b.scrollIntoView({ block: 'nearest' });
+  });
+}
+function parti(){
+  if($('b-go').disabled || !scelto) return;
+  rb('go', JSON.stringify({ profile: scelto, record: $('rec').checked }));
+}
+
+$('elenco').addEventListener('click', ev => {
+  const b = ev.target.closest('.prof');
+  if(b){ toccato = true; scegli(b.dataset.id); }
+});
+$('elenco').addEventListener('dblclick', ev => { if(ev.target.closest('.prof')) parti(); });
+$('rec').addEventListener('change', () => { toccato = true; });
+$('b-go').addEventListener('click', parti);
+$('b-cancel').addEventListener('click', () => rb('cancel'));
+$('b-edit').addEventListener('click', () => rb('edit'));
+document.addEventListener('keydown', ev => {
+  if(ev.key === 'Escape'){ ev.preventDefault(); rb('cancel'); return; }
+  if(ev.key === 'Enter' && !(ev.target.closest && ev.target.closest('button'))){ ev.preventDefault(); parti(); return; }
+  if((ev.key === 'ArrowDown' || ev.key === 'ArrowUp') && S && ev.target.type !== 'checkbox'){
+    ev.preventDefault();
+    const ids = S.profiles.map(p => p.id);
+    const i = Math.max(0, ids.indexOf(scelto)) + (ev.key === 'ArrowDown' ? 1 : -1);
+    toccato = true;
+    scegli(ids[(i + ids.length) % ids.length]);
+  }
+});
+// Mai il menu del browser (in inglese, con Ricarica, Ispeziona…)
+document.addEventListener('contextmenu', ev => ev.preventDefault());
+
+// ── Chiamate da Ruby ─────────────────────────────────────────────
+const rgb = h => { const m = /^#?([0-9a-f]{6})$/i.exec(h || ''); if(!m) return null; const n = parseInt(m[1], 16); return [n >> 16, n >> 8 & 255, n & 255]; };
+const mix = (a, b, t) => '#' + a.map((x, i) => Math.round(x + (b[i] - x) * t).toString(16).padStart(2, '0')).join('');
+const lum = c => (0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]) / 255;
+function applyLook(o){
+  const r = document.documentElement.style, set = (n, v) => r.setProperty('--' + n, v);
+  const light = o.theme === 'light' || (o.theme === 'auto' && matchMedia('(prefers-color-scheme: light)').matches);
+  const B = rgb(o.bg) || (light ? [240, 240, 239] : [21, 21, 21]);
+  const F = rgb(o.text) || (light ? [30, 30, 30] : [220, 220, 220]);
+  const A = rgb(o.accent) || [0, 201, 167];
+  set('bg', mix(B, B, 0)); set('fg', mix(F, F, 0)); set('mut', mix(B, F, .55));
+  set('line', mix(B, F, light ? .14 : .12)); set('in', mix(B, F, light ? .04 : .05));
+  set('btn', mix(B, F, light ? .1 : .14));
+  set('acc', mix(A, A, 0)); set('acc-ink', lum(A) > .5 ? '#0d0d0d' : '#ffffff');
+}
+
+function init(d){
+  L = d.strings || {};
+  document.documentElement.lang = d.lang || 'en';
+  document.documentElement.dir = d.rtl ? 'rtl' : 'ltr';
+  applyLook(d.look || {});
+  document.title = T('xs.title');
+  $('titolo').textContent = T('xs.title');
+  $('scegli').textContent = T('xs.choose');
+  $('t-rec').textContent = T('xs.record');
+  $('h-rec').textContent = T('xs.record.h');
+  $('b-edit').textContent = T('xs.edit');
+  $('b-cancel').textContent = T('xs.cancel');
+  $('b-go').textContent = '▶ ' + T('xs.start');
+  $('occ').textContent = T('xs.busy');
+  if(S) show(S);
+}
+
+// I profili possono cambiare mentre la finestra è aperta (dalla finestra dei
+// profili): l'elenco si rifà, ma la scelta già fatta qui resta.
+function show(s){
+  if(!s) return;
+  const prima = S;
+  S = s;
+  $('elenco').innerHTML = s.profiles.map(p =>
+    `<button class="prof" role="radio" tabindex="-1" data-id="${esc(p.id)}"><i></i><span>` +
+    `<b>${esc(p.name)}</b>${p.desc || !p.builtin ? `<small>${esc(p.builtin ? p.desc : T('xs.mine'))}</small>` : ''}</span></button>`
+  ).join('');
+  const resta = toccato && s.profiles.some(p => p.id === scelto);
+  scegli(resta ? scelto : s.active);
+  if(!prima || !toccato) $('rec').checked = !!s.record;
+  $('b-go').disabled = !!s.busy;
+  $('occ').classList.toggle('si', !!s.busy);
+  if(!prima) $('elenco').focus();
+  document.body.classList.remove('attende');
+}
+
+window.addEventListener('load', () => rb('ready'));
+</script>
+</body>
+</html>

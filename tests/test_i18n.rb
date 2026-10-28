@@ -44,6 +44,8 @@ used += (1..ph[/HELP_ITEMS = (\d+)/, 1].to_i).map { |i| "help.#{i}" }
 used += ph.scan(/^\{ id:'(\w+)', subs/).flatten.map { |t| "tab.#{t}" }
 used += ph.scan(/'(keys\.\w+)'/).flatten
 used += rb.scan(/'rt\.\w+'/).map { |k| k.delete("'") }            # chiavi passate come argomento (es. drop_grabbed)
+used += read(File.join(ROOT, 'lib', 'gallery.rb')).scan(/=> '(gal\.[\w.]+)'/).flatten   # GAL_TXT: i testi di galleria.html
+used += %w[path.photos.h path.photos0.h]                          # pannello: 📷 col numero, o spento ('path.' + h + '.h')
 used += %w[legno pietra metallo vetro gomma pallone cartone plastica].map { |m| "mat.#{m}" }
 # Finestra durante il video (attesa.html): ogni 'att.…' e 'fun.…' fra apici
 # (T('att.stop'), battute { k:'fun.…' }, righe delle statistiche, finali)
@@ -54,6 +56,14 @@ used += att
 kh = read(File.join(ROOT, 'keyedit.html'))
 ke = (kh.scan(/'(ke\.[\w.]+)'/).flatten + read(File.join(ROOT, 'lib', 'keyedit.rb')).scan(/t\('(ke\.[\w.]+)'\)/).flatten).uniq
 used += ke
+# Profili dell'esploratore (exprofiles.html, lib/exprofiles.rb, lib/explore.rb): ogni 'xp.…' fra apici
+xp = [read(File.join(ROOT, 'exprofiles.html')), read(File.join(ROOT, 'lib', 'exprofiles.rb')),
+      read(File.join(ROOT, 'lib', 'explore.rb'))].flat_map { |s| s.scan(/'(xp\.[\w.]+)'/).flatten }.uniq
+used += xp
+# Finestra di avvio dell'esploratore (exstart.html, lib/exprofiles.rb): ogni 'xs.…' fra apici
+xs = [read(File.join(ROOT, 'exstart.html')), read(File.join(ROOT, 'lib', 'exprofiles.rb'))]
+     .flat_map { |s| s.scan(/'(xs\.[\w.]+)'/).flatten }.uniq
+used += xs
 used.uniq!
 missing_en = used.reject { |k| en.key?(k) }
 ok(missing_en.empty?, "i #{used.size} testi usati da codice e pannello esistono in en.json#{missing_en.empty? ? '' : ": mancano #{missing_en.join(', ')}"}")
@@ -62,6 +72,10 @@ morti = en.keys.select { |k| k.start_with?('att.', 'fun.') } - att
 ok(morti.empty?, "ogni testo att./fun. di en.json è usato da attesa.html (#{att.size})#{morti.empty? ? '' : ": inutili #{morti.join(', ')}"}")
 morti = en.keys.select { |k| k.start_with?('ke.') } - ke
 ok(morti.empty?, "ogni testo ke. di en.json è usato dal pannello della sfera (#{ke.size})#{morti.empty? ? '' : ": inutili #{morti.join(', ')}"}")
+morti = en.keys.select { |k| k.start_with?('xp.') } - xp
+ok(morti.empty?, "ogni testo xp. di en.json è usato dai profili dell'esploratore (#{xp.size})#{morti.empty? ? '' : ": inutili #{morti.join(', ')}"}")
+morti = en.keys.select { |k| k.start_with?('xs.') } - xs
+ok(morti.empty?, "ogni testo xs. di en.json è usato dalla finestra di avvio (#{xs.size})#{morti.empty? ? '' : ": inutili #{morti.join(', ')}"}")
 
 (files - ['en']).sort.each do |c|
   d = parsed[c] || {}

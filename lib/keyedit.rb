@@ -65,14 +65,8 @@ module DagaWASD
     # Quota degli occhi sopra ciò che c'è sotto (pollici); nil se sotto non c'è nulla.
     # Le sfere e i loro pezzi non contano.
     def self.ke_ground(model, k)
-      from = Geom::Point3d.new(k[0], k[1], k[2])
-      down = Geom::Vector3d.new(0, 0, -1)
-      6.times do
-        hit = model.raytest([from, down], true) or return nil
-        return k[2] - hit[0].z unless hit[1].any? { |e| e.respond_to?(:definition) && e.definition.get_attribute(KEY_DICT, 'def') }
-        from = hit[0].offset(down, 0.01)
-      end
-      nil
+      hit = key_ray(model, Geom::Point3d.new(k[0], k[1], k[2]), Geom::Vector3d.new(0, 0, -1)) or return nil   # lib/pathkeys.rb
+      k[2] - hit[0].z
     rescue StandardError
       nil
     end
@@ -292,6 +286,7 @@ module DagaWASD
       @ke[:inst] = n
       view = n.model.active_view
       if key_editable?(e) && !e.equal?(n)
+        ke_dolly_end(view)                        # quello di prima finisce: la camera dov'era diretta
         a = key_of(e); b = key_of(n)
         if @ke[:preview]
           ke_dolly(view, ke_path_frames(e, n) || ->(s) { ke_mix(a, b, s) }, nil)
@@ -299,7 +294,7 @@ module DagaWASD
           c = ke_cam_frame(view.camera)
           c2 = c.dup
           3.times { |i| c2[i] += b[i] - a[i] }
-          ke_dolly(view, ->(s) { ke_mix(c, c2, s) }, KE_DOLLY)
+          ke_dolly(view, ->(s) { ke_mix(c, c2, s) }, KE_DOLLY, view.camera.perspective?)
         end
       end
       ke_push
@@ -309,6 +304,7 @@ module DagaWASD
       e = @ke && @ke[:inst]
       return unless key_editable?(e) && on != @ke[:preview]
       view = e.model.active_view
+      ke_dolly_end(view)                          # quello di prima finisce: sfere com'erano
       @ke[:preview] = on
       ke_select(e)                                # con l'anteprima niente contorno blu
       if on
@@ -321,20 +317,53 @@ module DagaWASD
         ke_dolly(view, ->(s) { ke_mix(from, to, s) }, KE_DOLLY)
       elsif (bk = @ke[:back])
         from = ke_cam_frame(view.camera)
+        to = ke_saved_frame(bk, from[9])
         eye, target, up, persp, fov, height = bk
-        dir = eye.vector_to(target)
-        to = path_orthonormal!([eye.x, eye.y, eye.z, dir.x, dir.y, dir.z, up.x, up.y, up.z, fov || from[9]])
-        hidden = @ke[:keys_hidden]
+        done = ke_preview_cut(view)
         ke_dolly(view, ->(s) { ke_mix(from, to, s) }, KE_DOLLY) do
           cam = Sketchup::Camera.new(eye, target, up, persp, fov || 35)
           cam.height = height if height
           view.camera = cam                       # esatta com'era, anche parallela
-          key_unhide(e.model, hidden)             # fuori dalla sfera si rivedono
+          done.call                               # fuori dalla sfera si rivedono
         end
-        @ke[:back] = nil
-        @ke[:keys_hidden] = false
       end
       ke_push
+    end
+
+    # La vista salvata all'accensione dell'anteprima come fotogramma
+    # (parallela: il campo visivo fov0)
+    def self.ke_saved_frame(bk, fov0)
+      eye, target, up, _persp, fov = bk
+      dir = eye.vector_to(target)
+      path_orthonormal!([eye.x, eye.y, eye.z, dir.x, dir.y, dir.z, up.x, up.y, up.z, fov || fov0])
+    end
+
+    # Con l'anteprima accesa: la vista di prima come fotogramma; se no nil
+    def self.ke_preview_back
+      return nil unless @ke && @ke[:preview] && @ke[:back]
+      ke_saved_frame(@ke[:back], 60.0)
+    end
+
+    # Anteprima spenta; la camera la muove chi chiama (il dolly di ritorno
+    # qui sopra, o lib/pathkeys.rb, key_add_at). Ritorna il blocco da
+    # chiamare a camera arrivata: di nuovo parallela se lo era, sfere
+    # riaccese. nil se non c'è una vista di prima.
+    def self.ke_preview_cut(view)
+      return nil unless @ke && (bk = @ke[:back])
+      _eye, _target, _up, persp, _fov, height = bk
+      hidden = @ke[:keys_hidden]
+      model = view.model
+      @ke[:preview] = false
+      @ke[:back] = nil
+      @ke[:keys_hidden] = false
+      ke_select(@ke[:inst]) if key_editable?(@ke[:inst])   # di nuovo selezionata
+      lambda do
+        unless persp
+          view.camera.perspective = false
+          view.camera.height = height
+        end
+        key_unhide(model, hidden)
+      end
     end
 
     # Fotogrammi del percorso da una sfera all'altra (anche all'indietro),
@@ -368,29 +397,67 @@ module DagaWASD
     end
 
     # Dolly: la camera segue f(s), s da 0 a 1 rallentando ai capi, in dur
-    # secondi (f può essere [funzione, durata]); poi il blocco, se c'è.
-    def self.ke_dolly(view, f, dur, &done)
+    # secondi (f può essere [funzione, durata]); poi il blocco, se c'è,
+    # anche se il dolly è interrotto (riaccende le sfere). persp false: la
+    # camera parallela resta parallela.
+    def self.ke_dolly(view, f, dur, persp = true, &done)
       f, dur = f if f.is_a?(Array)
-      view.animation = KeDolly.new(f, dur || KE_DOLLY, done)
+      @ke_dolly = KeDolly.new(f, dur || KE_DOLLY, done, persp)
+      view.animation = @ke_dolly
+    end
+
+    # Un dolly ancora in corso: un secondo clic arriva mentre la camera si
+    # muove. Uno scaduto da un pezzo SketchUp l'ha lasciato cadere senza
+    # dirlo (modello chiuso…): non blocca più nulla.
+    def self.ke_dolly?
+      !@ke_dolly.nil? && !@ke_dolly.over? && !@ke_dolly.stale?
+    end
+
+    # Fermato prima della fine (riproduzione, anteprima, altra sfera, FPS):
+    # il suo blocco subito
+    def self.ke_dolly_end(view)
+      d = @ke_dolly or return
+      @ke_dolly = nil
+      return if d.over? || d.stale?
+      view.animation = nil
+      d.stop
     end
 
     class KeDolly
-      def initialize(f, dur, done)
-        @f = f; @dur = dur; @done = done
+      def initialize(f, dur, done, persp = true)
+        @f = f; @dur = dur; @done = done; @persp = persp; @over = false
         @t0 = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      end
+
+      def over?; @over; end
+
+      # Doveva finire da più di un secondo: nessuno lo fa più andare
+      def stale?
+        Process.clock_gettime(Process::CLOCK_MONOTONIC) - @t0 > @dur + 1.0
       end
 
       def nextFrame(view)
         s = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - @t0) / @dur).clamp(0.0, 1.0)
         e = s < 0.5 ? 2 * s * s : 1 - (-2 * s + 2)**2 / 2
-        DagaWASD::FPSWalk.path_set_camera(view, @f.call(e))
+        DagaWASD::FPSWalk.path_set_camera(view, @f.call(e), @persp)
         view.show_frame
         return true if s < 1.0
-        @done&.call
+        stop
         false
       rescue => fps_err
         DagaWASD::FPSWalk.log_error(:ke_dolly, fps_err)
+        stop
         false
+      end
+
+      # Arrivato, o tolto da SketchUp (un'altra animazione, un'orbita…):
+      # il blocco della fine una volta sola
+      def stop
+        return if @over
+        @over = true
+        @done&.call
+      rescue => fps_err
+        DagaWASD::FPSWalk.log_error(:ke_dolly, fps_err)
       end
     end
 
@@ -426,14 +493,7 @@ module DagaWASD
         nk[10] = 0.0; nk[11] = 0.0
       end
       model.start_operation(t('ke.op'), true)
-      list.each_with_index { |x, j| x.set_attribute(KEY_DICT, 'i', j <= i ? j : j + 1) }
-      n = model.entities.add_instance(key_def(model, nk[9]), key_transform(nk)) # rubocop:disable SketchupSuggestions/ModelEntities
-      n.material = e.material
-      n.layer = e.layer
-      n.name = e.name
-      n.set_attribute(KEY_DICT, 'path', e.get_attribute(KEY_DICT, 'path'))
-      n.set_attribute(KEY_DICT, 'i', i + 1)
-      n.set_attribute(KEY_DICT, 'fov', nk[9].to_f.round(2))
+      n = key_insert_at(model, e.get_attribute(KEY_DICT, 'path').to_s, list, i + 1, nk)   # lib/pathkeys.rb
       model.commit_operation
       ke_select(n)
       ke_goto(n)

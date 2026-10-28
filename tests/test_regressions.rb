@@ -25,6 +25,17 @@ File.write(settings, '{"move_speed": 5.0')          # troncato a metà
 cfg = (F.load_cfg rescue :raised)
 ok(cfg.is_a?(Hash) && cfg['move_speed'] == F::DEFAULT['move_speed'], 'settings.json troncato: default, nessun errore')
 
+# ── Impostazioni in memoria azzerate (config.rb ricaricato a mano) ──
+# Prima: il primo salvataggio scriveva solo le poche chiavi rimaste in
+# memoria e il settings.json dell'utente perdeva tutto il resto.
+File.write(settings, JSON.generate('move_speed' => 3.3, 'language' => 'it'))
+F.instance_variable_set(:@cfg, { 'explore_profile' => 'runner' })
+F.save_cfg
+d = JSON.parse(File.read(settings))
+ok(d['move_speed'] == 3.3 && d['language'] == 'it' && d['explore_profile'] == 'runner' && d.key?('eye_height'),
+   'memoria azzerata: il salvataggio tiene il file e aggiunge la modifica')
+ok(F.cf('move_speed') == 3.3, 'e la memoria torna quella del file')
+
 # ── Salvataggio atomico ─────────────────────────────────────────────
 F.load_cfg
 F.instance_variable_get(:@cfg)['move_speed'] = 4.2

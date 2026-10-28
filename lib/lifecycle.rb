@@ -6,9 +6,20 @@ module DagaWASD
     # ══════════════════════════════════════════════════════════════
     # Start / Stop / Toggle
     # ══════════════════════════════════════════════════════════════
+    # Un ponte sta costruendo dal vivo, con un'operazione aperta: il nostro
+    # (lib/bridge.rb) o quello dell'estensione DagaMCP, se installata.
+    def self.bridge_building?
+      !!@bridge_job || dagamcp_building?
+    end
+
+    def self.dagamcp_building?
+      !!(defined?(DagaMCP::Bridge) && DagaMCP::Bridge.respond_to?(:busy?) && DagaMCP::Bridge.busy?)
+    end
+
     def self.start
       return if @active
-      return if @bridge_job     # il ponte sta costruendo: la fisica non deve entrare nella sua operazione
+      return if bridge_building?  # un ponte sta costruendo: la fisica non deve entrare nella sua operazione
+      explore_stop if @ex         # esploratore autonomo (lib/explore.rb): la camera torna a te
       stop_settle
       load_cfg
 
@@ -20,6 +31,7 @@ module DagaWASD
       view = Sketchup.active_model&.active_view
       return unless view
       watch_ops(Sketchup.active_model)   # voce d'annullamento della fisica (physics.rb)
+      ke_dolly_end(view)                 # keyedit.rb: un dolly a metà finisce prima, sfere com'erano
 
       @keys_hidden = key_hide(Sketchup.active_model)   # posizioni dei percorsi: né viste né ostacoli
 
@@ -62,6 +74,8 @@ module DagaWASD
       @prev_k         = false
       @prev_rec       = false
       @path_rec       = nil
+      @prev_photo     = false
+      @gal_loose      = nil   # le foto fuori da una registrazione: una serie per volta (lib/gallery.rb)
       @kick_start     = nil
       # FOV di riferimento: quello impostato, o quello del modello se fov = 0
       @base_fov = cf('fov').to_f > 0 ? cf('fov').to_f : (cam.fov.to_f rescue 60.0)
@@ -164,7 +178,7 @@ module DagaWASD
       now = Time.now.to_f
       dt  = (now - @last_settle).clamp(0.001, 0.1)
       @last_settle = now
-      return if @bridge_job
+      return if bridge_building?
       @settle_t += dt
       step_physics(dt)
       finish_settle if @phys_entities.empty? || @settle_t > SETTLE_MAX

@@ -17,6 +17,157 @@ Il numero sta in un posto solo, `VERSION` in `dagawasd.rb`;
   zoom. Un clic su una posizione ne apre il pannello, come il doppio clic
   sulla sfera. L'elenco resta aperto mentre si spostano, aggiungono o tolgono
   sfere.
+- Nello stesso elenco, passando col mouse fra due posizioni (o prima della
+  prima, dopo l'ultima) compare una lineetta: un clic aggiunge lì una
+  posizione presa dalla vista attuale, e la vista arretra di un metro per
+  non restare dentro la sfera nuova (meno, se dietro c'è un muro). La sfera
+  nuova prende colore e tag delle vicine; con l'anteprima del pannello della
+  sfera accesa conta la vista di prima, e l'anteprima si spegne. Gli spazi si
+  raggiungono anche col tasto Tab.
+- Durante la riproduzione (e il video) di un percorso, nel suo elenco si
+  accende una dopo l'altra la posizione in corso.
+- Il pulsante «+ Nuovo dalla vista» si chiama ora «+ Nuovo percorso dalla
+  vista», e la nota del pannello spiega l'elenco delle posizioni.
+- **Esploratore autonomo** (`lib/explore.rb`, pulsante con l'occhio nella
+  barra e voce nel menu): la camera esplora il modello da sola. Analizza la
+  vista con una retina di raggi lanciati attraverso lo schermo (distanza,
+  normale, faccia, oggetto e colore di ogni punto), sceglie il punto più
+  significativo — sagome, spigoli, dettaglio, contrasto di colore, rarità,
+  componenti e gruppi a misura d'uomo più delle pareti — gli fa un passo
+  incontro guardandolo, e ricomincia. Gira attorno agli ostacoli, sale le
+  scale, non scende dai precipizi; da una vista aerea vola e atterra dove c'è
+  qualcosa da vedere. Una memoria di ciò che ha già guardato (e dei posti
+  già calpestati) lo stanca delle stesse cose e lo porta in stanze nuove.
+  L'analisi è divisa fra i fotogrammi e la retina si adatta al modello, così
+  la vista resta fluida. Mappa dell'attenzione nella vista; Esc o un clic per
+  fermarlo, tasto destro per pausa, «Cerca altro», mappa e «occhio a
+  colori» (anche i pixel veri della vista, più lento); rotella per la
+  velocità. Alla fine il giro diventa un percorso, da riguardare o da
+  esportare in scene e video.
+- **Profili dell'esploratore** (*Estensioni › DagaWASD › Profili
+  dell'esploratore…*, `exprofiles.html`): il suo carattere è un insieme di
+  coefficienti — velocità, riflessi, soste, determinazione, fedeltà,
+  curiosità, noia, voglia di andare, capriccio, che cosa lo attira e quanto,
+  zoom. Sette profili pronti: Equilibrato, Curioso, Corridore, Lento,
+  Fotografo (ingrandisce ogni obiettivo prima di avvicinarsi), Spensierato
+  e Soldato (ricognizione, sempre a piedi: corre, guarda da lontano e per poco, va prima
+  dove non ha ancora visto); «Nuovo» ne copia uno da cambiare a piacere. Le modifiche
+  valgono subito, anche mentre esplora; dal tasto destro si cambia profilo
+  al volo.
+- L'esploratore salta un ostacolo basso che gli sbarra la strada (muretti,
+  staccionate), con la forza del salto e la gravità del giocatore, se oltre
+  c'è un piano dove atterrare; il profilo Lento non salta. Altezza degli
+  occhi, raggio, gradino e salto seguono le impostazioni del giocatore anche
+  se cambiate mentre esplora.
+- L'esploratore tiene una pianta di ciò che ha visto (a celle di 50 cm, una
+  per piano, con la quota di pavimenti, gradini e mobili) e su di essa
+  pianifica la strada per ogni obiettivo, invece di andare dritto schivando:
+  attorno a muri e mobili, su per scale e pendii, mai sopra un tavolo. A ogni
+  analisi ricontrolla il resto del percorso e, se ciò che ha appena visto lo
+  sbarra, ne cerca un altro; dove urta, ricalcola. Se l'obiettivo sparisce
+  dietro un muro trova il giro fino a un punto da cui lo rivede, invece di
+  camminare contro il muro o lasciar perdere, e intanto guarda dove va. Il
+  percorso in corso si vede tratteggiato sul pavimento: segue pendii e
+  gradini e scavalca gli spigoli, senza attraversare i solidi.
+- Frontiere: il bordo fra ciò che l'esploratore ha visto e ciò che non ha
+  mai visto (oltre una porta, dietro un angolo) diventa un obiettivo, «zona
+  inesplorata»: ci va a guardare. Quadratini viola nella mappa
+  dell'attenzione, posati sul terreno anche in salita e in discesa.
+- Retina dinamica: è più fitta attorno a ciò che l'esploratore guarda (una
+  fovea sull'obiettivo, o al centro) e più rada ai margini, a parità di
+  raggi; rarità e grandezza degli oggetti contano comunque per la parte di
+  vista che occupano. Il tempo di calcolo segue i fotogrammi: dove SketchUp
+  ha fiato la retina si fa fitta, dove la vista rallenta si fa rada. In
+  alto a sinistra il costo dell'ultima analisi sul suo budget (es.
+  «48/120 ms»). Opzioni `fovea` (0 = uniforme) e `adaptive` (false = budget
+  fisso `scan_ms`/`frame_ms`).
+- Occhio a colori: una seconda riga in alto a sinistra dice da dove vengono
+  i colori che l'esploratore pesa («colori: dei materiali» o «colori: come
+  si vedono», col costo dell'immagine). Se un'immagine della vista costa
+  troppo si spegne da solo, e ora lo dice: nel riquadro e nella voce del
+  tasto destro, coi millisecondi; un clic la riprova.
+- Esploratore: il tasto I nasconde o mostra le righe d'informazione in alto
+  a sinistra (comando `info` del ponte; la scelta resta per i giri dopo).
+- Profili: *Giro attorno agli oggetti* (in gradi). Raggiunto un oggetto, ci
+  gira attorno guardandolo per vederlo da più lati; il Fotografo di 180°, il
+  Curioso di 90°, gli altri no. Gira solo finché lo vede: dove una parete lo
+  nasconderebbe torna indietro e, se anche dall'altra parte sparisce, si
+  ferma lì.
+- La memoria dei posti già calpestati ricorda anche la quota: il piano di
+  sopra, sulla stessa verticale, resta nuovo.
+- Il pulsante dell'esploratore apre prima una finestra di avvio: si sceglie
+  il profilo e se registrare il giro come percorso (`exstart.html`). Le due
+  scelte restano per la volta dopo.
+- Se in 10 secondi non si sposta, l'esploratore cerca una via di fuga e la
+  percorre; senza via a piedi si alza in volo.
+- Profili: *Continuità dello sguardo*. Lo sguardo dell'esploratore passa
+  volentieri a ciò che sta accanto a quello che guarda, invece di saltare
+  da una parte all'altra della vista, e non torna su ciò che aveva già nella
+  retina e da cui si è girato: niente più destra, sinistra e di nuovo
+  destra. Anche guardandosi intorno continua a girare dalla stessa parte.
+  Il Soldato ne ha di più, lo Spensierato di meno; a 0 si comporta come
+  prima.
+- **Ponte per Claude Code**: `GET/POST /explore` comanda e osserva
+  l'esploratore (obiettivo, candidati, diario delle scelte); client
+  `tools/esplora.rb` con `avvia` (anche `--profilo`), `ferma`, `profili`,
+  `profilo`, `segui --foto` (un'immagine della vista a ogni nuovo
+  obiettivo).
+- **L'IA alla guida dell'esploratore** (`lib/expilot.rb`): attraverso il
+  ponte Claude Code vede ciò che l'esploratore ha visto (ogni cosa con un
+  nome corto e stabile, la sua direzione, distanza e grandezza, le zone
+  inesplorate) e gli dà un'agenda di mete: vai, guarda, vai a un punto, con
+  sosta, giro attorno e un commento che finisce nel diario. Può anche dargli
+  dei gusti (questo di più, quello mai, più frontiere) senza dare ordini.
+  L'esploratore non aspetta mai: cammina e guarda da solo verso le mete
+  dell'IA e, ad agenda vuota, sceglie da sé. Sul ponte `GET
+  /explore/percept` (con gli avvisi: arrivato, fatto, agenda quasi vuota,
+  cosa notevole) e il comando `steer`; client `tools/esplora.rb pilota` e
+  `guida`.
+- Il pilota vede: alle soste davanti alle sue mete l'esploratore scatta una
+  foto della vista con il nome corto scritto accanto a ogni cosa visibile
+  (la meta in giallo, oggetti, facce, zone inesplorate), in
+  `%APPDATA%\DagaWASD\pilota`. Solo da fermi, perché un'immagine della vista
+  blocca SketchUp per un attimo; a richiesta anche a ogni sosta, o mai.
+  `GET /explore/wait`: il ponte tiene in sospeso la richiesta del pilota e
+  risponde quando c'è qualcosa da decidere, invece di essere interrogato di
+  continuo.
+- Foto e galleria: P (o il dorsale destro del gamepad) scatta una foto, che
+  va col percorso se ne stai registrando uno. L'esploratore fotografa da sé
+  le mete più interessanti del giro e scrive che cosa sono e perché le ha
+  scelte; l'IA che lo guida le chiede con `snap`. Ogni serie sta accanto al
+  modello (`<modello>_foto/`).
+- In *Camera › Percorsi* ogni percorso ha il pulsante 📷 accanto a Video:
+  apre nel browser la galleria, o spiega come fare foto se non ce ne sono.
+  Le serie senza percorso stanno sotto l'elenco.
+- La galleria: Polaroid che si sviluppano su un tavolo di legno, ognuna coi
+  suoi appunti (che cosa, perché, chi, bussola e ora). Si guardano in fila,
+  col rullino delle miniature, o sparse sul tavolo, da spostare a mano. In
+  testa il giro a matita con le foto e i loro coni di vista, e in un angolo
+  la mappa piccola che segue. Ci sono anche i commenti dell'IA sui post-it,
+  il filtro per autore, la presentazione, la scheda finale con durata e
+  strada, e la stampa.
+- Un'azione arrivata con una versione nuova (come la foto) prende un tasto
+  libero se il suo predefinito l'avevi già dato a un'altra: i tuoi tasti
+  restano.
+- A piedi l'IA sa dove si arriva: `reach` e `walk_m` per cose e zone
+  inesplorate (una ricerca sulla pianta per tutte, riusata per qualche
+  secondo), «vai» verso cose irraggiungibili rifiutato, cartellini grigi
+  nelle foto. Lo stesso commento non si ripete nello stesso giro.
+- Il pilota non si risveglia più da solo dopo ogni sua decisione (gli avvisi
+  causati dallo steer non svegliano); il ponte libera le attese dei client
+  andati via.
+- I commenti dell'IA restano nel percorso registrato: descrizioni delle
+  scene e sottotitoli `.srt` del video (accanto all'AVI; nell'MP4 di
+  `crea_video.bat`).
+- Pilota autonomo `tools/pilota_ia.rb`: Claude guida l'esploratore da solo,
+  con la descrizione e le foto delle soste, un tetto di turni e di secondi.
+  Due motori: Claude Code (`claude -p`, l'account di questo computer, nessuna
+  chiave; risposta in JSON con lo schema dello steer, foto lette con Read,
+  conversazione con `--resume`) e l'API di Claude (gemma `anthropic`,
+  strumento `steer`). Test con un `claude -p` finto e un'API finta
+  (`tests/test_pilota_ia.rb`).
+- Test dell'esploratore in una scena finta (`tests/test_explore.rb`): due
+  stanze con una porta, scale, una terrazza, una vista aerea.
 
 ### Corretto
 - Entrando in modalità WASD la vista si spostava: gli occhi saltavano
@@ -30,8 +181,21 @@ Il numero sta in un posto solo, `VERSION` in `dagawasd.rb`;
 - Avviare la camminata stando dentro una sfera aperta in modifica scriveva
   un errore nel registro (le sfere restavano visibili): ora le sfere restano
   accese senza errori.
+- Spegnendo e riaccendendo subito l'anteprima del pannello della sfera, o
+  avviando la riproduzione durante il suo dolly, le sfere potevano restare
+  spente (tag *DagaWASD percorsi* nascosto).
+- Con la vista in proiezione parallela, «successiva» e «precedente» del
+  pannello della sfera la facevano passare in prospettiva a 60°: ora resta
+  parallela.
 - Raramente il disegno dei numeri delle sfere si interrompeva con un errore
   nel registro, e i numeri successivi non comparivano.
+- Ponte per Claude, con la costruzione dal vivo spenta: il codice inviato
+  vedeva le variabili interne del ponte, e un `out = …` nel codice faceva
+  perdere l'output della risposta (o un errore incomprensibile).
+- Ponte per Claude ed estensione DagaMCP accesi insieme: mentre DagaMCP
+  costruisce dal vivo, il ponte di DagaWASD rifiuta il codice (riprova a
+  costruzione finita) e la modalità WASD non parte, così nessuno entra
+  nell'operazione aperta dell'altro.
 
 ## [1.1.0] — 2026-10-17
 

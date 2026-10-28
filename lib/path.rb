@@ -8,9 +8,12 @@ module DagaWASD
     # ══════════════════════════════════════════════════════════════
     # Dove stanno: nel modello (dizionario PATH_DICT, una chiave per
     # percorso), così viaggiano col file .skp. Ogni percorso è un JSON
-    #   { "date": "2026-10-04 18:30", "s": [[t, ex, ey, ez, dx, dy, dz, ux, uy, uz, fov], …] }
+    #   { "date": "2026-10-04 18:30", "s": [[t, ex, ey, ez, dx, dy, dz, ux, uy, uz, fov], …],
+    #     "notes": [[t, "testo"], …] }
     # t in secondi dall'inizio, occhio in pollici, direzione e alto
     # versori, fov in gradi: la camera vera, dondolio e inclinazione compresi.
+    # notes (facoltative): i commenti dell'IA che guidava l'esploratore
+    # (lib/expilot.rb), che diventano descrizioni delle scene e sottotitoli.
     # ══════════════════════════════════════════════════════════════
     PATH_DICT = 'DagaWASD_percorsi'
     PATH_HZ   = 30.0         # campioni al secondo registrati (e fotogrammi interni)
@@ -57,29 +60,71 @@ module DagaWASD
           { 't' => sch[i][:arrive].round(1), 'p' => q[10].round(1), 'v' => q[11].round(2), 'z' => key_zoom(q[9]).round(1) }
         end
         { 'name' => k, 'dur' => dur.round(1), 'date' => p['date'].to_s, 'keys' => list.size,
-          'shown' => list.any? { |e| !e.hidden? }, 'rec' => rec, 'pts' => pts }
+          'shown' => list.any? { |e| !e.hidden? }, 'rec' => rec, 'pts' => pts, 'photos' => p['photos'].to_i }
       end.sort_by { |p| [p['date'], p['name']] }
     end
 
     # Fotogrammi e durata: dalle posizioni nel modello se ce ne sono almeno
     # due, se no dalla registrazione levigata; nil se nessuna delle due.
+    # Con le posizioni anche mark: da che secondo è «in corso» ciascuna
+    # (a metà del tratto che porta a lei; la prima da 0).
     def self.path_track(name, model = Sketchup.active_model)
       data = path_data(name, model) or return nil
       keys = key_read(name, model)
       if keys.size >= 2
-        fr = key_frames(keys, key_speed(data))
-        return { frames: fr, dur: (fr.size - 1) / PATH_HZ, keys: keys.size }
+        v = key_speed(data)
+        tm = key_timing(key_spline(keys), v)
+        fr = key_frames(keys, v, tm)
+        mark = [0.0] + key_schedule(keys, v, tm).each_cons(2).map { |a, b| (a[:leave] + b[:arrive]) / 2 }
+        return { frames: fr, dur: (fr.size - 1) / PATH_HZ, keys: keys.size, mark: mark }
       end
       s = data['s']
-      s.size >= 2 ? { frames: path_frames(s), dur: s.last[0].to_f, keys: 0 } : nil
+      s.size >= 2 ? { frames: path_frames(s), dur: s.last[0].to_f, keys: 0, notes: path_notes(data) } : nil
+    end
+
+    # I commenti sul tempo della registrazione: con le posizioni nel modello
+    # il tempo è un altro, e path_track non li dà.
+    def self.path_notes(data)
+      n = data['notes']
+      return [] unless n.is_a?(Array)
+      n.select { |a| a.is_a?(Array) && a[0].is_a?(Numeric) && a[1].is_a?(String) && !a[1].strip.empty? }
+       .map { |a| [a[0].to_f, a[1].strip] }.sort_by(&:first)
+    end
+
+    # Sottotitoli SRT: ogni commento dal suo istante (diviso per la velocità)
+    # finché non arriva il successivo, al più 4 s più un po' per i lunghi;
+    # nil se non ce ne sono nel tratto girato (end in s di video).
+    def self.path_srt(notes, speed, end_s)
+      tc = ->(s) { ms = (s * 1000).round; format('%02d:%02d:%02d,%03d', ms / 3_600_000, ms / 60_000 % 60, ms / 1000 % 60, ms % 1000) }
+      list = notes.map { |t, txt| [t / speed, txt] }.select { |a, _| a < end_s }
+      return nil if list.empty?
+      body = list.each_with_index.map do |(a, txt), i|
+        b = [a + 4.0 + txt.size * 0.04, a + 8.0, end_s].min
+        b = [b, a + 0.5].max
+        b = [b, list[i + 1][0] - 0.05].min if list[i + 1]      # mai sopra il successivo
+        "#{i + 1}\r\n#{tc.(a)} --> #{tc.(b)}\r\n#{txt}\r\n"
+      end
+      "\uFEFF" + body.join("\r\n")
+    end
+
+    # Senza commenti nel tratto girato si toglie quello di una volta.
+    def self.path_srt_write(job, file)
+      srt = path_srt(job[:notes].to_a, job[:speed], job[:k].to_f / job[:fps])
+      return (File.delete(file) if File.exist?(file)) && nil unless srt
+      File.write(file, srt, mode: 'wb')
+      file
+    rescue => fps_err
+      log_error(__method__, fps_err)
+      nil
     end
 
     def self.path_track_err(name)
       path_data(name) ? format(t('path.no_keys'), name: name) : t('path.missing')
     end
 
+    # I percorsi e le serie di foto che nessun percorso tiene (lib/gallery.rb)
     def self.path_push
-      @dialog&.execute_script("setPaths(#{js_json(path_list)})")
+      @dialog&.execute_script("setPaths(#{js_json(path_list)}, #{js_json(gal_loose)})")
     rescue => fps_err; log_error(__method__, fps_err); end
 
     def self.path_write(op, model = Sketchup.active_model)
@@ -138,12 +183,14 @@ module DagaWASD
       @path_rec = nil
       s = r[:s]
       if s.size < 2 || s.last[0] < PATH_MIN
+        gal_finish(r[:gal], nil, s)              # le foto restano, senza percorso
         Sketchup.status_text = t('rt.rec_short')
         return nil
       end
       name = path_new_name
-      json = JSON.generate('date' => Time.now.strftime('%Y-%m-%d %H:%M:%S'), 's' => s)
+      json = JSON.generate({ 'date' => Time.now.strftime('%Y-%m-%d %H:%M:%S'), 's' => s }.merge(gal_fields(r[:gal])))
       path_write(t('path.op_save')) { |m| m.set_attribute(PATH_DICT, name, json) }
+      gal_finish(r[:gal], name, s)               # lib/gallery.rb: le foto scattate registrando
       Sketchup.status_text = format(t('rt.rec_saved'), name: name, time: path_clock(s.last[0]))
       name
     rescue => fps_err
@@ -213,11 +260,13 @@ module DagaWASD
       path_orthonormal!(Array.new(10) { |k| a[k] + (b[k] - a[k]) * f })
     end
 
-    def self.path_set_camera(view, fr)
+    # persp false: solo occhio, sguardo e alto (una camera parallela resta tale)
+    def self.path_set_camera(view, fr, persp = true)
       cam = view.camera
       eye = Geom::Point3d.new(fr[0], fr[1], fr[2])
       cam.set(eye, Geom::Point3d.new(fr[0] + fr[3] * 100, fr[1] + fr[4] * 100, fr[2] + fr[5] * 100),
               Geom::Vector3d.new(fr[6], fr[7], fr[8]))
+      return unless persp
       cam.perspective = true
       cam.fov = fr[9]
     end
@@ -248,11 +297,13 @@ module DagaWASD
       return t('path.busy') if @path_job
       tr ||= path_track(name) or return path_track_err(name)
       stop if @active                 # la camera la guida il percorso, non il giocatore
+      explore_stop if @ex             # né l'esploratore autonomo
       model = Sketchup.active_model
       view = model.active_view
+      ke_dolly_end(view)              # lib/keyedit.rb: un dolly a metà finisce, sfere com'erano
       speed = cf('path_speed').to_f.clamp(0.1, 10.0)
-      @path_job = { kind: kind, name: name, frames: tr[:frames], speed: speed,
-                    dur: tr[:dur], t0: nil, k: 0, view: view, done: false }.merge(extra)
+      @path_job = { kind: kind, name: name, frames: tr[:frames], speed: speed, notes: tr[:notes],
+                    dur: tr[:dur], t0: nil, k: 0, view: view, done: false, mark: tr[:mark], on: nil }.merge(extra)
       @path_job[:keys_hidden] = key_hide(model)   # le sfere non devono finire nella vista
       @path_job[:back] = path_cam_save(view.camera) if kind == :play
       model.select_tool(PathTool.new)
@@ -267,6 +318,7 @@ module DagaWASD
         job[:t0] ||= now
         t = (now - job[:t0]) * job[:speed]
         path_set_camera(view, path_frame_at(job[:frames], [t, job[:dur]].min))
+        path_mark(job, t)
         if job[:k] == 0
           Sketchup.status_text = format(t('rt.path_play'), name: job[:name])
           job[:k] = 1
@@ -281,6 +333,18 @@ module DagaWASD
       log_error(__method__, fps_err)
       path_finish(job, :errore)
       false
+    end
+
+    # Nel pannello si accende la posizione in corso, una dopo l'altra
+    # (pathMark); t nil la spegne. Solo quando cambia.
+    def self.path_mark(job, t)
+      mark = job[:mark] or return
+      i = t && (mark.rindex { |s| s <= t } || 0)
+      return if i == job[:on]
+      job[:on] = i
+      @dialog.execute_script("pathMark(#{js_json(job[:name])}, #{js_json(i)})") if @dialog&.visible?
+    rescue => fps_err
+      log_error(__method__, fps_err)
     end
 
     def self.path_abort(tool_gone = false)
@@ -298,6 +362,7 @@ module DagaWASD
       view.animation = nil if view && !anim_gone
       Sketchup.active_model&.select_tool(nil) unless job[:tool_gone]
       key_unhide(Sketchup.active_model, job[:keys_hidden])
+      path_mark(job, nil) unless job[:on].nil?
       if job[:kind] == :frames
         path_frames_done(job, why)
       else
@@ -383,6 +448,7 @@ module DagaWASD
       end
       t = k * job[:speed] / job[:fps].to_f
       path_set_camera(view, path_frame_at(job[:frames], [t, job[:dur]].min))
+      path_mark(job, t)
       if (avi = job[:avi])
         ok = view.write_image(filename: job[:jpg], width: job[:w], height: job[:h], antialias: true, compression: 0.9)
         raise IOError, job[:jpg] unless ok
@@ -409,10 +475,12 @@ module DagaWASD
       n = job[:k]
       Sketchup.status_text = ''
       unless n.zero?
+        base = path_safe(job[:name])
+        srt = path_srt_write(job, File.join(job[:dir], "#{base}.srt"))   # i commenti dell'IA, nel video come sottotitoli
         bat = File.join(job[:dir], 'crea_video.bat')
         File.write(bat, "@echo off\r\ncd /d \"%~dp0\"\r\n" \
-                        "ffmpeg -y -framerate #{job[:fps]} -i frame_%%05d.png -c:v libx264 -pix_fmt yuv420p -crf 18 " \
-                        "\"#{path_safe(job[:name])}.mp4\"\r\npause\r\n")
+                        "ffmpeg -y -framerate #{job[:fps]} -i frame_%%05d.png #{srt ? "-i \"#{base}.srt\" -c:s mov_text " : ''}" \
+                        "-c:v libx264 -pix_fmt yuv420p -crf 18 \"#{base}.mp4\"\r\npause\r\n")
       end
       info = { 'n' => n, 'time' => path_clock(n.to_f / job[:fps]), 'mb' => (job[:bytes].to_i / 1_048_576.0).round(1),
                'dir' => job[:dir].tr('/', '\\') }
@@ -430,6 +498,7 @@ module DagaWASD
       Sketchup.status_text = ''
       n = avi.frames
       File.delete(avi.path) if n.zero? && File.exist?(avi.path)
+      path_srt_write(job, avi.path.sub(/\.avi\z/i, '') + '.srt') unless n.zero?   # accanto: i lettori lo aprono da soli
       file = avi.path.tr('/', '\\')
       time = path_clock(n.to_f / job[:fps])
       mb = n.zero? ? 0.0 : (File.size(avi.path) / 1_048_576.0).round(1)
@@ -460,6 +529,7 @@ module DagaWASD
       return t('path.busy') if @path_job
       tr = path_track(name) or return path_track_err(name)
       stop if @active
+      explore_stop if @ex
       model = Sketchup.active_model
       view = model.active_view
       frames = tr[:frames]
@@ -468,6 +538,9 @@ module DagaWASD
       speed = cf('path_speed').to_f.clamp(0.1, 10.0)
       times = (0..(dur / step).floor).map { |i| i * step }
       times << dur if dur - times.last > step * 0.25
+      # ogni commento dell'IA nella descrizione della scena più vicina
+      said = Hash.new { |h, k| h[k] = [] }
+      tr[:notes].to_a.each { |nt, txt| said[times.each_index.min_by { |i| (times[i] - nt).abs }] << txt }
       cam = view.camera
       saved = [cam.eye, cam.target, cam.up, cam.perspective?, cam.fov]
       flags = defined?(PAGE_USE_CAMERA) ? PAGE_USE_CAMERA : 1
@@ -479,6 +552,7 @@ module DagaWASD
           path_set_camera(view, path_frame_at(frames, tt))
           pg = m.pages.add(format('%s %03d', name, i + 1), flags)
           pg.transition_time = i.zero? ? 1.0 : (tt - times[i - 1]) / speed
+          pg.description = said[i].join(' · ') if said.key?(i)
           pg.delay_time = 0.0
           made += 1
         end
@@ -504,6 +578,9 @@ module DagaWASD
             when 'revert' then key_revert(name)
             when 'new'    then key_new
             when 'key'    then key_open_nth(name, i.to_i)
+            when 'add'    then key_add_at(name, i)
+            when 'photos' then gal_open_path(name)  # lib/gallery.rb: la galleria nel browser
+            when 'gallery' then gal_open_loose(name)  # una serie senza percorso (name = la sua cartella)
             end
       UI.messagebox(err) if err.is_a?(String)
     rescue => fps_err
@@ -526,6 +603,7 @@ module DagaWASD
           e.name = nuovo
         end
       end
+      gal_renamed(path_data(nuovo), nuovo)   # lib/gallery.rb: le sue foto lo sanno
       nil
     end
 

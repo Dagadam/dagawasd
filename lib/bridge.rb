@@ -22,6 +22,19 @@ module DagaWASD
     #   GET  /ping              stato: versione di SketchUp, modello aperto
     #   POST /eval[?op=Nome]    corpo = codice Ruby → risultato, output, errore
     #   GET  /image[?w=&h=]     PNG della vista attuale
+    #   GET  /explore           stato dell'esploratore autonomo (lib/explore.rb):
+    #                           obiettivo, candidati, retina, diario delle scelte
+    #   POST /explore           corpo = {"cmd": "start", "opts": {…}} — anche stop,
+    #                           pause, resume, next, heatmap, pixels, speed,
+    #                           steer (l'IA guida: agenda, gusti, commenti)
+    #                           (client: tools/esplora.rb)
+    #   GET  /explore/percept[?since=N&n=20&brief=1]
+    #                           ciò che l'esploratore vede e sa, per l'IA che lo
+    #                           guida, e gli avvisi dopo il numero N (lib/expilot.rb)
+    #   GET  /explore/wait?since=N[&timeout=25&run=…&n=20]
+    #                           la stessa descrizione, quando c'è un avviso che
+    #                           sveglia il pilota (o allo scadere, "timeout": true;
+    #                           un giro nuovo risponde subito): risposta in sospeso
     #
     # Costruzione dal vivo (bridge_live): il codice gira in una Fiber e a
     # ogni `step "descrizione"` cede il controllo a SketchUp, che ridisegna
@@ -34,6 +47,7 @@ module DagaWASD
     BRIDGE_MAX     = 8 * 1024 * 1024      # corpo massimo di una richiesta
     BRIDGE_TIMEOUT = 3.0                  # secondi per ricevere le intestazioni
     BRIDGE_OUT_MAX = 200_000              # caratteri massimi di risultato e output
+    BRIDGE_WAITS   = 4                    # richieste /explore/wait in sospeso al più
 
     # Oggetto in cui gira il codice ricevuto: le variabili d'istanza (@x)
     # restano da una chiamata all'altra, le locali no.
@@ -49,6 +63,15 @@ module DagaWASD
       # Dettaglio scelto nel pannello (1–3); 1 se la costruzione dal vivo è
       # spenta, così lo script non spezza le operazioni per niente.
       def detail; DagaWASD::FPSWalk.bridge_detail; end
+      # Esegue il codice ricevuto. instance_eval con una stringa vede le
+      # variabili locali del metodo che lo chiama: chiamato da bridge_eval,
+      # un `out = …` nel codice sostituiva il buffer dell'output. Qui l'unica
+      # locale ha un nome che nessuno scrive. Non un binding vuoto: dentro il
+      # binding di un metodo `COSTANTE = …` sarebbe un errore di sintassi, e
+      # gli script degli Artefatti ne definiscono.
+      def run_code(__dagawasd_code__)
+        instance_eval(__dagawasd_code__, 'claude', 1)
+      end
     end
 
     # SketchUp si chiude: il file di connessione non deve restare a indicare un server morto
@@ -114,6 +137,11 @@ module DagaWASD
       UI.stop_timer(@bridge_timer) if @bridge_timer
       @bridge_timer = nil
       bridge_job_finish('ok' => false, 'error' => 'ponte spento durante la costruzione') if @bridge_job
+      (@bridge_waits || []).each do |w|
+        bridge_reply(w[:sock], 200, 'ok' => false, 'error' => 'ponte spento durante l\'attesa')
+        w[:sock].close rescue nil
+      end
+      @bridge_waits = []
       if @bridge_srv
         begin; @bridge_srv.close; rescue IOError, SystemCallError; end
         # il file è nostro solo se contiene ancora il nostro token (un'altra
@@ -140,6 +168,7 @@ module DagaWASD
           c.close unless async rescue nil
         end
       end
+      bridge_wait_tick if @bridge_waits && !@bridge_waits.empty?
     rescue => fps_err; log_error(__method__, fps_err); nil; end
 
     # ── HTTP ────────────────────────────────────────────────────────
@@ -207,6 +236,8 @@ module DagaWASD
       when ['POST', '/eval']
         if @bridge_job
           bridge_reply(sock, 409, 'ok' => false, 'error' => 'sto ancora costruendo l\'invio precedente')
+        elsif dagamcp_building?
+          bridge_reply(sock, 409, 'ok' => false, 'error' => 'il ponte di DagaMCP sta costruendo: riprova quando ha finito')
         elsif cf('bridge_live') && !@active && Sketchup.active_model
           bridge_eval_live(sock, req[:body], req[:q]['op'])
         else
@@ -215,6 +246,15 @@ module DagaWASD
       when ['GET', '/image']
         png = bridge_image(req[:q]['w'].to_i, req[:q]['h'].to_i)
         png ? bridge_reply(sock, 200, png, 'image/png') : bridge_reply(sock, 500, 'error' => 'nessuna vista da fotografare')
+      when ['GET', '/explore'], ['POST', '/explore']
+        bridge_explore(sock, req)
+      when ['GET', '/explore/percept']
+        return bridge_reply(sock, 404, 'error' => 'esploratore assente (lib/expilot.rb)') unless respond_to?(:explore_percept)
+        q = req[:q]
+        bridge_reply(sock, 200, explore_percept(q['since'].to_i, q['n'] && q['n'].to_i, q['brief'] == '1'))
+      when ['GET', '/explore/wait']
+        return bridge_reply(sock, 404, 'error' => 'esploratore assente (lib/expilot.rb)') unless respond_to?(:explore_percept)
+        bridge_explore_wait(sock, req[:q])
       else bridge_reply(sock, 404, 'error' => "sconosciuto: #{req[:meth]} #{req[:path]}")
       end
     rescue => fps_err
@@ -223,6 +263,72 @@ module DagaWASD
     end
 
     # ── Comandi ─────────────────────────────────────────────────────
+    # Esploratore autonomo: GET = stato, POST = comando. Solo la camera si
+    # muove; l'unica modifica al modello è il percorso salvato alla fine,
+    # un'operazione annullabile come la registrazione a mano.
+    def self.bridge_explore(sock, req)
+      return bridge_reply(sock, 404, 'error' => 'esploratore assente (lib/explore.rb)') unless respond_to?(:explore_command)
+      return bridge_reply(sock, 200, explore_status) if req[:meth] == 'GET'
+      d = begin
+        JSON.parse(req[:body].to_s)
+      rescue JSON::ParserError
+        nil
+      end
+      return bridge_reply(sock, 400, 'error' => 'atteso un corpo JSON: {"cmd": "start", "opts": {…}}') unless d.is_a?(Hash)
+      bridge_reply(sock, 200, explore_command(d['cmd'], d['opts']))
+    end
+
+    # ── Attesa del pilota (lib/expilot.rb) ──
+    # Come la costruzione dal vivo, la risposta resta in sospeso: a ogni giro
+    # del timer si guarda se c'è un avviso che sveglia, se il giro è finito o
+    # cambiato, se il tempo è scaduto. Il pilota non interroga di continuo.
+    def self.bridge_explore_wait(sock, q)
+      w = { sock: sock, since: q['since'].to_i, n: q['n'] && q['n'].to_i, run: q['run'].to_s,
+            until: Time.now + (explore_num(q['timeout']) || 25.0).clamp(0.0, 300.0) }
+      r = bridge_wait_reply(w)
+      return bridge_reply(sock, 200, r) if r
+      @bridge_waits ||= []
+      return bridge_reply(sock, 409, 'ok' => false, 'error' => "già #{BRIDGE_WAITS} attese in corso") if @bridge_waits.size >= BRIDGE_WAITS
+      @bridge_waits << w
+      :async
+    end
+
+    # La risposta per un'attesa, o nil se si aspetta ancora.
+    def self.bridge_wait_reply(w)
+      b = explore_percept(w[:since], nil, true)
+      return b unless b['on']
+      return explore_percept(0, w[:n]).merge('new_run' => true) if !w[:run].empty? && b['run'] != w[:run]
+      return explore_percept(w[:since], w[:n]) if b['wake']
+      return explore_percept(w[:since], w[:n]).merge('timeout' => true) if Time.now >= w[:until]
+      nil
+    end
+
+    # Chi aspettava se n'è andato (il pilota interrotto): il posto si libera.
+    def self.bridge_wait_gone?(sock)
+      return false unless IO.select([sock], nil, nil, 0)
+      sock.read_nonblock(1, exception: false).nil?   # nil: chiusa dall'altra parte
+    rescue IOError, SystemCallError
+      true
+    end
+
+    def self.bridge_wait_tick
+      @bridge_waits.delete_if do |w|
+        if bridge_wait_gone?(w[:sock])
+          w[:sock].close rescue nil
+          next true
+        end
+        r = bridge_wait_reply(w)
+        next false unless r
+        bridge_reply(w[:sock], 200, r)
+        w[:sock].close rescue nil
+        true
+      end
+    rescue => fps_err
+      log_error(__method__, fps_err)
+      @bridge_waits.each { |w| w[:sock].close rescue nil }
+      @bridge_waits = []
+    end
+
     def self.bridge_ping
       m = Sketchup.active_model
       { 'ok' => true, 'sketchup' => Sketchup.version,
@@ -245,7 +351,7 @@ module DagaWASD
       t0 = Time.now
       begin
         $stdout = out
-        res = @bridge_ctx.instance_eval(code, 'claude', 1)
+        res = @bridge_ctx.run_code(code)
         $stdout = old_out
         model.commit_operation
         model.active_view.invalidate
@@ -284,13 +390,16 @@ module DagaWASD
       su_to_front          # una costruzione dal vivo è fatta per essere guardata (lib/input.rb)
       ctx   = @bridge_ctx
       op = op.to_s.strip.empty? ? 'Claude' : "Claude: #{op.to_s[0, 60]}"
+      # l'esploratore muoverebbe la camera e salverebbe il suo percorso dentro
+      # l'operazione aperta: si ferma prima che cominci
+      explore_stop if respond_to?(:explore_on?) && explore_on?
       # disable_ui = true anche dal vivo: con false SketchUp aggiorna i suoi
       # pannelli a ogni singola modifica e la costruzione diventa ~50 volte
       # più lenta. La vista si ridisegna comunque fra un passo e l'altro.
       model.start_operation(op, true)
       fiber = Fiber.new do
         begin
-          { 'ok' => true, 'result' => bridge_clip(ctx.instance_eval(code, 'claude', 1).inspect) }
+          { 'ok' => true, 'result' => bridge_clip(ctx.run_code(code).inspect) }
         rescue ScriptError, StandardError => e
           { 'ok' => false, 'error' => "#{e.class}: #{e.message}",
             'backtrace' => (e.backtrace || []).select { |l| l.start_with?('claude:') }.first(8) }

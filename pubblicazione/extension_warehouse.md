@@ -56,6 +56,25 @@ While the video is being written, a little character keeps you company with
 a progress bar, statistics about your walk and model, and jokes made from
 those numbers.
 
+**Autonomous explorer.** Press the eye button and the camera explores the
+model by itself: it looks at the scene, picks the most significant thing in
+view (objects that stand out by shape, detail, colour and rarity, not bare
+walls), takes a step towards it while turning to look at it, and repeats.
+It walks around obstacles, climbs stairs, never steps off a ledge, flies in
+from an aerial view and lands where there is something to see, and gets
+bored of what it has already seen, so it keeps discovering new rooms. An
+attention map shows what it finds interesting; when you stop it, the walk is
+saved as a camera path, ready to become scenes or a video.
+
+**Photos and gallery.** Press P while walking (or RB on the gamepad) to
+take a photo of the view. The explorer takes its own: the most interesting
+things of its walk, each with a note on what it shows and why it was chosen.
+The camera button on every path opens its gallery in the browser: instant
+photos that develop on a wooden table, with handwritten notes, a film strip
+of thumbnails, the route sketched in pencil with where each photo looked,
+and a slideshow. Lay them out in a row or scatter them on the table and move
+them around by hand. Photos are saved next to the model as JPG files.
+
 **Settings.** Speeds, jump, field of view, mouse, keys, object behaviour,
 themes and crosshair, with export and import. The interface is available in
 36 languages, including right-to-left Arabic and Hebrew.
@@ -85,8 +104,18 @@ Settings are stored in `%APPDATA%\DagaWASD`, so updates never erase them.
   for Claude Code is only in the developer package and is not included).
 - **Files.** Writes only to `%APPDATA%\DagaWASD` (settings and an error log),
   to the files the user picks for video/image export, and to one temporary
-  JPEG in `%TEMP%`, deleted at the end of each export. Never writes into the
+  JPEG in `%TEMP%`, deleted at the end of each export. Photos taken while
+  walking (P) or by the explorer go to a `<model name>_foto` folder next to
+  the model (`%APPDATA%\DagaWASD\foto` for an unsaved model or a read-only
+  folder), with a JSON index and a static `galleria.html` built from a
+  template in the extension; the camera button opens that local page in the
+  default browser with `UI.openURL` (no network, no scripts from outside).
+  With the explorer's optional "colour eye" a small temporary BMP of the
+  view is written to `%TEMP%` and deleted right after reading it. Never writes into the
   extension folder.
+- **Explorer.** It only moves the camera (`View#animation`, ray tests through
+  the view) and is stopped by Esc, a click or any other tool; its walk is
+  saved as a camera path in one undoable operation.
 - **Model changes.** Physics moves are wrapped in operations and undone with
   Ctrl+Z. Recorded camera paths are stored in an attribute dictionary of the
   model (`DagaWASD_percorsi`). Only when the user clicks Edit (or New from

@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>DagaWASD</title>
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   PROFILI DELL'ESPLORATORE — lo apre lib/exprofiles.rb (Estensioni ›
+   DagaWASD, o il tasto destro mentre esplora). Ruby manda init (testi
+   xp.*, lingua, aspetto) e show (profili, quello in uso, i suoi valori e
+   quelli originali); la pagina rimanda use (id), set {k, v, save} e act
+   (new, rename, delete, reset, start, stop). Mentre si trascina un
+   cursore i valori arrivano con save: false (l'esploratore li prova dal
+   vivo), al rilascio con save: true.
+   Colori: tema e accento del pannello (Sistema › Aspetto).
+═══════════════════════════════════════════════════════════════ */
+:root{
+  --bg:#151515;--fg:#dcdcdc;--mut:#8a8a8a;--line:#2c2c2c;--in:#1f1f1f;
+  --acc:#00c9a7;--acc-ink:#0d0d0d;--dg:#c04747;--dg-ink:#fff;--btn:#353535;
+  --font:'Segoe UI',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font:14px/1.4 var(--font);display:flex;flex-direction:column;user-select:none}
+body.attende{visibility:hidden}
+header{padding:12px 14px 9px;border-bottom:1px solid var(--line)}
+header h1{font-size:15px;font-weight:600}
+header p{color:var(--mut);font-size:12.5px;margin-top:2px}
+.corpo{flex:1 1 auto;display:flex;min-height:0}
+/* elenco dei profili a sinistra (a destra da destra a sinistra) */
+nav{flex:0 0 165px;overflow:auto;border-inline-end:1px solid var(--line);padding:8px}
+.prof{display:block;width:100%;text-align:start;border:0;border-radius:7px;background:none;color:var(--fg);
+  font:inherit;padding:7px 9px;margin-bottom:3px;cursor:pointer}
+.prof:hover{background:var(--btn)}
+.prof:focus-visible{outline:0;box-shadow:0 0 0 2px var(--acc)}
+.prof.on{background:var(--acc);color:var(--acc-ink)}
+.prof b{display:block;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prof small{display:block;font-size:11.5px;opacity:.75}
+.sep{border-top:1px solid var(--line);margin:7px 2px 8px}
+main{flex:1 1 auto;overflow:auto;padding:10px 14px 12px;min-width:0}
+.testa h2{font-size:16px;font-weight:600}
+.testa p{color:var(--mut);font-size:12.5px}
+.vivo{margin-top:6px;padding:6px 9px;border-radius:7px;background:var(--in);border-inline-start:3px solid var(--acc);font-size:12.5px;display:none}
+.vivo.si{display:block}
+fieldset{border:0;border-top:1px solid var(--line);padding:9px 0 4px;margin-top:9px}
+legend{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);padding:0 4px 0 0}
+.riga{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(70px,1fr) 60px 30px 22px;align-items:center;gap:7px;margin:6px 0}
+.riga label{min-width:0}
+.riga small{display:block;color:var(--mut);font-size:11.5px;line-height:1.25}
+.riga.mod label{color:var(--acc)}
+.riga input[type=range]{width:100%;accent-color:var(--acc)}
+.riga input[type=text]{width:100%;background:var(--in);color:var(--fg);border:1px solid var(--line);border-radius:6px;
+  padding:4px 6px;font:inherit;text-align:end;user-select:text}
+.riga input[type=text]:focus{outline:0;border-color:var(--acc)}
+.riga select{grid-column:2 / 5;background:var(--in);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:4px 6px;font:inherit}
+.riga .sw{grid-column:2 / 5;justify-self:start;width:17px;height:17px;accent-color:var(--acc)}
+.u{color:var(--mut);font-size:12.5px}
+.rip{border:0;background:none;color:var(--mut);font:15px/1 var(--font);cursor:pointer;visibility:hidden;padding:2px}
+.riga.mod .rip{visibility:visible}
+.rip:hover{color:var(--acc)}
+.rip:focus-visible{outline:0;color:var(--acc)}
+.btn{border:0;border-radius:7px;background:var(--btn);color:var(--fg);font:inherit;padding:6px 11px;cursor:pointer}
+.btn:hover{filter:brightness(1.15)}
+.btn:disabled{opacity:.35;cursor:default;filter:none}
+.btn:focus-visible{box-shadow:0 0 0 2px var(--acc);outline:0}
+.btn.go{background:var(--acc);color:var(--acc-ink)}
+.btn.dg{background:var(--dg);color:var(--dg-ink)}
+footer{display:flex;gap:7px;flex-wrap:wrap;padding:10px 14px 12px;border-top:1px solid var(--line)}
+footer .sp{flex:1 1 auto}
+/* finestra stretta: l'elenco sopra, in orizzontale */
+@media (max-width:560px){
+  .corpo{flex-direction:column}
+  nav{flex:0 0 auto;display:flex;gap:4px;overflow-x:auto;border-inline-end:0;border-bottom:1px solid var(--line)}
+  .prof{width:auto;flex:0 0 auto;margin:0}
+  .prof small,.sep{display:none}
+  .riga{grid-template-columns:minmax(0,1fr) 64px 34px 22px}
+  .riga input[type=range]{grid-column:1 / -1;order:5}
+  .riga select,.riga .sw{grid-column:2 / 4}
+}
+</style>
+</head>
+<body class="attende">
+<header>
+  <h1 id="titolo"></h1>
+  <p id="t-note"></p>
+</header>
+<div class="corpo">
+  <nav id="elenco"></nav>
+  <main>
+    <div class="testa">
+      <h2 id="nome"></h2>
+      <p id="desc"></p>
+      <div class="vivo" id="vivo"></div>
+    </div>
+    <div id="campi"></div>
+  </main>
+</div>
+<footer>
+  <button class="btn" id="b-new" onclick="act('new')"></button>
+  <button class="btn" id="b-rename" onclick="act('rename')"></button>
+  <button class="btn" id="b-reset" onclick="act('reset')"></button>
+  <button class="btn dg" id="b-delete" onclick="act('delete')"></button>
+  <span class="sp"></span>
+  <button class="btn go" id="b-run" onclick="act(S && S.running ? 'stop' : 'start')"></button>
+</footer>
+<script>
+let L = {}, LANG = 'en', S = null;
+const $ = id => document.getElementById(id);
+const T = k => L[k] || k;
+const fill = (s, o) => s.replace(/\{(\w+)\}/g, (m, k) => k in o ? o[k] : m);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+const nf = (x, d) => new Intl.NumberFormat(LANG, { maximumFractionDigits: d, minimumFractionDigits: d, useGrouping: false }).format(x);
+const num = s => { const x = Number(String(s).trim().replace(',', '.').replace(/\s*%$/, '')); return isFinite(x) ? x : null; };
+const rb = (n, a) => { try { sketchup[n](a); } catch(e){} };
+
+// I coefficienti del profilo (EX_PROFILE_KEYS in lib/explore.rb), a gruppi.
+// Numeri: unità, minimo, massimo, passo, decimali; pct: si mostra × 100 in %.
+// bool: una casella; opts: una scelta.
+const GRUPPI = [
+  ['xp.g.move', [
+    { k:'speed',      l:'xp.f.speed',      h:'xp.h.speed',      u:'m/s', min:0.2,  max:4,   st:0.1,  d:1 },
+    { k:'standoff',   l:'xp.f.standoff',   h:'xp.h.standoff',   u:'m',   min:0.4,  max:8,   st:0.1,  d:1 },
+    { k:'max_drop',   l:'xp.f.max_drop',   h:'xp.h.max_drop',   u:'m',   min:0.1,  max:5,   st:0.1,  d:1 },
+    { k:'mode',       l:'xp.f.mode',       h:'xp.h.mode',
+      opts:[['auto', 'xp.mode.auto'], ['walk', 'xp.mode.walk'], ['fly', 'xp.mode.fly']] },
+    { k:'bob',        l:'xp.f.bob',        h:'xp.h.bob',        bool:true },
+    { k:'jump',       l:'xp.f.jump',       h:'xp.h.jump',       bool:true }]],
+  ['xp.g.look', [
+    { k:'turn_speed', l:'xp.f.turn_speed', h:'xp.h.turn_speed', u:'°/s', min:20,   max:360, st:5,    d:0 },
+    { k:'pitch_max',  l:'xp.f.pitch_max',  h:'xp.h.pitch_max',  u:'°',   min:10,   max:80,  st:1,    d:0 },
+    { k:'step_time',  l:'xp.f.step_time',  h:'xp.h.step_time',  u:'s',   min:0.15, max:3,   st:0.05, d:2 },
+    { k:'continuity', l:'xp.f.continuity', h:'xp.h.continuity', u:'×',   min:0,    max:3,   st:0.05, d:2 }]],
+  ['xp.g.attn', [
+    { k:'dwell',      l:'xp.f.dwell',      h:'xp.h.dwell',      u:'s',   min:0,    max:15,  st:0.1,  d:1 },
+    { k:'orbit',      l:'xp.f.orbit',      h:'xp.h.orbit',      u:'°',   min:0,    max:360, st:15,   d:0 },
+    { k:'attention',  l:'xp.f.attention',  h:'xp.h.attention',  u:'s',   min:3,    max:120, st:1,    d:0 },
+    { k:'commit',     l:'xp.f.commit',     h:'xp.h.commit',     u:'s',   min:0,    max:20,  st:0.1,  d:1 },
+    { k:'sticky',     l:'xp.f.sticky',     h:'xp.h.sticky',     u:'×',   min:1,    max:4,   st:0.05, d:2 }]],
+  ['xp.g.curio', [
+    { k:'curiosity',  l:'xp.f.curiosity',  h:'xp.h.curiosity',  u:'×',   min:0,    max:3,   st:0.05, d:2 },
+    { k:'boredom',    l:'xp.f.boredom',    h:'xp.h.boredom',    u:'s',   min:3,    max:120, st:1,    d:0 },
+    { k:'roam',       l:'xp.f.roam',       h:'xp.h.roam',       u:'×',   min:0,    max:3,   st:0.05, d:2 },
+    { k:'whim',       l:'xp.f.whim',       h:'xp.h.whim',       u:'%',   min:0,    max:1,   st:0.01, d:0, pct:true }]],
+  ['xp.g.taste', [
+    { k:'w_object',   l:'xp.f.w_object',   h:'xp.h.w_object',   u:'×',   min:0,    max:3,   st:0.05, d:2 },
+    { k:'w_shape',    l:'xp.f.w_shape',    h:'xp.h.w_shape',    u:'×',   min:0,    max:3,   st:0.05, d:2 },
+    { k:'w_detail',   l:'xp.f.w_detail',   h:'xp.h.w_detail',   u:'×',   min:0,    max:3,   st:0.05, d:2 },
+    { k:'w_color',    l:'xp.f.w_color',    h:'xp.h.w_color',    u:'×',   min:0,    max:3,   st:0.05, d:2 },
+    { k:'w_rare',     l:'xp.f.w_rare',     h:'xp.h.w_rare',     u:'×',   min:0,    max:3,   st:0.05, d:2 },
+    { k:'pixels',     l:'xp.f.pixels',     h:'xp.h.pixels',     bool:true }]],
+  ['xp.g.zoom', [
+    { k:'zoom',       l:'xp.f.zoom',       h:'xp.h.zoom',       bool:true },
+    { k:'zoom_fill',  l:'xp.f.zoom_fill',  h:'xp.h.zoom_fill',  u:'%',   min:0.1,  max:0.9, st:0.05, d:0, pct:true },
+    { k:'zoom_max',   l:'xp.f.zoom_max',   h:'xp.h.zoom_max',   u:'×',   min:1,    max:12,  st:0.5,  d:1 },
+    { k:'zoom_hold',  l:'xp.f.zoom_hold',  h:'xp.h.zoom_hold',  u:'s',   min:0,    max:10,  st:0.1,  d:1 }]]
+];
+const CAMPO = {};
+GRUPPI.forEach(([, campi]) => campi.forEach(c => { CAMPO[c.k] = c; }));
+const mostra = (c, v) => c.pct ? v * 100 : v;          // valore vero → valore mostrato
+const vero = (c, x) => c.pct ? x / 100 : x;
+
+function costruisci(){
+  $('campi').innerHTML = GRUPPI.map(([g, campi]) =>
+    `<fieldset><legend>${esc(T(g))}</legend>` + campi.map(c => {
+      let ctl;
+      if(c.bool) ctl = `<input type="checkbox" class="sw" id="f-${c.k}" data-k="${c.k}">`;
+      else if(c.opts) ctl = `<select id="f-${c.k}" data-k="${c.k}">` +
+        c.opts.map(([v, et]) => `<option value="${v}">${esc(T(et))}</option>`).join('') + `</select>`;
+      else ctl = `<input type="range" id="r-${c.k}" data-k="${c.k}" min="${mostra(c, c.min)}" max="${mostra(c, c.max)}" step="${mostra(c, c.st)}">` +
+        `<input type="text" inputmode="decimal" id="f-${c.k}" data-k="${c.k}"><span class="u">${esc(c.u)}</span>`;
+      return `<div class="riga" id="w-${c.k}"><label for="${c.bool || c.opts ? 'f' : 'r'}-${c.k}">${esc(T(c.l))}` +
+        `<small>${esc(T(c.h))}</small></label>${ctl}` +
+        `<button class="rip" id="z-${c.k}" data-k="${c.k}">↺</button></div>`;
+    }).join('') + `</fieldset>`).join('');
+  document.querySelectorAll('input[type=range]').forEach(r => {
+    r.addEventListener('input', () => trascina(r));
+    r.addEventListener('change', () => rilascia(r));
+  });
+  document.querySelectorAll('.riga input[type=text]').forEach(inp => {
+    inp.addEventListener('input', () => { delete inp.dataset.inviato; });
+    inp.addEventListener('change', () => scritto(inp));
+    inp.addEventListener('keydown', ev => { if(ev.key === 'Enter'){ ev.preventDefault(); scritto(inp); } });
+  });
+  document.querySelectorAll('.sw').forEach(b => b.addEventListener('change', () => manda(b.dataset.k, b.checked, true)));
+  document.querySelectorAll('.riga select').forEach(s => s.addEventListener('change', () => manda(s.dataset.k, s.value, true)));
+  document.querySelectorAll('.rip').forEach(b => b.addEventListener('click', () => {
+    if(S && S.base) manda(b.dataset.k, S.base[b.dataset.k], true);
+  }));
+}
+
+// Il cursore: il numero accanto segue subito, Ruby al più ogni 120 ms
+// (l'esploratore, se usa questo profilo, cambia dal vivo); al rilascio si salva.
+let ultimo = 0, attesa = null;
+function trascina(r){
+  const c = CAMPO[r.dataset.k];
+  const x = Number(r.value);
+  $('f-' + c.k).value = nf(x, c.d);
+  clearTimeout(attesa);
+  const ora = performance.now();
+  if(ora - ultimo >= 120){ ultimo = ora; manda(c.k, vero(c, x), false); }
+  else attesa = setTimeout(() => { ultimo = performance.now(); manda(c.k, vero(c, x), false); }, 120);
+}
+function rilascia(r){
+  clearTimeout(attesa);
+  const c = CAMPO[r.dataset.k];
+  manda(c.k, vero(c, Number(r.value)), true);
+}
+function scritto(inp){
+  const c = CAMPO[inp.dataset.k];
+  const x = num(inp.value);
+  if(x === null){ show(S); return; }          // non è un numero: torna il valore di prima
+  inp.dataset.inviato = '1';                  // Ruby lo riporta nei limiti e lo rimanda: va mostrato
+  manda(c.k, vero(c, x), true);
+}
+function manda(k, v, save){ rb('set', JSON.stringify({ k: k, v: v, save: save })); }
+function act(a){ rb('act', a); }
+function usa(id){ rb('use', id); }
+
+// Mai il menu del browser (in inglese, con Ricarica, Ispeziona…)
+document.addEventListener('contextmenu', ev => ev.preventDefault());
+
+// ── Chiamate da Ruby ─────────────────────────────────────────────
+const rgb = h => { const m = /^#?([0-9a-f]{6})$/i.exec(h || ''); if(!m) return null; const n = parseInt(m[1], 16); return [n >> 16, n >> 8 & 255, n & 255]; };
+const mix = (a, b, t) => '#' + a.map((x, i) => Math.round(x + (b[i] - x) * t).toString(16).padStart(2, '0')).join('');
+const lum = c => (0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]) / 255;
+function applyLook(o){
+  const r = document.documentElement.style, set = (n, v) => r.setProperty('--' + n, v);
+  const light = o.theme === 'light' || (o.theme === 'auto' && matchMedia('(prefers-color-scheme: light)').matches);
+  const B = rgb(o.bg) || (light ? [240, 240, 239] : [21, 21, 21]);
+  const F = rgb(o.text) || (light ? [30, 30, 30] : [220, 220, 220]);
+  const A = rgb(o.accent) || [0, 201, 167];
+  set('bg', mix(B, B, 0)); set('fg', mix(F, F, 0)); set('mut', mix(B, F, .55));
+  set('line', mix(B, F, light ? .14 : .12)); set('in', mix(B, F, light ? .04 : .05));
+  set('btn', mix(B, F, light ? .1 : .14));
+  set('acc', mix(A, A, 0)); set('acc-ink', lum(A) > .5 ? '#0d0d0d' : '#ffffff');
+  const D = rgb(o.danger);
+  if(D){ set('dg', mix(D, D, 0)); set('dg-ink', lum(D) > .5 ? '#111111' : '#ffffff'); }
+}
+
+function init(d){
+  L = d.strings || {};
+  LANG = d.lang || 'en';
+  document.documentElement.lang = LANG;
+  document.documentElement.dir = d.rtl ? 'rtl' : 'ltr';
+  applyLook(d.look || {});
+  document.title = T('xp.title');
+  $('titolo').textContent = T('xp.title');
+  $('t-note').textContent = T('xp.note');
+  $('b-new').textContent = T('xp.new'); $('b-new').title = T('xp.new.h');
+  $('b-rename').textContent = T('xp.rename');
+  $('b-reset').textContent = T('xp.reset'); $('b-reset').title = T('xp.reset.h');
+  $('b-delete').textContent = T('xp.delete');
+  costruisci();
+  if(S) show(S);
+}
+
+function show(s){
+  if(!s) return;
+  S = s;
+  const att = s.profiles.find(p => p.id === s.active) || s.profiles[0];
+  // elenco: i già pronti, una riga, i tuoi
+  let html = '', tuoi = false;
+  s.profiles.forEach(p => {
+    if(!p.builtin && !tuoi){ tuoi = true; html += '<div class="sep"></div>'; }
+    const nota = p.builtin ? (p.modified ? T('xp.modified') : '') : T('xp.mine');
+    html += `<button class="prof${p.id === s.active ? ' on' : ''}" data-id="${esc(p.id)}" title="${esc(p.desc || '')}">` +
+            `<b>${esc(p.name)}</b>${nota ? `<small>${esc(nota)}</small>` : ''}</button>`;
+  });
+  $('elenco').innerHTML = html;
+  $('elenco').querySelectorAll('.prof').forEach(b => b.addEventListener('click', () => usa(b.dataset.id)));
+  $('nome').textContent = att.name;
+  $('desc').textContent = att.builtin ? att.desc : '';
+  const vivo = s.running && s.running_profile === s.active;
+  $('vivo').textContent = vivo ? T('xp.live') : '';
+  $('vivo').classList.toggle('si', vivo);
+  // valori; chi sta scrivendo o trascinando non va interrotto
+  Object.values(CAMPO).forEach(c => {
+    const v = s.values[c.k];
+    const riga = $('w-' + c.k);
+    const base = s.base ? s.base[c.k] : undefined;
+    riga.classList.toggle('mod', base !== undefined && base !== v);
+    if(base !== undefined){
+      const testo = c.bool || c.opts ? (c.opts ? T(c.opts.find(o => o[0] === base)[1]) : (base ? '✓' : '—'))
+                                     : nf(mostra(c, base), c.d) + ' ' + c.u;
+      $('z-' + c.k).title = fill(T('xp.reset_one'), { v: testo });
+    }
+    if(c.bool){ $('f-' + c.k).checked = !!v; return; }
+    if(c.opts){ $('f-' + c.k).value = v; return; }
+    const r = $('r-' + c.k), inp = $('f-' + c.k);
+    if(document.activeElement !== r) r.value = mostra(c, v);
+    if(document.activeElement !== inp || inp.dataset.inviato){ inp.value = nf(mostra(c, v), c.d); delete inp.dataset.inviato; }
+  });
+  $('b-rename').disabled = $('b-delete').disabled = att.builtin;
+  $('b-reset').disabled = !(att.builtin && att.modified);
+  $('b-run').textContent = s.running ? '■ ' + T('xp.stop') : '▶ ' + T('xp.start');
+  $('b-run').disabled = !s.running && s.busy;
+  document.body.classList.remove('attende');
+}
+
+window.addEventListener('load', () => rb('ready'));
+</script>
+</body>
+</html>

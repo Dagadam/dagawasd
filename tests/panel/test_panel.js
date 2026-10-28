@@ -52,7 +52,7 @@ w.addEventListener('load', () => {
   ok(!/const DEF = \{\s*move_speed/.test(html), 'panel.html non contiene più una copia dei default');
   w.eval(`setDefaults(${JSON.stringify(RB_DEF)})`);
   w.eval(`loadSettings(${JSON.stringify(RB_DEF)})`);
-  ok(Object.keys(RB_DEF.keys).length === 12 && RB_DEF.move_speed > 0, 'default letti da lib/config.rb (12 tasti)');
+  ok(Object.keys(RB_DEF.keys).length === 13 && RB_DEF.move_speed > 0, 'default letti da lib/config.rb (13 tasti)');
   const mats = [
     { id:'legno', name:'', density:600, restitution:0.3, friction:0.5, keywords:'legno, wood', icon:'wood' },
     { id:'c1', name:'Sughero', density:240, restitution:0.5, friction:0.6, keywords:'sughero, cork', icon:'cork' }
@@ -468,6 +468,26 @@ w.addEventListener('load', () => {
   d.querySelector('.pnew button').click();
   ok(JSON.stringify(pathCalls) === JSON.stringify([{ cmd: 'edit', name: 'Giro' }, { cmd: 'revert', name: 'Giro' }, { cmd: 'new', name: '' }]),
      'Nascondi, ↺ e «Nuovo dalla vista» arrivano a Ruby');
+  // Foto (lib/gallery.rb): 📷 sul percorso che ne ha, e sotto le serie senza percorso
+  w.eval(`setPaths(${JSON.stringify([{ name: 'Giro', dur: 12, date: '1', photos: 4 }, { name: 'Senza', dur: 3, date: '2', photos: 0 }])},
+                   ${JSON.stringify([{ id: '2026-10-28_20-10-40', n: 3, date: '2026-10-28 20:10:40' }])})`);
+  const r3 = pl().querySelectorAll('.prow');
+  const gl = d.getElementById('galList');
+  const spento = [...r3[1].querySelectorAll('button')].find(x => x.textContent.trim() === '📷');
+  ok(btns(r3[0]).includes('📷 4') && spento && spento.classList.contains('off') && spento.title === it['path.photos0.h']
+     && btns(r3[0]).indexOf('📷 4') === btns(r3[0]).findIndex(x => x === it['path.frames']) + 1
+     && gl.textContent.includes(it['path.loose'])
+     && gl.querySelector('button').textContent.includes('2026-10-28 20:10 · 3'),
+     'foto: 📷 su ogni percorso, accanto a Video (col numero, o spento), le serie senza percorso a parte');
+  pathCalls.length = 0;
+  [...r3[0].querySelectorAll('button')].find(x => x.textContent.trim() === '📷 4').click();
+  gl.querySelector('button').click();
+  spento.click();
+  ok(JSON.stringify(pathCalls) === JSON.stringify([{ cmd: 'photos', name: 'Giro' }, { cmd: 'gallery', name: '2026-10-28_20-10-40' },
+                                                   { cmd: 'photos', name: 'Senza' }]),
+     'le gallerie si aprono da Ruby: del percorso, e di una serie per la sua cartella');
+  w.eval(`setPaths(${JSON.stringify([{ name: 'Giro', dur: 12, date: '1' }])})`);
+  ok(d.getElementById('galList').querySelectorAll('button').length === 1, 'setPaths senza il secondo elenco: le serie restano');
   // Elenco delle posizioni: il triangolo lo apre sotto al percorso, rientrato; resta aperto ai setPaths
   ok(!r2[0].querySelector('.ptog'), 'senza pts niente triangolo');
   const giro = pts => [{ name: 'Giro', dur: 12, date: '1', keys: pts.length, shown: true, rec: true, pts },
@@ -484,8 +504,56 @@ w.addEventListener('load', () => {
   pathCalls.length = 0;
   pp[1].click();
   ok(JSON.stringify(pathCalls) === JSON.stringify([{ cmd: 'key', name: 'Giro', i: 1 }]), 'clic su una posizione: Ruby ne apre il pannello');
+  // Spazi fra le posizioni: prima della prima, fra ognuna, dopo l'ultima
+  const gaps = [...pl().querySelectorAll('.ppts > *')];
+  ok(gaps.map(x => x.className).join(' ') === 'pgap ppt pgap ppt pgap ppt pgap' && gaps[0].title === it['path.add.h'],
+     'quattro spazi attorno alle tre posizioni, col suggerimento «' + it['path.add.h'] + '»');
+  ok(gaps[0].tagName === 'BUTTON' && gaps[0].getAttribute('aria-label') === it['path.add.h'],
+     'gli spazi sono pulsanti: si raggiungono e si premono anche da tastiera');
+  pathCalls.length = 0;
+  gaps[0].click(); gaps[4].click();
+  ok(pathCalls.length === 2, 'aggiunta rifiutata da Ruby (nessun pathAdded): il clic dopo conta');
+  pathCalls.length = 0;
+  gaps[0].click(); w.eval('pathAdded()'); gaps[4].click(); pp[1].click();
+  ok(JSON.stringify(pathCalls) === JSON.stringify([{ cmd: 'add', name: 'Giro', i: 0 }]),
+     'doppio clic: il secondo clic subito dopo un\'aggiunta (su uno spazio o una posizione) non conta');
+  w.eval('PATH_ADDED = -1e9'); gaps[4].click();
+  w.eval('PATH_ADDED = -1e9'); gaps[6].click();
+  ok(JSON.stringify(pathCalls) === JSON.stringify([0, 2, 3].map(i => ({ cmd: 'add', name: 'Giro', i }))),
+     'clic sugli spazi: Ruby aggiunge dalla vista prima della prima, fra la seconda e la terza, dopo l\'ultima');
+  w.eval('PATH_ADDED = -1e9');
+  ok(d.querySelector('.pnew button').textContent.includes(it['path.new']) && it['path.new'] === 'Nuovo percorso dalla vista',
+     'il pulsante sotto l\'elenco: «+ Nuovo percorso dalla vista»');
   w.eval(`setPaths(${JSON.stringify(giro([{ t: 0, p: 0, v: 0, z: 1 }, { t: 4, p: 0, v: 0, z: 1 }]))})`);
   ok(pl().querySelectorAll('.ppts .ppt').length === 2, 'nuovo elenco da Ruby (sfera cancellata): resta aperto, con due posizioni');
+  // Riproduzione: la posizione in corso si accende, una dopo l'altra
+  const accese = () => [...pl().querySelectorAll('.ppt')].map(x => x.classList.contains('on') ? 1 : 0).join('');
+  w.eval('pathMark("Giro", 0)');
+  ok(accese() === '10', 'riproduzione: accesa la prima posizione');
+  w.eval('pathMark("Giro", 1)');
+  ok(accese() === '01', 'poi la seconda, e la prima si spegne');
+  w.eval(`setPaths(${JSON.stringify(giro([{ t: 0, p: 0, v: 0, z: 1 }, { t: 4, p: 0, v: 0, z: 1 }]))})`);
+  ok(accese() === '01', 'un nuovo elenco da Ruby la lascia accesa');
+  w.eval('pathMark("Giro", null)');
+  ok(accese() === '00', 'a fine corsa si spegne');
+  w.eval('pathMark("Nuovo", 1)');
+  ok(accese() === '00', 'un percorso con l\'elenco chiuso: niente da accendere, nessun errore');
+  w.eval('pathMark(null, null)');
+  // Scorrimento: segue la riga accesa solo se si stava guardando la precedente
+  const proto = w.HTMLElement.prototype, rectVero = proto.getBoundingClientRect, scrollVero = proto.scrollIntoView;
+  const scorsi = [];
+  let fuori = () => false;                       // quali righe sono fuori dalla vista
+  proto.scrollIntoView = function(){ scorsi.push(this.dataset.j); };
+  proto.getBoundingClientRect = function(){ return fuori(this) ? { top: 5000, bottom: 5020 } : { top: 10, bottom: 30 }; };
+  w.eval('pathMark("Giro", 0)');
+  fuori = el => el.dataset.j === '1';
+  w.eval('pathMark("Giro", 1)');
+  ok(scorsi.join() === '1', 'riga successiva fuori vista mentre si guardava la precedente: il pannello la segue');
+  fuori = el => el.classList.contains('ppt');    // tutte le righe fuori, la parte che scorre no
+  w.eval('pathMark("Giro", 0)');
+  ok(scorsi.join() === '1', 'pannello fatto scorrere altrove: non si torna all\'elenco');
+  w.eval('pathMark(null, null)');
+  proto.getBoundingClientRect = rectVero; proto.scrollIntoView = scrollVero;
   pl().querySelector('.ptog').click();
   ok(!pl().querySelector('.ppts'), 'di nuovo il triangolo: si richiude');
   ok(!!d.getElementById('path_video_size') && !!d.getElementById('path_smooth'), 'sotto l\'elenco le impostazioni dei percorsi');

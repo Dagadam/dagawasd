@@ -44,6 +44,7 @@ module DagaWASD
     VK_K      = 0x4B   # Calcia
     VK_G      = 0x47   # Afferra / Lancia
     VK_R      = 0x52   # Registra un percorso
+    VK_P      = 0x50   # Scatta una foto
     VK_LEFT   = 0x25   # Frecce = alias di WASD
     VK_UP     = 0x26
     VK_RIGHT  = 0x27
@@ -68,7 +69,7 @@ module DagaWASD
       'forward' => VK_W,     'back'   => VK_S,     'left' => VK_A, 'right' => VK_D,
       'jump'    => VK_SPACE, 'crouch' => VK_C,     'run'  => VK_SHIFT,
       'use'     => VK_ALT,   'kick'   => VK_K,     'grab' => VK_G, 'cursor' => VK_F,
-      'record'  => VK_R
+      'record'  => VK_R,     'photo'  => VK_P
     }.freeze
     RESERVED_KEYS = [VK_ESC, VK_TAB, VK_PRIOR, VK_NEXT, VK_HOME,
                      VK_LEFT, VK_UP, VK_RIGHT, VK_DOWN, 0x5B, 0x5C, 0x5D,
@@ -179,6 +180,10 @@ module DagaWASD
       'path_video_fps'      => 30,     # immagini al secondo di video
       'path_video_size'     => 'fhd',  # view (come la vista), hd, fhd, uhd
       'path_video_format'   => 'avi',  # avi (video Motion JPEG, lib/avi.rb) o png (immagini)
+      # ── Esploratore autonomo (lib/explore.rb, lib/exprofiles.rb) ──
+      'explore_profile'     => 'balanced',   # profilo in uso
+      'explore_profiles'    => {},           # i tuoi profili e le modifiche a quelli già pronti
+      'explore_record'      => true,         # il giro diventa un percorso (scelta della finestra di avvio)
       # ── Oggetti: corpo rigido ────────────────────────────────────
       'obj_use_materials'   => true,
       'obj_density'         => 400.0,

@@ -86,10 +86,32 @@ big = "s = <<~T\n#{'x' * 300_000}\nT\ns.size"
 r = call(info, post(big))
 ok(body[r]['result'] == '300001', 'corpo grande (300 kB) ricevuto per intero')
 
+# 2026-10-24: instance_eval vedeva le locali di bridge_eval, e `out = …` nel
+# codice sostituiva il buffer dell'output (NoMethodError su string)
+r = call(info, post("puts 'stampato'\nout = 5\nmodel = nil\ncode = nil\nPROVA_COSTANTE = 7\n[out, PROVA_COSTANTE]"))
+b = body[r]
+ok(b['ok'] && b['result'] == '[5, 7]' && b['output'] == "stampato\n",
+   "il codice non tocca le variabili del ponte (out, model…) e può definire costanti (#{b['result'] || b['error']})")
+
 F.instance_variable_set(:@active, true)
 r = call(info, post('1'))
 ok(!body[r]['ok'] && body[r]['error'].include?('FPS'), 'con la modalità FPS attiva il codice non viene eseguito')
 F.instance_variable_set(:@active, false)
+
+# Il ponte dell'estensione DagaMCP sta costruendo dal vivo: niente codice e
+# niente modalità FPS, la sua operazione è aperta
+module DagaMCP
+  module Bridge
+    def self.busy? = $dagamcp_busy
+  end
+end
+$dagamcp_busy = true
+r = call(info, post('1'))
+ok(r.code == '409' && !body[r]['ok'] && body[r]['error'].include?('DagaMCP'), 'DagaMCP costruisce: codice rifiutato (409)')
+ok(F.bridge_building?, 'DagaMCP costruisce: bridge_building? vero (start e settle_tick si fermano)')
+$dagamcp_busy = false
+r = call(info, post('1'))
+ok(body[r]['ok'] && !F.bridge_building?, 'DagaMCP fermo: il codice torna a girare')
 
 # ── Costruzione dal vivo ─────────────────────────────────────────
 # I timer di SketchUp qui sono finti: si raccolgono i blocchi e il test li

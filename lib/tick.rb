@@ -326,6 +326,9 @@ module DagaWASD
       rec_now = pressed?('record')
       path_rec_toggle(now) if rec_now && !@prev_rec
       @prev_rec = rec_now
+      photo_now = pressed?('photo')
+      gal_human(view, now) if photo_now && !@prev_photo   # lib/gallery.rb
+      @prev_photo = photo_now
 
       # ── Fisica oggetti ───────────────────────────────────────────
       step_physics(dt)

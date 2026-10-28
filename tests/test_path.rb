@@ -50,7 +50,7 @@ class FakeView
     true
   end
 end
-Page = Struct.new(:name, :flags, :eye_x, :transition_time, :delay_time)
+Page = Struct.new(:name, :flags, :eye_x, :transition_time, :delay_time, :description)
 class FakePages
   include Enumerable
   def initialize(view); @view = view; @list = []; end
@@ -161,6 +161,22 @@ F::PathTool.new.deactivate(view)
 ok(!F.path_busy? && pm.tools_sel.size == sel, 'scelto un altro strumento: si ferma senza toglierlo')
 ok(F.path_start(:play, 'Nessuno') == F.t('path.missing'), 'percorso inesistente: messaggio')
 
+# ── Commenti dell'IA (lib/expilot.rb): descrizioni delle scene, sottotitoli ──
+con_note = lambda do |name, notes|
+  p = JSON.parse(d[name])
+  p['notes'] = notes
+  d[name] = JSON.generate(p)
+end
+con_note.('Percorso 1', [[2.9, 'Fine'], [1.2, 'Una statua'], [1.3, 'Bella'], [2.0, '  '], 'rotto'])
+ok(F.path_track('Percorso 1')[:notes] == [[1.2, 'Una statua'], [1.3, 'Bella'], [2.9, 'Fine']],
+   'commenti del percorso: in ordine, senza quelli vuoti o rotti')
+srt = F.path_srt([[0.5, 'Primo'], [1.0, 'Secondo'], [9.0, 'oltre la fine']], 1.0, 2.0)
+ok(srt == "\uFEFF1\r\n00:00:00,500 --> 00:00:00,950\r\nPrimo\r\n\r\n2\r\n00:00:01,000 --> 00:00:02,000\r\nSecondo\r\n",
+   'SRT: ognuno finché arriva il successivo, l\'ultimo fino alla fine del video, niente oltre')
+ok(F.path_srt([[2.0, 'Uno']], 2.0, 60.0).include?('00:00:01,000 --> 00:00:05,120') && F.path_srt([[3.0, 'x']], 1.0, 2.0).nil?,
+   'SRT a velocità 2: tempi dimezzati; 4 s più un po\' per testo; nessun commento nel tratto: nil')
+con_note.('Percorso 2', [[0.5, 'Primo'], [1.0, 'Secondo']])
+
 # ── Scene ────────────────────────────────────────────────────────────
 cfg['path_scene_step'] = 1.0
 cfg['path_speed'] = 1.0
@@ -173,6 +189,7 @@ ok(sc.all? { |p| p.flags == 1 && p.delay_time == 0.0 } && sc[1..].all? { |p| (p.
    'solo la camera, nessuna pausa, transizione di 1 s')
 ok((sc.last.eye_x - s.last[1]).abs < 1.0 && (sc[1].eye_x / M - 1.0).abs < 0.05, 'ogni scena dove si era in quell\'istante')
 ok(pm.opts['PageOptions']['ShowTransition'] == true, 'transizioni delle scene accese')
+ok(sc.map(&:description) == [nil, 'Una statua · Bella', nil, 'Fine'], 'i commenti dell\'IA nella descrizione della scena più vicina')
 ok(view.camera.eye.x == cam0, 'la vista torna com\'era')
 cfg['path_speed'] = 2.0
 F.path_make_scenes('Percorso 1')
@@ -198,6 +215,10 @@ ok(xs.each_cons(2).all? { |a, b| b > a }, 'ogni immagine un passo più avanti')
 bat = File.join(out, 'crea_video.bat')
 ok(File.exist?(bat) && File.read(bat).include?('-framerate 10') && File.read(bat).include?('frame_%%05d.png'),
    'accanto, crea_video.bat per ffmpeg')
+srt_png = File.join(out, 'Percorso 2.srt')
+ok(File.exist?(srt_png) && File.binread(srt_png).force_encoding('UTF-8').include?('Secondo') &&
+   File.read(bat).include?('-i "Percorso 2.srt" -c:s mov_text'),
+   'i commenti in Percorso 2.srt, e crea_video.bat li mette nel video come sottotitoli')
 ok(boxes.last.include?('21') && !F.path_busy? && view.anim.nil?, 'alla fine: messaggio con quante immagini e dove')
 view.images.clear
 F.path_export_frames('Percorso 2')
@@ -248,12 +269,15 @@ ok(idx.size == 21 && idx.each_with_index.all? { |(id, fl, off, n), i| id == '00d
 ok(avih[7] >= frames.map { |_id, n, _at| n }.max, 'buffer suggerito grande quanto il fotogramma più grosso')
 ok(boxes.last.include?('giro.avi') && boxes.last.include?('0:02') && !File.exist?(File.join(Dir.tmpdir, "dagawasd_fotogramma_#{Process.pid}.jpg")),
    'alla fine: messaggio con file e durata, JPEG temporaneo tolto')
+srt_avi = File.join(tmp, 'giro.srt')
+ok(File.exist?(srt_avi) && File.binread(srt_avi).include?('Primo'), 'accanto al video giro.srt con i commenti')
 F.path_export_frames('Percorso 2')
 5.times { view.anim.nextFrame(view) }
 F::PathTool.new.onCancel(0, view)
 b = File.binread(avi_file)
 ok(b.byteslice(4, 4).unpack1('V') == b.bytesize - 8 && b.byteslice(48, 4).unpack1('V') == 5 && boxes.last.include?('giro.avi'),
    'interrotto con Esc: video di 5 fotogrammi, comunque valido')
+ok(!File.exist?(srt_avi), 'mezzo secondo di video, nessun commento: il .srt di prima tolto')
 UI.define_singleton_method(:savepanel) { |*_a| nil }
 ok(F.path_export_frames('Percorso 2').nil? && !F.path_busy?, 'nessun file scelto: non parte')
 small = F::MjpegAvi.new(File.join(tmp, 'vuoto.avi'), 64, 48, 25)
@@ -441,6 +465,11 @@ ok(boxes.last == F.t('path.missing'), 'comando su un percorso che non c\'è più
 
 # ── Tasto ────────────────────────────────────────────────────────────
 ok(F::DEFAULT_KEYS['record'] == 0x52, 'R registra (tasto predefinito)')
+ok(F::DEFAULT_KEYS['photo'] == 0x50 && F.sanitize_keys({})['photo'] == 0x50, 'P scatta una foto (tasto predefinito)')
+vecchi = F::DEFAULT_KEYS.reject { |a, _| a == 'photo' }.merge('use' => 0x50)   # impostazioni di prima, con P già usato
+k = F.sanitize_keys(vecchi)
+ok(k['use'] == 0x50 && k['photo'] && k['photo'] != 0x50 && k.values.uniq.size == k.size && k['jump'] == F::DEFAULT_KEYS['jump'],
+   "un'azione nuova col tasto già preso: ne prende uno libero (#{k['photo'] && k['photo'].chr}), gli altri restano come li si era scelti")
 F.refresh_keys
 ok(F.instance_variable_get(:@swallow).include?(0x52), 'in modalità FPS R non arriva a SketchUp')
 

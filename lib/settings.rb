@@ -80,14 +80,23 @@ module DagaWASD
     # ── Tasti personalizzati ────────────────────────────────────────
     # Valori non validi, riservati o doppi tornano al predefinito; se anche
     # così due azioni finiscono sullo stesso tasto, si torna ai predefiniti.
+    # Un'azione che manca (arrivata con una versione nuova) prende il suo
+    # predefinito, o se un'altra azione l'ha già preso un tasto libero di
+    # KEY_SPARE: i tasti scelti dall'utente restano.
+    KEY_SPARE = [0x50, 0x4F, 0x49, 0x4C, 0x4A, 0x4E, 0x4D, 0x42, 0x48, 0x55, 0x59, 0x54, 0x56, 0x58, 0x5A, 0x51, 0x45].freeze
+
     def self.sanitize_keys(h)
       h = {} unless h.is_a?(Hash)
       out = {}
+      taken = h.values.map { |v| v.is_a?(String) && v =~ /\A\d+\z/ ? v.to_i : v }
       DEFAULT_KEYS.each do |act, dflt|
         v = h[act]
         v = v.to_i if v.is_a?(String) && v =~ /\A\d+\z/
         ok = v.is_a?(Integer) && v.between?(1, 254) && !RESERVED_KEYS.include?(v) &&
              !out.value?(v)
+        if !ok && !h.key?(act) && (taken.include?(dflt) || out.value?(dflt))
+          dflt = KEY_SPARE.find { |k| !taken.include?(k) && !out.value?(k) && !DEFAULT_KEYS.value?(k) } || dflt
+        end
         out[act] = ok ? v : dflt
       end
       out.values.uniq.size == out.size ? out : DEFAULT_KEYS.dup
@@ -172,6 +181,10 @@ module DagaWASD
     # Prima su un file temporaneo, poi lo scambio: se SketchUp si chiude a
     # metà scrittura, settings.json resta quello di prima invece che troncato.
     def self.save_cfg
+      # Impostazioni mai lette dal disco (lo stato azzerato da un config.rb
+      # ricaricato a mano): prima quelle del file, poi le modifiche di ora.
+      # Senza, un settings.json intero diventerebbe le poche chiavi in memoria.
+      @cfg = load_cfg_keep(@cfg) unless @cfg && DEFAULT.keys.all? { |k| @cfg.key?(k) }
       tmp = "#{settings_path}.tmp"
       FileUtils.mkdir_p(File.dirname(settings_path))
       File.write(tmp, JSON.pretty_generate(@cfg), encoding: 'UTF-8')
@@ -179,6 +192,11 @@ module DagaWASD
     rescue => e
       log_error(__method__, e)
       Sketchup.status_text = "DagaWASD: save error — #{e.message}"
+    end
+
+    def self.load_cfg_keep(mine)
+      mine = (mine || {}).dup
+      load_cfg.merge!(mine)
     end
 
     # ── Registro errori ─────────────────────────────────────────────

@@ -88,6 +88,11 @@ ok(F.pad_pressed?('kick') && !F.pad_pressed?('run'), 'grilletto destro = calcio'
 xi.pads[2] = [F::XI_LTHUMB, 0, 0, 0, 0, 0, 0]
 run.(1.0 / 60)
 ok(F.pad_pressed?('run'), 'leva sinistra premuta = corsa')
+scatti = 0
+F.define_singleton_method(:gal_human) { |_view, _now| scatti += 1; nil }   # lib/gallery.rb: qui solo contate
+xi.pads[2] = [F::XI_RB, 0, 0, 0, 0, 0, 0]
+run.(0.2)
+ok(F.pad_pressed?('photo') && scatti == 1, "dorsale destro (RB) = foto, una per pressione (#{scatti})")
 xi.pads[2] = [F::XI_BACK, 0, 0, 0, 0, 0, 0]
 run.(0.3)
 ok(frozen == 1, 'View: sblocca il mouse una volta sola anche tenendo premuto')

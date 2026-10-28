@@ -6,11 +6,12 @@ rem  Lancia tutti i test del progetto:
 rem    1. controllo di sintassi dei file Ruby
 rem    2. test di fisica e materiali (tests\test_physics.rb)
 rem    3. tasti, importazione e registro errori (tests\test_settings.rb)
-rem    4. ponte per Claude, meteo e gamepad (test_bridge, test_sky, test_precip, test_clouds, test_gamepad)
+rem    4. ponte per Claude, meteo, gamepad, percorsi, esploratore (test_bridge, test_sky, test_precip,
+rem       test_clouds, test_gamepad, test_path, test_explore, test_pilota_ia: pilota con l'API finta)
 rem    5. completezza delle traduzioni (tests\test_i18n.rb)
 rem    6. pacchetti .rbz: si creano, si estraggono e si caricano (tests\test_rbz.rb),
 rem       e regole SketchUp sul pacchetto per l'Extension Warehouse (se c'e' rubocop)
-rem    7. test del pannello e della finestra del video in un browser simulato (tests\panel)
+rem    7. test del pannello, della finestra del video e della galleria delle foto in un browser simulato (tests\panel)
 rem  Serve Ruby 3.2 (C:\Ruby32-x64) e, per il pannello, Node.js.
 rem  Questa cartella NON viene copiata in SketchUp da installa.bat.
 rem ==================================================================
@@ -69,6 +70,11 @@ echo  == Percorsi ==
 "%RUBY%" -E UTF-8 "%ROOT%\tests\test_pathkeys.rb" || set "FAIL=1"
 
 echo.
+echo  == Esploratore autonomo ==
+"%RUBY%" -E UTF-8 "%ROOT%\tests\test_explore.rb" || set "FAIL=1"
+"%RUBY%" -E UTF-8 "%ROOT%\tests\test_pilota_ia.rb" || set "FAIL=1"
+
+echo.
 echo  == Traduzioni ==
 "%RUBY%" -E UTF-8 "%ROOT%\tests\test_i18n.rb" || set "FAIL=1"
 
@@ -98,6 +104,9 @@ if errorlevel 1 (
   node "%ROOT%\tests\panel\test_panel.js" || set "FAIL=1"
   node "%ROOT%\tests\panel\test_attesa.js" || set "FAIL=1"
   node "%ROOT%\tests\panel\test_keyedit.js" || set "FAIL=1"
+  node "%ROOT%\tests\panel\test_exprofiles.js" || set "FAIL=1"
+  node "%ROOT%\tests\panel\test_exstart.js" || set "FAIL=1"
+  node "%ROOT%\tests\panel\test_galleria.js" || set "FAIL=1"
 )
 
 echo.

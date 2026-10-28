@@ -1,5 +1,6 @@
 # DagaWASD — icone PNG dagli SVG di pubblicazione\ (con Edge headless, già in Windows).
 #   pubblicazione\icona_barra.svg → icons\wasd_32.png, icons\wasd_24.png (barra degli strumenti)
+#   pubblicazione\icona_esplora.svg → icons\explore_32.png, icons\explore_24.png (esploratore autonomo)
 #   pubblicazione\icona.svg       → pubblicazione\icona_512.png (scheda dell'Extension Warehouse)
 # Edge disegna ogni SVG alla misura finale, su fondo trasparente: più nitido che
 # rimpicciolire un'immagine grande.
@@ -25,4 +26,6 @@ function Rendi([string]$svg, [string]$png, [int]$lato) {
 
 Rendi 'pubblicazione\icona_barra.svg' 'icons\wasd_32.png' 32
 Rendi 'pubblicazione\icona_barra.svg' 'icons\wasd_24.png' 24
+Rendi 'pubblicazione\icona_esplora.svg' 'icons\explore_32.png' 32
+Rendi 'pubblicazione\icona_esplora.svg' 'icons\explore_24.png' 24
 Rendi 'pubblicazione\icona.svg' 'pubblicazione\icona_512.png' 512

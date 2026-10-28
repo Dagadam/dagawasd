@@ -10,9 +10,9 @@ cfg = F.instance_variable_get(:@cfg)
 
 # ── Caricamento da main.rb: menu e barra registrati ──────────────
 plug = UI.menu('Plugins').items.find { |n, _| n == 'DagaWASD' }
-ok(plug && plug[1].items.size == 2, 'main.rb carica lib/ e registra il sottomenu DagaWASD (2 voci)')
+ok(plug && plug[1].items.size == 4, 'main.rb carica lib/ e registra il sottomenu DagaWASD (4 voci, con l\'esploratore e i suoi profili)')
 tb = UI.toolbars.find { |x| x.name == 'DagaWASD' }
-ok(tb && tb.items.size == 2, 'barra degli strumenti DagaWASD con 2 pulsanti')
+ok(tb && tb.items.size == 3, 'barra degli strumenti DagaWASD con 3 pulsanti (camminata, esploratore, impostazioni)')
 ok(F::PLUGIN_DIR == File.expand_path('..', __dir__), 'PLUGIN_DIR è la cartella dell\'estensione, non lib/')
 
 # ── Tasti: pulizia ───────────────────────────────────────────────

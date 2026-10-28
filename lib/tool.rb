@@ -51,6 +51,8 @@ module DagaWASD
         cx = view.vpwidth / 2; cy = view.vpheight / 2
         draw_crosshair(view, fps, cx, cy) if fps.cf('crosshair')
         draw_charge_bar(view, fps, cx, cy, *fps.charge_info) if fps.charge_info
+        flash = fps.gal_flash
+        draw_flash(view, flash) if flash
       rescue => fps_err; DagaWASD::FPSWalk.log_error(:draw, fps_err); nil; end
 
       # Mirino secondo Sistema › Aspetto: forma, colore, misure. Il bordo
@@ -99,6 +101,14 @@ module DagaWASD
           view.drawing_color = zc
           view.draw2d(GL_LINES, [Geom::Point3d.new(zx, y0 - 3, 0), Geom::Point3d.new(zx, y0 + h + 3, 0)])
         end
+      end
+
+      # Lampo dello scatto (lib/gallery.rb): la vista sbianca e torna
+      def draw_flash(view, a)
+        w = view.vpwidth; h = view.vpheight
+        view.drawing_color = [255, 255, 255, (200 * a * a).round]
+        view.draw2d(GL_QUADS, [Geom::Point3d.new(0, 0, 0), Geom::Point3d.new(w, 0, 0),
+                               Geom::Point3d.new(w, h, 0), Geom::Point3d.new(0, h, 0)])
       end
 
       def getInstructorContentDirectory; nil; end

@@ -33,6 +33,8 @@ module DagaWASD
     KEY_V    = 1.4                   # m/s: percorso nuovo, passo tranquillo
     KEY_TURN = 45.0                  # °/s: girarsi sul posto
     KEY_SUB  = 24                    # pezzi per tratto: lunghezza e curva disegnata
+    KEY_BACK = 1.0 * M_TO_IN         # aggiunta dall'elenco: la vista arretra tanto…
+    KEY_WALL = 0.15 * M_TO_IN        # …ma resta così lontana da ciò che ha dietro
 
     # ── I componenti ──────────────────────────────────────────────
     # Uno per campo visivo, in gradi interi: la freccia è lunga quanto lo
@@ -347,9 +349,9 @@ module DagaWASD
 
     # Fotogrammi a PATH_HZ (come path_frames), dall'una all'altra posizione,
     # fermi sulle soste.
-    def self.key_frames(keys, v_m)
+    def self.key_frames(keys, v_m, tm = nil)
       sp = key_spline(keys)
-      tm = key_timing(sp, v_m)
+      tm ||= key_timing(sp, v_m)
       parts = []
       keys.each_with_index do |k, i|
         parts << [:sosta, k[10].to_f, i] if k[10].to_f > 0
@@ -446,11 +448,12 @@ module DagaWASD
       [a, b]
     end
 
+    # Le istanze nuove, nell'ordine
     def self.key_place(model, name, keys)
       key_upgrade(model)
       mat = key_material(model, 'DagaWASD posizione')
       tag = key_tag(model)
-      keys.each_with_index do |k, i|
+      made = keys.each_with_index.map do |k, i|
         d = key_def(model, k[9])                           # la freccia del suo zoom
         e = model.entities.add_instance(d, key_transform(k)) # rubocop:disable SketchupSuggestions/ModelEntities
         e.material = mat
@@ -461,8 +464,26 @@ module DagaWASD
         e.set_attribute(KEY_DICT, 'fov', k[9].to_f.round(2))
         e.set_attribute(KEY_DICT, 'sosta', k[10].to_f.round(2)) if k[10].to_f > 0
         e.set_attribute(KEY_DICT, 'v', k[11].to_f.round(2)) if k[11].to_f > 0
+        e
       end
       key_purge(model)
+      made
+    end
+
+    # Una posizione nuova al posto j del percorso (da j in poi le altre
+    # scalano di uno), come la vicina: materiale, tag, nome, nascosta o no.
+    # Dentro un'operazione. Ritorna l'istanza.
+    def self.key_insert_at(model, name, list, j, k)
+      list.each_with_index { |x, i| x.set_attribute(KEY_DICT, 'i', i < j ? i : i + 1) }
+      e = key_place(model, name, [k]).first
+      e.set_attribute(KEY_DICT, 'i', j)
+      if (like = list[[j - 1, 0].max])
+        e.material = like.material
+        e.layer = like.layer
+        e.name = like.name
+      end
+      e.hidden = true if !list.empty? && list.all?(&:hidden?)
+      e
     end
 
     # ══════════════════════════════════════════════════════════════
@@ -514,6 +535,70 @@ module DagaWASD
         key_tag(m).visible = true unless @active
       end
       Sketchup.status_text = format(t('path.keys_made'), n: keys.size, name: name)
+      nil
+    end
+
+    # Dall'elenco del pannello, fra due posizioni (j = quante ne restano
+    # prima: 0 davanti alla prima, quante sono dopo l'ultima): una nuova dalla
+    # vista attuale, come le vicine. Poi la vista arretra (in dolly), se no
+    # resta dentro la sfera nuova. Con l'anteprima del pannello della sfera
+    # la vista è quella di una sfera: conta quella di prima, e l'anteprima
+    # si spegne. Mentre la camera è in dolly niente (doppio clic).
+    def self.key_add_at(name, j)
+      return t('path.busy') if @path_job || @active  # in modalità FPS la camera è del giocatore
+      return nil if ke_dolly?                         # lib/keyedit.rb
+      model = Sketchup.active_model
+      path_data(name, model) or return t('path.missing')
+      list = key_instances(model)[name]
+      return format(t('path.no_keys'), name: name) if list.nil? || list.empty?
+      j = j.to_i.clamp(0, list.size)
+      view = model.active_view
+      k = ke_preview_back || ke_cam_frame(view.camera)  # lib/keyedit.rb
+      path_write(t('path.op_keys'), model) { |m| key_insert_at(m, name, list, j, k) }
+      # solo ora, a sfera aggiunta: se l'aggiunta fallisce l'anteprima resta com'era
+      if (done = ke_preview_cut(view))
+        ke_push
+      end
+      key_step_back(view, k, &done)
+      @dialog&.execute_script('pathAdded()')            # il pannello ignora il secondo clic di un doppio clic
+      Sketchup.status_text = format(t('path.key_added'), i: j + 1, name: name)
+      nil
+    end
+
+    # Indietro lungo lo sguardo di KEY_BACK, meno se c'è un muro, in dolly
+    # dalla vista attuale: la sfera nuova resta al centro della vista. La
+    # parallela resta parallela. Poi il blocco, se c'è.
+    def self.key_step_back(view, k, &done)
+      m = key_room_behind(view.model, k)
+      back = k.dup
+      3.times { |c| back[c] -= k[3 + c] * m }
+      from = ke_cam_frame(view.camera)
+      ke_dolly(view, ->(s) { ke_mix(from, back, s) }, KE_DOLLY, view.camera.perspective?, &done)
+    end
+
+    # Quanto si può arretrare dall'occhio di k (pollici): KEY_BACK, o fino a
+    # KEY_WALL da ciò che c'è dietro. Le sfere non contano, le cose nascoste nemmeno.
+    def self.key_room_behind(model, k)
+      eye = Geom::Point3d.new(k[0], k[1], k[2])
+      hit = key_ray(model, eye, Geom::Vector3d.new(-k[3], -k[4], -k[5])) or return KEY_BACK
+      (eye.distance(hit[0]).to_f - KEY_WALL).clamp(0.0, KEY_BACK)
+    rescue StandardError
+      KEY_BACK
+    end
+
+    # Un pezzo di una sfera (o la sfera)
+    def self.key_part?(e)
+      e.respond_to?(:definition) && !e.definition.get_attribute(KEY_DICT, 'def').nil?
+    end
+
+    # Il primo colpo di un raggio che non sia una sfera (le attraversa, anche
+    # quella in cui parte); le cose nascoste non contano. [punto, percorso] o nil.
+    def self.key_ray(model, from, dir)
+      6.times do
+        hit = model.raytest([from, dir], true) or return nil
+        return hit unless hit[1].any? { |e| key_part?(e) }
+        from = hit[0].offset(dir, 0.01)
+      end
       nil
     end
 
@@ -632,14 +717,8 @@ module DagaWASD
       v = eye.vector_to(pt)
       d = v.length.to_f
       return true if d <= KEY_R
-      from = eye
-      5.times do
-        hit = model.raytest([from, v], true) or return true
-        return true if eye.distance(hit[0]).to_f >= d - KEY_R * 1.05
-        return false unless hit[1].any? { |e| e.respond_to?(:definition) && e.definition.get_attribute(KEY_DICT, 'def') }
-        from = hit[0].offset(v, 0.01)                   # un'altra sfera davanti: oltre
-      end
-      true
+      hit = key_ray(model, eye, v) or return true       # le altre sfere davanti non coprono
+      eye.distance(hit[0]).to_f >= d - KEY_R * 1.05
     rescue StandardError
       true                                              # nel dubbio il numero si scrive
     end
