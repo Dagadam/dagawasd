@@ -1,6 +1,6 @@
 # DagaWASD
 
-[English](README.md) · [Italiano](README.it.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · **中文**
+[English](README.md) · [Italiano](README.it.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Português](README.pt.md) · [日本語](README.ja.md) · **中文**
 
 SketchUp 扩展程序（Windows）：用 WASD 和鼠标，或用游戏手柄，以第一人称在模型中行走。
 
@@ -140,7 +140,7 @@ ruby tools/pilota_ia.rb --motore api                     # 使用 API，需要�
 - 版本号只写在 `dagawasd.rb`（`VERSION`）中；每个版本在 `CHANGELOG.md` 中都有对应章节。
 - 图标由 `pubblicazione/` 中的 SVG 生成：`tools\rendi_icone.bat` 会重新生成工具栏图标（`icons/`）和 Warehouse 页面的图标（`pubblicazione/icona_512.png`）。
 - Extension Warehouse 页面（英文文本和给审核者的说明）位于 `pubblicazione/extension_warehouse.md`。
-- 本 README 有多种语言（英文 `README.md`、`README.it.md`、`.es`、`.fr`、`.de`、`.zh`）：修改时需同步到所有语言。
+- 本 README 有多种语言（英文 `README.md`、`README.it.md`、`.es`、`.fr`、`.de`、`.pt`、`.ja`、`.zh`）：修改时需同步到所有语言。
 - 在运行中的 SketchUp 里，开启桥接并在面板中开启“窗口和按键”（供 Claude Code 使用的工具，不会被安装）：
   - `tools\finestre.ps1` 能做到 Ruby 做不到的事：原生窗口、提示框、菜单、连同天空和云一起截取视图、模拟按键，以及在 3D 视图中的真实点击（例如双击球体）；
   - `tools\collaudo.rb` 实时测试面板的按钮和菜单、“删除”的确认，以及一直到最终窗口的视频导出；

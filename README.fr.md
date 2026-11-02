@@ -1,6 +1,6 @@
 # DagaWASD
 
-[English](README.md) · [Italiano](README.it.md) · [Español](README.es.md) · **Français** · [Deutsch](README.de.md) · [中文](README.zh.md)
+[English](README.md) · [Italiano](README.it.md) · [Español](README.es.md) · **Français** · [Deutsch](README.de.md) · [Português](README.pt.md) · [日本語](README.ja.md) · [中文](README.zh.md)
 
 Extension pour SketchUp (Windows) : parcourez votre modèle à la première
 personne avec WASD et la souris, ou avec une manette.
@@ -337,7 +337,7 @@ Le code, ses commentaires et le journal des modifications sont en italien.
 - La fiche de l'Extension Warehouse (textes en anglais et notes pour les
   examinateurs) se trouve dans `pubblicazione/extension_warehouse.md`.
 - Ce README existe en plusieurs langues (`README.md` en anglais,
-  `README.it.md`, `.es`, `.fr`, `.de`, `.zh`) : une modification va dans
+  `README.it.md`, `.es`, `.fr`, `.de`, `.pt`, `.ja`, `.zh`) : une modification va dans
   toutes.
 - Dans SketchUp ouvert, avec le pont activé et « Fenêtres et touches »
   activé dans le panneau (outils pour Claude Code, non installés) :

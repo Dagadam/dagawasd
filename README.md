@@ -1,6 +1,6 @@
 # DagaWASD
 
-**English** · [Italiano](README.it.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [中文](README.zh.md)
+**English** · [Italiano](README.it.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Português](README.pt.md) · [日本語](README.ja.md) · [中文](README.zh.md)
 
 A SketchUp extension (Windows): walk through your model in first person with
 WASD and the mouse, or with a gamepad.
@@ -316,7 +316,7 @@ The code, its comments and the changelog are in Italian.
 - The Extension Warehouse listing (texts in English and notes for the
   reviewers) is in `pubblicazione/extension_warehouse.md`.
 - This README is in several languages (`README.md` in English,
-  `README.it.md`, `.es`, `.fr`, `.de`, `.zh`): a change goes into all of
+  `README.it.md`, `.es`, `.fr`, `.de`, `.pt`, `.ja`, `.zh`): a change goes into all of
   them.
 - In the running SketchUp, with the bridge on and «Windows and keys» on in
   the panel (tools for Claude Code, not installed):

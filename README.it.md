@@ -1,6 +1,6 @@
 # DagaWASD
 
-[English](README.md) · **Italiano** · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [中文](README.zh.md)
+[English](README.md) · **Italiano** · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Português](README.pt.md) · [日本語](README.ja.md) · [中文](README.zh.md)
 
 Estensione per SketchUp (Windows): cammini nel modello in prima persona con
 WASD e mouse, o con un gamepad.
@@ -313,7 +313,7 @@ rete e si può mandare a qualcuno con la sua cartella.
 - La scheda per l'Extension Warehouse (testi in inglese e note per i
   revisori) sta in `pubblicazione/extension_warehouse.md`.
 - Questo README è in più lingue (`README.md` in inglese, `README.it.md`,
-  `.es`, `.fr`, `.de`, `.zh`): una modifica va in tutte.
+  `.es`, `.fr`, `.de`, `.pt`, `.ja`, `.zh`): una modifica va in tutte.
 - Nel SketchUp aperto, col ponte acceso e con «Finestre e tasti» acceso nel
   pannello (strumenti per Claude Code, non installati):
   - `tools\finestre.ps1` arriva dove il Ruby non arriva: finestre native,
