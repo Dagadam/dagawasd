@@ -10,6 +10,12 @@ Il numero sta in un posto solo, `VERSION` in `dagawasd.rb`;
 
 ## [Non ancora uscito]
 
+### Corretto
+- Portoghese: «Dirada camere», la spiegazione dell'analisi adattiva e il
+  suggerimento del tastierino usavano forme brasiliane («câmeras», «tela»,
+  «grade», «mouse»…) in un'interfaccia in portoghese europeo: ora «Rarear
+  câmaras», «ecrã», «grelha», «rato».
+
 ## [1.2.0] — 2026-11-02
 
 ### Aggiunto

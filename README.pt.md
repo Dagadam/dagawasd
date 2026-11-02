@@ -23,7 +23,7 @@ com WASD e o rato, ou com um comando de jogos.
   sua esfera (ou Enter), abre as suas definições com uma pré-visualização do
   que ela vê, e um clique entre duas posições acrescenta uma a partir da
   vista atual. Durante a reprodução, a lista acende a posição em curso.
-  «Rarear câmeras» junta as esferas amontoadas umas sobre as outras numa só,
+  «Rarear câmaras» junta as esferas amontoadas umas sobre as outras numa só,
   a média delas (posição, olhar, zoom), desde que não olhem a mais de 45°
   umas das outras.
 - **Explorador autónomo**: a câmara olha para a cena, escolhe a coisa mais
