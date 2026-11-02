@@ -1,11 +1,13 @@
 # DagaWASD
 
-[English](README.md) · [Italiano](README.it.md) · **Español** · [Français](README.fr.md) · [Deutsch](README.de.md) · [Português](README.pt.md) · [日本語](README.ja.md) · [中文](README.zh.md)
+[English](README.md) · [Italiano](README.it.md) · **Español** · [Français](README.fr.md) · [Deutsch](README.de.md) · [Português](README.pt.md) · [Nederlands](README.nl.md) · [Svenska](README.sv.md) · [Polski](README.pl.md) · [Čeština](README.cs.md) · [Русский](README.ru.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [中文](README.zh.md)
 
 Extensión para SketchUp (Windows): recorre tu modelo en primera persona con
 WASD y el ratón, o con un mando.
 
 ▶ Vídeo de demostración: https://youtu.be/w6xE86y7iEw?is=7Gh12tF7atE_N9_K
+
+⬇ **Descargar**: [última versión](https://github.com/Dagadam/dagawasd/releases/latest) (todas las versiones: [Releases](https://github.com/Dagadam/dagawasd/releases))
 
 ## Qué hace
 
@@ -41,9 +43,11 @@ instala pero no arranca, y lo dice.
 ## Instalación
 
 - Desde el **Extension Warehouse** de SketchUp (versión firmada), o
-- descarga el `.rbz` de una [Release](https://github.com/Dagadam/dagawasd/releases)
-  e instálalo desde *Extensiones › Administrador de extensiones › Instalar
-  extensión*.
+- descarga **`dagawasd-<versión>-warehouse.rbz`** de la
+  [última versión](https://github.com/Dagadam/dagawasd/releases/latest) (en *Assets*) e instálalo desde
+  *Extensiones › Administrador de extensiones › Instalar extensión*. El
+  otro archivo, `dagawasd-<versión>.rbz`, contiene además el puente para
+  Claude Code (ver *Dos paquetes*).
 
 Los ajustes se guardan en `%APPDATA%\DagaWASD\settings.json`: una
 actualización no los borra.
@@ -320,7 +324,7 @@ El código, sus comentarios y el registro de cambios están en italiano.
 - La ficha del Extension Warehouse (textos en inglés y notas para los
   revisores) está en `pubblicazione/extension_warehouse.md`.
 - Este README está en varios idiomas (`README.md` en inglés,
-  `README.it.md`, `.es`, `.fr`, `.de`, `.pt`, `.ja`, `.zh`): un cambio va en todos.
+  `README.it.md`, `.es`, `.fr`, `.de`, `.pt`, `.nl`, `.sv`, `.pl`, `.cs`, `.ru`, `.ja`, `.ko`, `.zh`): un cambio va en todos.
 - En el SketchUp abierto, con el puente activo y «Ventanas y teclas»
   activado en el panel (herramientas para Claude Code, no instaladas):
   - `tools\finestre.ps1` llega adonde Ruby no llega: ventanas nativas,

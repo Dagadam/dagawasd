@@ -1,11 +1,13 @@
 # DagaWASD
 
-[English](README.md) · [Italiano](README.it.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · **Português** · [日本語](README.ja.md) · [中文](README.zh.md)
+[English](README.md) · [Italiano](README.it.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · **Português** · [Nederlands](README.nl.md) · [Svenska](README.sv.md) · [Polski](README.pl.md) · [Čeština](README.cs.md) · [Русский](README.ru.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [中文](README.zh.md)
 
 Extensão para SketchUp (Windows): caminhe pelo seu modelo na primeira pessoa
 com WASD e o rato, ou com um comando de jogos.
 
 ▶ Vídeo de demonstração: https://youtu.be/w6xE86y7iEw?is=7Gh12tF7atE_N9_K
+
+⬇ **Descarregar**: [versão mais recente](https://github.com/Dagadam/dagawasd/releases/latest) (todas as versões: [Releases](https://github.com/Dagadam/dagawasd/releases))
 
 ## O que faz
 
@@ -41,8 +43,11 @@ instala-se mas não arranca, e avisa.
 ## Instalação
 
 - A partir do **Extension Warehouse** do SketchUp (versão assinada), ou
-- descarregue o `.rbz` de uma [Release](https://github.com/Dagadam/dagawasd/releases)
-  e instale-o em *Extensões › Extension Manager › Instalar extensão*.
+- descarregue **`dagawasd-<versão>-warehouse.rbz`** da
+  [versão mais recente](https://github.com/Dagadam/dagawasd/releases/latest) (em *Assets*) e instale-o em
+  *Extensões › Extension Manager › Instalar extensão*. O outro ficheiro,
+  `dagawasd-<versão>.rbz`, contém também a ponte para o Claude Code (ver
+  *Dois pacotes*).
 
 As definições ficam em `%APPDATA%\DagaWASD\settings.json`: uma atualização
 não as apaga.
@@ -317,7 +322,7 @@ O código, os seus comentários e o registo de alterações estão em italiano.
 - A ficha do Extension Warehouse (textos em inglês e notas para os
   revisores) está em `pubblicazione/extension_warehouse.md`.
 - Este README existe em várias línguas (`README.md` em inglês,
-  `README.it.md`, `.es`, `.fr`, `.de`, `.pt`, `.ja`, `.zh`): uma alteração
+  `README.it.md`, `.es`, `.fr`, `.de`, `.pt`, `.nl`, `.sv`, `.pl`, `.cs`, `.ru`, `.ja`, `.ko`, `.zh`): uma alteração
   vai para todas.
 - No SketchUp aberto, com a ponte ligada e «Janelas e teclas» ligado no
   painel (ferramentas para o Claude Code, não instaladas):

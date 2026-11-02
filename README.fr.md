@@ -1,11 +1,13 @@
 # DagaWASD
 
-[English](README.md) · [Italiano](README.it.md) · [Español](README.es.md) · **Français** · [Deutsch](README.de.md) · [Português](README.pt.md) · [日本語](README.ja.md) · [中文](README.zh.md)
+[English](README.md) · [Italiano](README.it.md) · [Español](README.es.md) · **Français** · [Deutsch](README.de.md) · [Português](README.pt.md) · [Nederlands](README.nl.md) · [Svenska](README.sv.md) · [Polski](README.pl.md) · [Čeština](README.cs.md) · [Русский](README.ru.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [中文](README.zh.md)
 
 Extension pour SketchUp (Windows) : parcourez votre modèle à la première
 personne avec WASD et la souris, ou avec une manette.
 
 ▶ Vidéo de démonstration : https://youtu.be/w6xE86y7iEw?is=7Gh12tF7atE_N9_K
+
+⬇ **Télécharger** : [dernière version](https://github.com/Dagadam/dagawasd/releases/latest) (toutes les versions : [Releases](https://github.com/Dagadam/dagawasd/releases))
 
 ## Ce qu'elle fait
 
@@ -44,9 +46,11 @@ l'extension s'installe mais ne démarre pas, et le dit.
 ## Installation
 
 - Depuis l'**Extension Warehouse** de SketchUp (version signée), ou
-- téléchargez le `.rbz` d'une [Release](https://github.com/Dagadam/dagawasd/releases)
-  et installez-le depuis *Extensions › Gestionnaire d'extensions › Installer
-  l'extension*.
+- téléchargez **`dagawasd-<version>-warehouse.rbz`** depuis la
+  [dernière version](https://github.com/Dagadam/dagawasd/releases/latest) (sous *Assets*) et installez-le depuis
+  *Extensions › Gestionnaire d'extensions › Installer l'extension*.
+  L'autre fichier, `dagawasd-<version>.rbz`, contient aussi le pont pour
+  Claude Code (voir *Deux paquets*).
 
 Les réglages sont enregistrés dans `%APPDATA%\DagaWASD\settings.json` : une
 mise à jour ne les efface pas.
@@ -337,7 +341,7 @@ Le code, ses commentaires et le journal des modifications sont en italien.
 - La fiche de l'Extension Warehouse (textes en anglais et notes pour les
   examinateurs) se trouve dans `pubblicazione/extension_warehouse.md`.
 - Ce README existe en plusieurs langues (`README.md` en anglais,
-  `README.it.md`, `.es`, `.fr`, `.de`, `.pt`, `.ja`, `.zh`) : une modification va dans
+  `README.it.md`, `.es`, `.fr`, `.de`, `.pt`, `.nl`, `.sv`, `.pl`, `.cs`, `.ru`, `.ja`, `.ko`, `.zh`) : une modification va dans
   toutes.
 - Dans SketchUp ouvert, avec le pont activé et « Fenêtres et touches »
   activé dans le panneau (outils pour Claude Code, non installés) :

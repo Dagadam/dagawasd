@@ -1,11 +1,13 @@
 # DagaWASD
 
-[English](README.md) · **Italiano** · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Português](README.pt.md) · [日本語](README.ja.md) · [中文](README.zh.md)
+[English](README.md) · **Italiano** · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Português](README.pt.md) · [Nederlands](README.nl.md) · [Svenska](README.sv.md) · [Polski](README.pl.md) · [Čeština](README.cs.md) · [Русский](README.ru.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [中文](README.zh.md)
 
 Estensione per SketchUp (Windows): cammini nel modello in prima persona con
 WASD e mouse, o con un gamepad.
 
 ▶ Video dimostrativo: https://youtu.be/w6xE86y7iEw?is=7Gh12tF7atE_N9_K
+
+⬇ **Scarica**: [ultima versione](https://github.com/Dagadam/dagawasd/releases/latest) (tutte le versioni: [Releases](https://github.com/Dagadam/dagawasd/releases))
 
 ## Che cosa fa
 
@@ -41,8 +43,11 @@ installa ma non parte, e lo dice.
 ## Installazione
 
 - Dall'**Extension Warehouse** di SketchUp (versione firmata), oppure
-- scarica il `.rbz` da una [Release](https://github.com/Dagadam/dagawasd/releases) e installalo da *Estensioni › Gestore
-  estensioni › Installa estensione*.
+- scarica **`dagawasd-<versione>-warehouse.rbz`** dall'
+  [ultima versione](https://github.com/Dagadam/dagawasd/releases/latest) (sotto *Assets*) e installalo da
+  *Estensioni › Gestore estensioni › Installa estensione*. L'altro file,
+  `dagawasd-<versione>.rbz`, contiene anche il ponte per Claude Code (vedi
+  *Due pacchetti*).
 
 Le impostazioni stanno in `%APPDATA%\DagaWASD\settings.json`: un
 aggiornamento non le cancella.
@@ -313,7 +318,7 @@ rete e si può mandare a qualcuno con la sua cartella.
 - La scheda per l'Extension Warehouse (testi in inglese e note per i
   revisori) sta in `pubblicazione/extension_warehouse.md`.
 - Questo README è in più lingue (`README.md` in inglese, `README.it.md`,
-  `.es`, `.fr`, `.de`, `.pt`, `.ja`, `.zh`): una modifica va in tutte.
+  `.es`, `.fr`, `.de`, `.pt`, `.nl`, `.sv`, `.pl`, `.cs`, `.ru`, `.ja`, `.ko`, `.zh`): una modifica va in tutte.
 - Nel SketchUp aperto, col ponte acceso e con «Finestre e tasti» acceso nel
   pannello (strumenti per Claude Code, non installati):
   - `tools\finestre.ps1` arriva dove il Ruby non arriva: finestre native,

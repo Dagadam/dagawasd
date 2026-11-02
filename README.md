@@ -1,11 +1,13 @@
 # DagaWASD
 
-**English** · [Italiano](README.it.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Português](README.pt.md) · [日本語](README.ja.md) · [中文](README.zh.md)
+**English** · [Italiano](README.it.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Português](README.pt.md) · [Nederlands](README.nl.md) · [Svenska](README.sv.md) · [Polski](README.pl.md) · [Čeština](README.cs.md) · [Русский](README.ru.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [中文](README.zh.md)
 
 A SketchUp extension (Windows): walk through your model in first person with
 WASD and the mouse, or with a gamepad.
 
 ▶ Demo video: https://youtu.be/w6xE86y7iEw?is=7Gh12tF7atE_N9_K
+
+⬇ **Download**: [latest release](https://github.com/Dagadam/dagawasd/releases/latest) (all versions: [Releases](https://github.com/Dagadam/dagawasd/releases))
 
 ## What it does
 
@@ -41,8 +43,11 @@ installs but does not start, and says so.
 ## Installation
 
 - From SketchUp's **Extension Warehouse** (signed version), or
-- download the `.rbz` from a [Release](https://github.com/Dagadam/dagawasd/releases)
-  and install it from *Extensions › Extension Manager › Install Extension*.
+- download **`dagawasd-<version>-warehouse.rbz`** from the
+  [latest release](https://github.com/Dagadam/dagawasd/releases/latest) (under *Assets*) and install it from
+  *Extensions › Extension Manager › Install Extension*. The other file,
+  `dagawasd-<version>.rbz`, also contains the bridge for Claude Code (see
+  *Two packages*).
 
 Settings are stored in `%APPDATA%\DagaWASD\settings.json`: an update does
 not erase them.
@@ -316,7 +321,7 @@ The code, its comments and the changelog are in Italian.
 - The Extension Warehouse listing (texts in English and notes for the
   reviewers) is in `pubblicazione/extension_warehouse.md`.
 - This README is in several languages (`README.md` in English,
-  `README.it.md`, `.es`, `.fr`, `.de`, `.pt`, `.ja`, `.zh`): a change goes into all of
+  `README.it.md`, `.es`, `.fr`, `.de`, `.pt`, `.nl`, `.sv`, `.pl`, `.cs`, `.ru`, `.ja`, `.ko`, `.zh`): a change goes into all of
   them.
 - In the running SketchUp, with the bridge on and «Windows and keys» on in
   the panel (tools for Claude Code, not installed):

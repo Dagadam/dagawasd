@@ -1,10 +1,12 @@
 # DagaWASD
 
-[English](README.md) · [Italiano](README.it.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Português](README.pt.md) · **日本語** · [中文](README.zh.md)
+[English](README.md) · [Italiano](README.it.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Português](README.pt.md) · [Nederlands](README.nl.md) · [Svenska](README.sv.md) · [Polski](README.pl.md) · [Čeština](README.cs.md) · [Русский](README.ru.md) · **日本語** · [한국어](README.ko.md) · [中文](README.zh.md)
 
 SketchUp 用の拡張機能（Windows）：WASD とマウス、またはゲームパッドで、モデルの中を一人称視点で歩けます。
 
 ▶ デモ動画：https://youtu.be/w6xE86y7iEw?is=7Gh12tF7atE_N9_K
+
+⬇ **ダウンロード**：[最新リリース](https://github.com/Dagadam/dagawasd/releases/latest)（すべてのバージョン：[Releases](https://github.com/Dagadam/dagawasd/releases)）
 
 ## できること
 
@@ -22,7 +24,7 @@ SketchUp 用の拡張機能（Windows）：WASD とマウス、またはゲー�
 ## インストール
 
 - SketchUp の **Extension Warehouse**（署名済み版）から、または
-- [Release](https://github.com/Dagadam/dagawasd/releases) から `.rbz` をダウンロードし、*拡張機能 › Extension Manager › 拡張機能をインストール* からインストールします。
+- [最新リリース](https://github.com/Dagadam/dagawasd/releases/latest) の *Assets* から **`dagawasd-<バージョン>-warehouse.rbz`** をダウンロードし、*拡張機能 › Extension Manager › 拡張機能をインストール* からインストールします。もう一つのファイル `dagawasd-<バージョン>.rbz` には Claude Code 用ブリッジも含まれます（*2 つのパッケージ* を参照）。
 
 設定は `%APPDATA%\DagaWASD\settings.json` に保存されるので、アップデートしても消えません。
 
@@ -140,7 +142,7 @@ ruby tools/pilota_ia.rb --motore api                     # API を使う（キ�
 - バージョン番号は `dagawasd.rb`（`VERSION`）にだけあります。各バージョンには `CHANGELOG.md` に専用のセクションがあります。
 - アイコンは `pubblicazione/` の SVG から作られます：`tools\rendi_icone.bat` がツールバーのアイコン（`icons/`）と Warehouse ページのアイコン（`pubblicazione/icona_512.png`）を作り直します。
 - Extension Warehouse のページ（英語のテキストと審査担当者へのメモ）は `pubblicazione/extension_warehouse.md` にあります。
-- この README は複数の言語であります（英語の `README.md`、`README.it.md`、`.es`、`.fr`、`.de`、`.pt`、`.ja`、`.zh`）。変更はすべてに反映してください。
+- この README は複数の言語であります（英語の `README.md`、`README.it.md`、`.es`、`.fr`、`.de`、`.pt`、`.nl`、`.sv`、`.pl`、`.cs`、`.ru`、`.ja`、`.ko`、`.zh`）。変更はすべてに反映してください。
 - 起動中の SketchUp で、ブリッジをオンにし、パネルで「ウィンドウとキー」をオンにすると（Claude Code 用のツールで、インストールはされません）：
   - `tools\finestre.ps1` は Ruby が届かないところに届きます：ネイティブウィンドウ、警告、メニュー、空と雲を含むビューのキャプチャ、キー入力のシミュレーション、3D ビューでの実際のクリック（たとえば球のダブルクリック）。
   - `tools\collaudo.rb` はパネルのボタンとメニュー、「削除」の確認、最後のウィンドウまでの動画書き出しをライブでテストします。
