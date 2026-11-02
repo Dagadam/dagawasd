@@ -1,333 +1,338 @@
 # DagaWASD
 
-Estensione per SketchUp (Windows): cammini nel modello in prima persona con
-WASD e mouse, o con un gamepad.
+**English** · [Italiano](README.it.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [中文](README.zh.md)
 
-*A SketchUp extension (Windows only) to walk through your model in first
-person with WASD and mouse or a gamepad, with object physics, sky, weather
-and recorded camera paths. The interface is available in 36 languages.*
+A SketchUp extension (Windows): walk through your model in first person with
+WASD and the mouse, or with a gamepad.
 
-https://youtu.be/w6xE86y7iEw?is=7Gh12tF7atE_N9_K
+▶ Demo video: https://youtu.be/w6xE86y7iEw?is=7Gh12tF7atE_N9_K
 
-## Che cosa fa
+## What it does
 
-- **Camminata**: inerzia, corsa, accovacciarsi, salto, gradini e pendenze,
-  ritorno a terra se cadi nel vuoto.
-- **Fisica degli oggetti**: gruppi e componenti cadono, rimbalzano e si
-  ribaltano secondo il materiale; si possono calciare, afferrare e lanciare.
-- **Cielo e meteo**: sole, luna e stelle secondo data, ora e luogo; pioggia,
-  neve, nuvole, temporali, neve al suolo.
-- **Percorsi**: registra la camera mentre cammini, riproducila, esportala in
-  scene o in video AVI. Ritoccala nel modello spostando e ruotando le sue
-  posizioni (sfere con una freccia lunga quanto lo zoom e il riquadro
-  dell'inquadratura), o costruiscine una da zero. Nel pannello ogni percorso
-  si apre sull'elenco delle sue posizioni; un clic su una posizione, o un
-  doppio clic sulla sua sfera (o Invio), apre le sue impostazioni, con
-  l'anteprima di ciò che vede, e un clic fra due posizioni ne aggiunge una
-  dalla vista attuale. Durante la riproduzione l'elenco accende la posizione
-  in corso. «Dirada camere» unisce le sfere ammassate una sull'altra in una
-  sola, la loro media (posizione, sguardo, zoom), se non guardano a più di
-  45° l'una dall'altra.
-- **Esploratore autonomo**: la camera guarda la scena, sceglie la cosa più
-  significativa, le fa un passo incontro guardandola e ricomincia; alla fine
-  il giro è un percorso. Vedi sotto.
-- **Foto e galleria**: P scatta una foto di quello che vedi; l'esploratore
-  fotografa da sé le cose più interessanti del giro. Ogni percorso apre la
-  sua galleria nel browser, Polaroid su un tavolo con gli appunti. Vedi sotto.
-- **Gamepad** XInput e visuale con il tastierino numerico.
-- Pannello delle impostazioni in 36 lingue.
+- **Walking**: inertia, running, crouching, jumping, stairs and slopes, and
+  a safe return to the ground if you fall into the void.
+- **Object physics**: groups and components fall, bounce and tip over
+  according to their material; you can kick, grab and throw them.
+- **Sky and weather**: sun, moon and stars for the date, time and location;
+  rain, snow, clouds, thunderstorms, snow settling on the ground.
+- **Camera paths**: record the camera while you walk, replay it, export it as
+  scenes or as an AVI video. Fine-tune it in the model by moving and rotating
+  its positions (spheres with an arrow as long as the zoom, and the camera
+  frame), or build one from scratch. In the panel every path opens onto the
+  list of its positions; clicking a position, or double-clicking its sphere
+  (or pressing Enter), opens its settings with a preview of what it sees, and
+  a click between two positions adds one from the current view. During replay
+  the list lights up the current position. «Thin cameras» merges spheres
+  piled on top of each other into one, their average (position, look, zoom),
+  as long as they look no more than 45° apart.
+- **Autonomous explorer**: the camera looks at the scene, picks the most
+  significant thing, takes a step towards it while looking at it, and starts
+  again; in the end the walk is a path. See below.
+- **Photos and gallery**: P takes a photo of what you see; the explorer
+  photographs the most interesting things of its walk by itself. Every path
+  opens its gallery in the browser: instant photos on a table, with notes.
+  See below.
+- XInput **gamepad**, and looking around with the numeric keypad.
+- Settings panel in 36 languages.
 
-Requisiti: SketchUp 2023 o successivo, su Windows. Su Mac l'estensione si
-installa ma non parte, e lo dice.
+Requirements: SketchUp 2023 or later, on Windows. On a Mac the extension
+installs but does not start, and says so.
 
-## Installazione
+## Installation
 
-- Dall'**Extension Warehouse** di SketchUp (versione firmata), oppure
-- scarica il `.rbz` da una Release e installalo da *Estensioni › Gestore
-  estensioni › Installa estensione*.
+- From SketchUp's **Extension Warehouse** (signed version), or
+- download the `.rbz` from a [Release](https://github.com/Dagadam/dagawasd/releases)
+  and install it from *Extensions › Extension Manager › Install Extension*.
 
-Le impostazioni stanno in `%APPDATA%\DagaWASD\settings.json`: un
-aggiornamento non le cancella.
+Settings are stored in `%APPDATA%\DagaWASD\settings.json`: an update does
+not erase them.
 
-## Esploratore autonomo
+## Autonomous explorer
 
-Pulsante con l'occhio nella barra (o *Estensioni › DagaWASD › Esploratore
-autonomo*): una piccola finestra fa scegliere il profilo (il carattere, vedi
-sotto) e se registrare il giro come percorso, e ricorda le scelte per la
-volta dopo; frecce e Invio, o doppio clic su un profilo, per partire subito.
-Lo stesso pulsante, mentre esplora, lo ferma. Ciclo: **analizza → sceglie il punto → un passo verso il punto,
-guardandolo → analizza**.
+Eye button in the toolbar (or *Extensions › DagaWASD › Autonomous
+explorer*): a small window lets you choose the profile (its character, see
+below) and whether to record the walk as a path, and remembers your choices
+for next time; arrows and Enter, or a double-click on a profile, to start
+right away. The same button stops it while it explores. The cycle:
+**analyse → pick the point → one step towards the point, looking at it →
+analyse**.
 
-- **Analisi**: una retina di raggi attraverso la griglia dello schermo
-  (`view.pickray` + `model.raytest`) dà, per ogni cella, distanza, normale,
-  faccia, oggetto e colore. Da lì la salienza: bordi di profondità, spigoli,
-  dettaglio, contrasto di colore (Lab), rarità, componenti e gruppi a misura
-  d'uomo; le pareti e i pavimenti grandi contano poco. Pesata per distanza,
-  centro della vista e novità.
-- **Memoria**: voxel di ciò che lo sguardo ha già visto, posti già
-  calpestati (in pianta e in quota: il piano di sopra resta nuovo), noia per
-  obiettivo e per categoria (visto un divano, gli altri uguali incuriosiscono
-  meno): così non torna sempre sulle stesse cose.
-- **Pianta di ciò che ha visto**: a piedi, i raggi che passano all'altezza
-  del corpo segnano su una pianta a celle di 50 cm (una per piano) il
-  pavimento visto con la sua quota (pavimento, gradini, piani dei mobili) e i
-  muri colpiti. Serve a due cose:
-  - **frontiere**: il bordo fra ciò che ha visto e ciò che non ha mai visto
-    (oltre una porta, dietro un angolo) diventa un obiettivo, «zona
-    inesplorata»: ci va e ci guarda dentro. Pesa come lo spazio aperto,
-    secondo la voglia di andare del profilo; nella mappa dell'attenzione
-    sono i quadratini viola sul pavimento;
-  - **percorsi pianificati**: per ogni obiettivo si prefigura la strada sulla
-    pianta (A*) fino a un punto da cui lo si vede: attorno a muri e mobili
-    tenendosene un po' discosto, su per le scale (un gradino per volta sì,
-    un tavolo o un divano no) e per i pendii fino alla pendenza massima
-    del giocatore, dritta dove si può. Dove non ha ancora visto
-    è ottimista e prova. A ogni analisi ricontrolla il resto del percorso
-    sulla pianta nuova e, se ora è sbarrato, ne cerca un altro; ogni 3 s lo
-    rifà comunque (magari ha visto una scorciatoia); dove urta, segna e
-    ricalcola. Se l'obiettivo sparisce dietro qualcosa, o il percorso gira
-    lontano da lui, guarda dove va. Il percorso in corso è il tratteggio sul
-    pavimento. La ricerca lavora a fette come l'analisi.
-- **Passo**: verso il punto, girando attorno agli ostacoli, salendo le scale,
-  mai giù da un bordo; si ferma a una distanza da cui l'oggetto si vede
-  intero e lo guarda. Da una vista aerea vola e atterra dove c'è qualcosa.
-- **Giro attorno agli oggetti**: raggiunto un oggetto, se il profilo lo
-  chiede (*Giro attorno agli oggetti*, in gradi: Fotografo 180°, Curioso 90°)
-  ci gira attorno guardandolo, dal lato più libero, per vederlo da più lati;
-  se la strada si chiude torna indietro. Poi la sosta.
-- **Salto**: un ostacolo basso che sbarra la strada (un muretto, una
-  staccionata, un gradone) e attorno a cui non c'è un giro corto lo salta,
-  se oltre c'è un piano dove atterrare. Usa la forza del salto e la gravità
-  del giocatore (con quelle predefinite i piedi salgono di 1,08 m; salta ciò
-  che sta sotto l'85 % di quella quota); non salta sopra sedili e tavoli.
-  Si spegne nel profilo (il Lento non salta).
-- **Corpo**: altezza degli occhi, raggio, gradino (al più 25 cm), salto e
-  gravità sono quelli del giocatore (pannello › Giocatore), anche cambiati
-  mentre esplora.
-- **Fluido**: come la costruzione dal vivo del ponte, l'analisi è una Fiber
-  che lavora a fette fra un fotogramma e l'altro; la retina si allarga o si
-  stringe secondo quanto costa un raggio in quel modello. Con *Sistema ›
-  Prestazioni › Analisi adattiva* anche la frequenza delle analisi segue il
-  calcolo libero, fra un minimo e un massimo al secondo, senza rallentare il
-  cammino.
-- **Comandi**: Esc o clic per fermarlo, tasto destro per pausa, «Cerca
-  altro», mappa dell'attenzione, occhio a colori; rotella per la velocità; I
-  nasconde o mostra le righe d'informazione in alto a sinistra. Un
-  altro strumento lo ferma; l'orbita col tasto centrale lo sospende e lui
-  riparte da dove hai messo la camera.
-- **Bloccato?** Se in 10 secondi non si sposta di 75 cm (indeciso fra
-  obiettivi vicini, chiuso in un angolo), cerca una via di fuga fra 12
-  direzioni e la percorre per qualche secondo; se a piedi non c'è via e il
-  modo è automatico, si alza in volo.
-- **Alla fine**, se all'avvio hai lasciato «Registra il percorso», il giro
-  diventa un percorso («Esplorazione 1», …): dal pannello lo riguardi, lo
-  fai in scene o in video.
+- **Analysis**: a retina of rays across the screen grid (`view.pickray` +
+  `model.raytest`) gives distance, normal, face, object and colour for every
+  cell. From there, saliency: depth edges, creases, detail, colour contrast
+  (Lab), rarity, human-sized components and groups; large walls and floors
+  count little. Weighted by distance, centre of view and novelty.
+- **Memory**: voxels of what the gaze has already seen, places already
+  walked on (in plan and in height: the floor above stays new), boredom per
+  target and per category (after seeing one sofa, other identical ones are
+  less intriguing): so it does not keep going back to the same things.
+- **Map of what it has seen**: on foot, the rays passing at body height mark
+  on a map of 50 cm cells (one per floor) the floor seen, with its height
+  (floor, steps, tops of furniture), and the walls hit. It serves two
+  purposes:
+  - **frontiers**: the edge between what it has seen and what it has never
+    seen (beyond a door, around a corner) becomes a target, an «unexplored
+    area»: it goes there and looks inside. It weighs like open space,
+    according to the profile's urge to roam; in the attention map they are
+    the purple squares on the floor;
+  - **planned routes**: for every target it plans the way on the map (A*) to
+    a point from which it can be seen: around walls and furniture, keeping a
+    little distance, up the stairs (one step at a time yes, a table or a sofa
+    no) and up slopes to the player's maximum slope, straight where it can.
+    Where it has not looked yet it is optimistic and tries. At every analysis
+    it rechecks the rest of the route on the new map and, if it is now
+    blocked, looks for another; every 3 s it replans anyway (maybe it has
+    spotted a shortcut); where it bumps into something, it marks it and
+    replans. If the target disappears behind something, or the route turns
+    away from it, it looks where it is going. The current route is the dashed
+    line on the floor. The search works in slices, like the analysis.
+- **Step**: towards the point, around obstacles, up the stairs, never off an
+  edge; it stops at a distance from which the object is seen whole, and looks
+  at it. From an aerial view it flies and lands where there is something.
+- **Walking around objects**: once it reaches an object, if the profile asks
+  for it (*Walks around objects*, in degrees: Photographer 180°, Curious 90°)
+  it walks around it while looking at it, on the freer side, to see it from
+  several sides; if the way closes it turns back. Then the pause.
+- **Jumping**: a low obstacle blocking the way (a low wall, a fence, a large
+  step) with no short way around is jumped over, if there is a surface to
+  land on beyond it. It uses the player's jump force and gravity (with the
+  defaults the feet rise 1.08 m; it jumps what is below 85 % of that
+  height); it never jumps onto seats and tables. It can be turned off in the
+  profile (Slow does not jump).
+- **Body**: eye height, radius, step (at most 25 cm), jump and gravity are
+  the player's (panel › Player), even when changed while it explores.
+- **Smooth**: like the bridge's live building, the analysis is a Fiber that
+  works in slices between one frame and the next; the retina grows or
+  shrinks according to how much a ray costs in that model. With *System ›
+  Performance › Adaptive analysis* the rate of analyses follows the spare
+  computing power too, between a minimum and a maximum per second, without
+  slowing down the walk.
+- **Controls**: Esc or a click to stop it, right-click to pause, «Look for
+  something else», attention map, colour eye; mouse wheel for the speed; I
+  hides or shows the information lines at the top left. Another tool stops
+  it; orbiting with the middle button suspends it, and it starts again from
+  where you put the camera.
+- **Stuck?** If it does not move 75 cm in 10 seconds (undecided between
+  nearby targets, trapped in a corner), it looks for an escape route among 12
+  directions and follows it for a few seconds; if there is no way on foot and
+  the mode is automatic, it takes off.
+- **At the end**, if you left «Record the path» ticked at the start, the walk
+  becomes a path («Exploration 1», …): from the panel you can replay it, or
+  turn it into scenes or a video.
 
-### Profili
+### Profiles
 
-Il carattere dell'esploratore è un **profilo**, un insieme di coefficienti:
-*Estensioni › DagaWASD › Profili dell'esploratore…*, o tasto destro mentre
-esplora › *Profilo* (cambio al volo) e *Modifica i profili…*.
+The explorer's character is a **profile**, a set of coefficients:
+*Extensions › DagaWASD › Explorer profiles…*, or right-click while it
+explores › *Profile* (switch on the fly) and *Edit profiles…*.
 
-| Profilo | Carattere |
+| Profile | Character |
 |---|---|
-| Equilibrato | quello di sempre |
-| Curioso | si annoia presto, cerca dettagli e cose rare, esplora di più, gira di 90° attorno agli oggetti |
-| Corridore | 3,2 m/s, riflessi pronti, soste brevi |
-| Lento | 0,5 m/s, soste lunghe, sguardo che gira piano |
-| Fotografo | prima di avvicinarsi ingrandisce l'obiettivo (zoom), poi ci va e ci gira attorno di 180° |
-| Spensierato | scelte a capriccio, cambia idea facilmente, ama lo spazio aperto |
-| Soldato | ricognizione, sempre a piedi: 3,6 m/s, guarda da lontano e per poco, va prima dove non ha ancora visto |
+| Balanced | the usual one |
+| Curious | gets bored quickly, looks for details and rare things, explores more, walks 90° around objects |
+| Runner | 3.2 m/s, quick reflexes, short pauses |
+| Slow | 0.5 m/s, long pauses, a gaze that turns slowly |
+| Photographer | zooms in on the target before approaching, then goes there and walks 180° around it |
+| Carefree | whimsical choices, changes its mind easily, loves open space |
+| Soldier | reconnaissance, always on foot: 3.6 m/s, looks from afar and briefly, goes first where it has not looked yet |
 
-Nella finestra ogni coefficiente ha un cursore (mentre lo trascini
-l'esploratore, se usa quel profilo, cambia dal vivo) e un ↺ che lo riporta
-al valore originale. Gruppi: movimento (velocità, distanza di sosta,
-gradino, a piedi/in volo), sguardo (rotazione, riflessi, **continuità** —
-quanto preferisce passare a ciò che sta accanto a quello che guarda e non
-tornare su ciò da cui si è già girato), attenzione
-(sosta, giro attorno agli oggetti, durata, **determinazione** — per quanti secondi non cambia idea su
-un obiettivo appena scelto — e **fedeltà**), curiosità (memoria, noia,
-voglia di andare, capriccio), che cosa lo attira (pesi di oggetti, sagome,
-dettaglio, colore, rarità) e zoom. «Nuovo» copia il profilo in uso; i
-profili già pronti si possono cambiare e poi ripristinare.
+In the window every coefficient has a slider (while you drag it, the
+explorer, if it uses that profile, changes live) and a ↺ that restores the
+original value. Groups: movement (speed, stopping distance, step, on
+foot/flying), gaze (turning, reflexes, **continuity** — how much it prefers
+to move on to what is next to what it is looking at, and not to go back to
+what it has already turned away from), attention (pause, walking around
+objects, duration, **determination** — for how many seconds it does not
+change its mind about a target it has just picked — and **loyalty**),
+curiosity (memory, boredom, urge to roam, whim), what attracts it (weights
+of objects, silhouettes, detail, colour, rarity) and zoom. «New» copies the
+profile in use; the ready-made profiles can be changed and then restored.
 
-In `settings.json`: `"explore_profile"` (quello in uso),
-`"explore_profiles"` (i tuoi, e le modifiche a quelli già pronti) ed
-`"explore_record"` (la casella del percorso della finestra di avvio). I valori
-si sommano a strati: predefiniti (`EX_DEFAULTS`, `lib/explore.rb`) ←
-`"explore": { … }` ← profilo ← opzioni di chi lo avvia (il ponte).
+In `settings.json`: `"explore_profile"` (the one in use),
+`"explore_profiles"` (yours, and changes to the ready-made ones) and
+`"explore_record"` (the path checkbox of the start window). Values add up in
+layers: defaults (`EX_DEFAULTS`, `lib/explore.rb`) ← `"explore": { … }` ←
+profile ← options of whoever starts it (the bridge).
 
-Con il ponte acceso Claude Code lo comanda e lo osserva:
-
-```
-ruby tools/esplora.rb avvia --secondi 120 --velocita 1.3
-ruby tools/esplora.rb avvia --profilo Fotografo    # un profilo solo per questo giro
-ruby tools/esplora.rb profili                      # elenco; «profilo NOME» lo mette in uso
-ruby tools/esplora.rb segui --foto esplorazione    # una riga e una foto per ogni scelta
-ruby tools/esplora.rb ferma                        # salva il percorso
-```
-
-### L'IA alla guida
-
-Con `pilota` e `guida` è Claude Code a decidere dove andare, mentre
-l'esploratore continua a camminare e guardare da solo (`lib/expilot.rb`).
-Ogni cosa vista ha un nome corto e stabile (`o12` un oggetto, `s7` una
-faccia, `F3` una zona inesplorata); l'IA mette in agenda delle mete, e
-l'esploratore le raggiunge una dopo l'altra con i suoi passi, i suoi giri
-attorno ai muri e il suo sguardo. Ad agenda vuota torna a scegliere da solo:
-non si ferma mai ad aspettare l'IA.
+With the bridge on, Claude Code controls and watches it (the commands of
+the developer tools are in Italian):
 
 ```
-ruby tools/esplora.rb pilota                       # aspetta un avviso e descrive ciò che vede
-ruby tools/esplora.rb guida --vai o12 --giro 90 --commento "L'altare maggiore" --vai F3
-ruby tools/esplora.rb guida --guarda o7 --per 3    # si gira a guardare, senza muoversi
+ruby tools/esplora.rb avvia --secondi 120 --velocita 1.3   # start: 120 s, 1.3 m/s
+ruby tools/esplora.rb avvia --profilo Fotografo    # a profile just for this walk
+ruby tools/esplora.rb profili                      # list; «profilo NAME» puts it in use
+ruby tools/esplora.rb segui --foto esplorazione    # one line and one photo per choice
+ruby tools/esplora.rb ferma                        # stop and save the path
+```
+
+### AI at the wheel
+
+With `pilota` and `guida` it is Claude Code that decides where to go, while
+the explorer keeps walking and looking by itself (`lib/expilot.rb`). Every
+thing seen has a short, stable name (`o12` an object, `s7` a face, `F3` an
+unexplored area); the AI puts destinations on an agenda, and the explorer
+reaches them one after the other with its own steps, its own detours around
+walls and its own gaze. With an empty agenda it goes back to choosing by
+itself: it never stops to wait for the AI.
+
+```
+ruby tools/esplora.rb pilota                       # waits for an event and describes what it sees
+ruby tools/esplora.rb guida --vai o12 --giro 90 --commento "The high altar" --vai F3
+ruby tools/esplora.rb guida --guarda o7 --per 3    # turns to look, without moving
 ruby tools/esplora.rb guida --piace label:colonna=2 --evita o4
-ruby tools/esplora.rb guida --sostituisci --punto 12,4,1.7   # rifà l'agenda: un punto in metri
-ruby tools/esplora.rb guida --svuota               # niente agenda: torna a scegliere da solo
-ruby tools/esplora.rb guida --foto                 # una foto alla sosta di adesso (o alla prossima)
-ruby tools/esplora.rb guida --foto-sempre          # una foto a ogni sosta (--foto-mete: solo alle mete dell'IA, --senza-foto)
+ruby tools/esplora.rb guida --sostituisci --punto 12,4,1.7   # new agenda: a point in metres
+ruby tools/esplora.rb guida --svuota               # no agenda: back to choosing by itself
+ruby tools/esplora.rb guida --foto                 # a photo at the current pause (or the next)
+ruby tools/esplora.rb guida --foto-sempre          # a photo at every pause (--foto-mete: only at the AI's destinations, --senza-foto)
 ```
 
-Gli avvisi che svegliano `pilota`: arrivato a una meta, meta fatta (o
-lasciata, e perché), agenda quasi vuota o vuota, una meta che non si
-raggiunge, una cosa notevole mai vista, una foto.
+The events that wake `pilota` up: a destination reached, a destination done
+(or given up, and why), agenda almost empty or empty, a destination that
+cannot be reached, a remarkable thing never seen before, a photo.
 
-**A piedi: dove si arriva.** Camminando, la descrizione dice per ogni cosa
-e zona inesplorata se ci si arriva (`reach`: sì, forse passando da zone
-mai viste, no) e con quanti metri di strada (`walk_m`), dalla pianta che
-l'esploratore si è fatto guardando. Un «vai» verso una cosa dove a piedi
-non si arriva è rifiutato subito, col motivo; nelle foto quelle cose hanno
-il cartellino grigio chiaro. Su Stromboli il pilota autonomo è passato da
-circa una meta raggiunta al minuto a tre.
+**On foot: where you can get.** While walking, the description says for
+every thing and unexplored area whether it can be reached (`reach`: yes,
+maybe through areas never seen, no) and with how many metres of walking
+(`walk_m`), from the map the explorer has built by looking. A «go» towards
+something that cannot be reached on foot is refused at once, with the
+reason; in the photos those things have a light grey label. On Stromboli
+the autonomous pilot went from about one destination reached per minute to
+three.
 
-**Foto con i segni.** Alle soste davanti alle mete dell'IA l'esploratore,
-fermo e con lo sguardo sulla meta, scatta un'immagine della vista (800 px)
-e scrive accanto a ogni cosa visibile il suo nome corto: la meta in giallo,
-gli oggetti in blu, le facce in grigio, le zone inesplorate in viola. Così
-l'IA vede che cosa sono «Gruppo2577#2» e simili e li indica per nome. Le
-foto stanno in `%APPDATA%\DagaWASD\pilota` (le ultime 40). Una foto blocca
-SketchUp per il tempo di un'immagine della vista (mezzo secondo su un
-modello grande): per questo solo da fermi.
+**Photos with labels.** At pauses in front of the AI's destinations the
+explorer, standing still and looking at the destination, takes an image of
+the view (800 px) and writes next to every visible thing its short name: the
+destination in yellow, objects in blue, faces in grey, unexplored areas in
+purple. This way the AI sees what «Group2577#2» and the like are, and refers
+to them by name. The photos are in `%APPDATA%\DagaWASD\pilota` (the last
+40). A photo freezes SketchUp for the time of one view image (half a second
+on a large model): that is why only when standing still.
 
-Sul ponte: `GET /explore/percept?since=N` (descrizione e avvisi), `GET
-/explore/wait?since=N&timeout=60` (la stessa descrizione, ma il ponte
-risponde solo quando c'è un avviso che sveglia: `pilota` non interroga di
-continuo) e `POST /explore` con `{"cmd": "steer", …}`.
+On the bridge: `GET /explore/percept?since=N` (description and events), `GET
+/explore/wait?since=N&timeout=60` (the same description, but the bridge only
+answers when there is an event that wakes it: `pilota` does not keep
+polling) and `POST /explore` with `{"cmd": "steer", …}`.
 
-**I commenti nel video.** Ciò che l'IA dice (`--commento`, `--di`, o `say`
-nello steer) resta nel percorso registrato, all'istante in cui l'ha detto:
-diventa la descrizione della scena più vicina quando si fanno le scene, e un
-file di sottotitoli `.srt` accanto al video (AVI: lo stesso nome, i lettori
-lo aprono da soli; immagini PNG: `crea_video.bat` lo mette nell'MP4).
+**Comments in the video.** What the AI says (`--commento`, `--di`, or `say`
+in the steer) stays in the recorded path, at the moment it said it: it
+becomes the description of the nearest scene when you make scenes, and an
+`.srt` subtitle file next to the video (AVI: same name, players open it by
+themselves; PNG images: `crea_video.bat` puts it into the MP4).
 
-**Pilota autonomo.** `tools/pilota_ia.rb` guida da solo, senza un comando
-alla volta: aspetta gli avvisi del ponte, manda a Claude la descrizione e la
-foto della sosta, e passa al ponte quello che Claude decide. Il motore
-predefinito è Claude Code stesso (`claude -p`, con l'account di questo
-computer: nessuna chiave); con `ANTHROPIC_API_KEY` impostata usa l'API di
-Claude (gemma `anthropic`). Su Stromboli un turno dura 4–5 s. Ogni turno
-consuma: `--turni` (20) e `--secondi` (300) mettono il tetto, e alla fine
-stampa i token usati.
+**Autonomous pilot.** `tools/pilota_ia.rb` drives on its own, without one
+command at a time: it waits for the bridge's events, sends Claude the
+description and the photo of the pause, and passes on to the bridge what
+Claude decides. The default engine is Claude Code itself (`claude -p`, with
+this computer's account: no key); with `ANTHROPIC_API_KEY` set it uses the
+Claude API (`anthropic` gem). On Stromboli a turn takes 4–5 s. Every turn
+costs: `--turni` (20) and `--secondi` (300) set the limits, and at the end it
+prints the tokens used.
 
 ```
-ruby tools/esplora.rb avvia --a-piedi
-ruby tools/pilota_ia.rb --turni 15 --secondi 240        # sforzo basso: risposte in pochi secondi
+ruby tools/esplora.rb avvia --a-piedi                   # start, on foot
+ruby tools/pilota_ia.rb --turni 15 --secondi 240        # low effort: answers in a few seconds
 ruby tools/pilota_ia.rb --sforzo medium --lingua inglese --modello claude-sonnet-5-5
-ruby tools/pilota_ia.rb --motore api                     # l'API, con la chiave
+ruby tools/pilota_ia.rb --motore api                     # the API, with the key
 ```
 
-## Foto e galleria
+## Photos and gallery
 
-Camminando, **P** (si cambia in *Tasti*; col gamepad il dorsale destro, RB)
-scatta una foto della vista, senza mirino né scritte, con un lampo. Se stai
-registrando un percorso la foto va con lui; se no in una serie a parte, una
-per ogni volta che entri nella modalità.
+While walking, **P** (it can be changed in *System › Controls*; on the
+gamepad the right bumper, RB) takes a photo of the view, without crosshair
+or text, with a flash. If you are recording a path the photo goes with it;
+otherwise into a separate series, one for each time you enter the mode.
 
-L'esploratore fotografa da sé, quando il giro diventa un percorso: le mete
-più interessanti fra quelle viste fino a lì, quando lo sguardo ci si posa e
-le vede abbastanza grandi (molte mete si guardano senza arrivarci) o
-all'arrivo; gli spazi che si aprono ogni tanto; mai da dove ha già
-fotografato, mai più di una foto ogni 8 secondi (al più 30 per giro). Di ogni
-foto scrive **che cosa** c'è (la cosa, quanto è grande, quanto è lontana, che
-cosa c'è intorno) e **perché** l'ha scelta: la più interessante fin lì, il
-colore che spicca, niente di simile in vista, tanti dettagli, la sagoma che
-si stacca dallo sfondo, un oggetto fatto di molte parti, una veduta. L'IA
-che lo guida chiede le sue foto con `snap` (il suo perché) e `say` (il che
-cosa).
+The explorer takes photos by itself, when the walk becomes a path: the most
+interesting destinations among those seen so far, when its gaze rests on
+them and sees them large enough (many destinations are looked at without
+getting there) or on arrival; the open spaces that appear now and then;
+never from where it has already taken a photo, never more than one photo
+every 8 seconds (at most 30 per walk). For each photo it writes **what** is
+there (the thing, how big it is, how far away, what is around it) and
+**why** it chose it: the most interesting so far, the colour that stands
+out, nothing similar in view, lots of detail, the silhouette standing out
+against the background, an object made of many parts, a view. The AI driving
+it asks for its own photos with `snap` (its why) and `say` (the what).
 
-Le foto stanno accanto al modello, in `<modello>_foto/<data e ora>/`, in JPG
-da 1600 px, con `galleria.json`; il percorso tiene la cartella relativa al
-modello, così la ritrova se il modello si sposta con le sue foto. Per un
-modello mai salvato, o se accanto al modello non si può scrivere, vanno in
+Photos are stored next to the model, in `<model>_foto/<date and time>/`, as
+1600 px JPGs, with `galleria.json`; the path keeps the folder relative to the
+model, so it finds it again if the model moves with its photos. For a model
+never saved, or if it cannot write next to the model, they go to
 `%APPDATA%/DagaWASD/foto`.
 
-In *Camera › Percorsi* ogni percorso ha il suo pulsante **📷**, accanto a
-Video: col numero delle foto apre la galleria nel browser; spento, se il
-percorso non ne ha, e un clic spiega come farne. Sotto l'elenco ci sono le
-serie che nessun percorso tiene (foto fuori da una registrazione, percorsi
-cancellati).
+In *Camera › Paths* every path has its own **📷** button, next to Video:
+with the number of photos, it opens the gallery in the browser; greyed out
+if the path has none, and a click explains how to take some. Below the list
+are the series no path holds (photos outside a recording, deleted paths).
 
-La galleria è una pagina sola, `galleria.html` nella cartella delle foto,
-rifatta a ogni apertura nella lingua di SketchUp. Le foto sono Polaroid su un
-tavolo di legno, che si sviluppano quando arrivano nella vista, ognuna col
-foglietto degli appunti: che cosa, perché, chi l'ha scattata, una bussola
-con la direzione dello sguardo e l'ora. Si guardano in due modi:
+The gallery is a single page, `galleria.html` in the photo folder, rebuilt
+every time it opens, in SketchUp's language. The photos are instant photos
+on a wooden table that develop as they come into view, each with its note
+card: what, why, who took it, a compass with the direction of the gaze, and
+the time. There are two ways to look at them:
 
-- **in fila**: scorrono di lato con la rotella, le frecce, trascinando o dal
-  rullino in basso (le miniature su pellicola). In testa c'è il giro
-  disegnato a matita: le foto numerate col cono di quello che guardavano, la
-  scala, il nord, il verso. Una mappa piccola in un angolo segue la foto in
-  corso. I commenti dell'IA stanno sui post-it al loro posto nel giro, e in
-  fondo c'è la scheda con durata, strada fatta e foto;
-- **sparse sul tavolo**: le foto si prendono e si spostano col mouse (o col
-  dito, o con le frecce), e la disposizione resta per la volta dopo.
-  *Rimettile in ordine* le rimette a righe.
+- **in a row**: they scroll sideways with the mouse wheel, the arrows, by
+  dragging, or from the film strip at the bottom (thumbnails on film). At the
+  top is the walk drawn in pencil: the numbered photos with the cone of what
+  they were looking at, the scale, north, the direction. A small map in a
+  corner follows the current photo. The AI's comments are on sticky notes at
+  their place in the walk, and at the end there is the card with duration,
+  distance walked and photos;
+- **scattered on the table**: you pick up the photos and move them with the
+  mouse (or a finger, or the arrows), and the layout is kept for next time.
+  *Tidy them up* puts them back in rows.
 
-Un clic apre la foto in grande, con *Presentazione* (una dopo l'altra; lo
-spazio la ferma). Con foto di più autori (tu, l'esploratore, l'IA) i timbri
-in testa le filtrano. `#3` nell'indirizzo porta alla foto 3, `#3z` la apre
-in grande. Si stampa pulita (le foto con i loro appunti), funziona senza
-rete e si può mandare a qualcuno con la sua cartella.
+A click opens the photo in large, with *Slideshow* (one after the other;
+space pauses it). With photos by several authors (you, the explorer, the AI)
+the stamps at the top filter them. `#3` in the address goes to photo 3,
+`#3z` opens it large. It prints cleanly (the photos with their notes), works
+offline and can be sent to someone together with its folder.
 
-## Due pacchetti
+## Two packages
 
-`tools\crea_rbz.bat` crea in `dist\`:
+`tools\crea_rbz.bat` creates in `dist\`:
 
-- `dagawasd-<versione>.rbz`: completo, con il **ponte per Claude Code**
-  (`lib/bridge.rb`), un server solo locale, spento finché non lo accendi dal
-  pannello, attraverso cui Claude Code disegna nel modello aperto;
-- `dagawasd-<versione>-warehouse.rbz`: senza il ponte, per l'Extension
-  Warehouse. Senza `lib/bridge.rb` l'estensione funziona lo stesso.
+- `dagawasd-<version>.rbz`: complete, with the **bridge for Claude Code**
+  (`lib/bridge.rb`), a local-only server, off until you turn it on from the
+  panel, through which Claude Code draws in the open model;
+- `dagawasd-<version>-warehouse.rbz`: without the bridge, for the Extension
+  Warehouse. Without `lib/bridge.rb` the extension works all the same.
 
-## Sviluppo
+## Development
 
-- `installa.bat` copia il sorgente nella cartella Plugins di ogni SketchUp
-  trovato.
-- `tests\run_tests.bat` lancia i test (Ruby, con SketchUp simulato; il
-  pannello in un browser simulato con Node).
-- `tools\controlla_warehouse.bat` controlla il pacchetto con le regole di
-  Trimble (rubocop-sketchup).
-- Il numero di versione sta solo in `dagawasd.rb` (`VERSION`); ogni versione
-  ha la sua sezione in `CHANGELOG.md`.
-- Le icone nascono dagli SVG in `pubblicazione/`: `tools\rendi_icone.bat`
-  rifà quelle della barra (`icons/`) e quella della scheda del Warehouse
+The code, its comments and the changelog are in Italian.
+
+- `installa.bat` copies the source into the Plugins folder of every SketchUp
+  it finds.
+- `tests\run_tests.bat` runs the tests (Ruby, with a simulated SketchUp; the
+  panel in a simulated browser with Node).
+- `tools\controlla_warehouse.bat` checks the package against Trimble's rules
+  (rubocop-sketchup).
+- The version number lives only in `dagawasd.rb` (`VERSION`); every version
+  has its section in `CHANGELOG.md`.
+- The icons come from the SVGs in `pubblicazione/`: `tools\rendi_icone.bat`
+  rebuilds the toolbar ones (`icons/`) and the Warehouse listing one
   (`pubblicazione/icona_512.png`).
-- La scheda per l'Extension Warehouse (testi in inglese e note per i
-  revisori) sta in `pubblicazione/extension_warehouse.md`.
-- Nel SketchUp aperto, col ponte acceso e con «Finestre e tasti» acceso nel
-  pannello (strumenti per Claude Code, non installati):
-  - `tools\finestre.ps1` arriva dove il Ruby non arriva: finestre native,
-    avvisi, menu, cattura della vista con cielo e nuvole, tasti simulati e
-    clic veri nella vista 3D (per esempio il doppio clic su una sfera);
-  - `tools\collaudo.rb` prova dal vivo pulsante e menu del pannello, la
-    conferma di «Elimina» e un video fino alla finestra finale;
-  - `tools\schermate.rb` fa le immagini della scheda in
-    `pubblicazione/schermate/` (1920×1080 con uno schermo almeno così);
-  - `tools\prova_fps.rb` cammina e corre in modalità FPS e misura
-    l'oscillazione della testa.
+- The Extension Warehouse listing (texts in English and notes for the
+  reviewers) is in `pubblicazione/extension_warehouse.md`.
+- This README is in several languages (`README.md` in English,
+  `README.it.md`, `.es`, `.fr`, `.de`, `.zh`): a change goes into all of
+  them.
+- In the running SketchUp, with the bridge on and «Windows and keys» on in
+  the panel (tools for Claude Code, not installed):
+  - `tools\finestre.ps1` reaches where Ruby cannot: native windows, alerts,
+    menus, capturing the view with sky and clouds, simulated keys and real
+    clicks in the 3D view (for example a double-click on a sphere);
+  - `tools\collaudo.rb` tests live the panel's button and menu, the
+    «Delete» confirmation and a video up to the final window;
+  - `tools\schermate.rb` makes the listing images in
+    `pubblicazione/schermate/` (1920×1080, with a screen at least that
+    large);
+  - `tools\prova_fps.rb` walks and runs in FPS mode and measures the head
+    bob.
 
-## Licenza
+## License
 
-[MIT](LICENSE) © 2026 Dagadam. Puoi usare, modificare e ridistribuire il codice
-liberamente, anche a fini commerciali, purché ogni copia mantenga la nota di
-copyright e il testo della licenza.
+[MIT](LICENSE) © 2026 Dagadam. You may use, modify and redistribute the code
+freely, commercially too, as long as every copy keeps the copyright notice
+and the license text.
