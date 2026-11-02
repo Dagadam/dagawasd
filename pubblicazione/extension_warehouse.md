@@ -123,7 +123,9 @@ Settings are stored in `%APPDATA%\DagaWASD`, so updates never erase them.
   (definitions «DagaWASD camera <fov>°», one per zoom level, with materials
   «DagaWASD …») on the tag «DagaWASD percorsi», in one undoable operation;
   deleting the path or reverting removes them and any definition left unused.
-  Edits made in a sphere's panel are undoable operations too; a model
+  Edits made in a sphere's panel, and "Thin cameras" (after a confirmation,
+  merges spheres piled on top of each other into one and erases the
+  others), are undoable operations too; a model
   observer (onActivePathChanged) only notices a double-click into a sphere,
   closes it again and opens the panel.
 - **Loading.** All files are loaded with `Sketchup.require`; the package
