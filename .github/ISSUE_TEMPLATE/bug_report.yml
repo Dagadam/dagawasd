@@ -1,0 +1,71 @@
+name: Bug report
+description: Something does not work as it should
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! Security problems must **not** be reported here: see the [security policy](https://github.com/Dagadam/dagawasd/security/policy).
+        You can write in English or Italian.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What did you do, what did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: If it happens only with one model, say what is special about it (size, groups, components, terrain…), or attach a small model that shows the problem.
+      placeholder: |
+        1. Open a model with …
+        2. Press …
+        3. …
+    validations:
+      required: true
+  - type: input
+    id: dagawasd
+    attributes:
+      label: DagaWASD version
+      description: Extensions › Extension Manager shows it next to DagaWASD.
+      placeholder: "1.2.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: package
+    attributes:
+      label: Package
+      options:
+        - Extension Warehouse
+        - dagawasd-<version>-warehouse.rbz from GitHub
+        - dagawasd-<version>.rbz from GitHub (with the Claude bridge)
+        - Installed from the source (installa.bat)
+    validations:
+      required: true
+  - type: input
+    id: sketchup
+    attributes:
+      label: SketchUp version
+      placeholder: "SketchUp 2024 (24.0.594)"
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      placeholder: "Windows 11 23H2"
+  - type: textarea
+    id: log
+    attributes:
+      label: Error log
+      description: |
+        Settings panel › System › Error log › Copy, then paste it here.
+        **Before posting**, replace your Windows user name in the paths (for example `C:/Users/YourName/…` → `C:/Users/USER/…`).
+      render: text
+  - type: textarea
+    id: more
+    attributes:
+      label: Anything else
+      description: Screenshots, a short video, gamepad model, other extensions installed…

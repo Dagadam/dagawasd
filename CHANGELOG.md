@@ -8,6 +8,8 @@ che chiedono qualcosa a chi aggiorna.
 Il numero sta in un posto solo, `VERSION` in `dagawasd.rb`;
 `tools/crea_rbz.rb` rifiuta di fare il pacchetto se qui manca la sua sezione.
 
+## [Non ancora uscito]
+
 ## [1.2.0] — 2026-11-02
 
 ### Aggiunto

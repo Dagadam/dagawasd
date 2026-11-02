@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/Dagadam/dagawasd/security/advisories/new
+    about: Report security problems privately, not in a public issue.
+  - name: Demo video
+    url: https://youtu.be/w6xE86y7iEw
+    about: See DagaWASD in action before asking how something works.

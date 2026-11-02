@@ -1,0 +1,24 @@
+name: Feature request
+description: An idea for something new, or a way to make something better
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: You can write in English or Italian.
+  - type: textarea
+    id: need
+    attributes:
+      label: What would you like to do
+      description: Describe what you are trying to achieve and what gets in the way today, rather than only the solution.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: How it could work
+      description: How you imagine it in SketchUp or in the settings panel.
+  - type: textarea
+    id: more
+    attributes:
+      label: Anything else
+      description: Examples, screenshots, other software that does it.
