@@ -145,6 +145,19 @@ body.ti-icons .tabs2 button{padding-inline:11px}
   background:var(--acc);border-radius:50%;margin-top:-6px;cursor:pointer;
   box-shadow:0 0 0 1px var(--sunk);
 }
+/* Cursore a due maniglie (campo con hi:): due range sovrapposti con la
+   traccia trasparente; solo le maniglie prendono il mouse. La traccia è
+   ::before, il tratto fra le maniglie .fill (spanFill). */
+.span{flex:1 1 auto;min-width:80px;position:relative;height:18px;direction:ltr}
+.span::before{content:'';position:absolute;left:0;right:0;top:6px;height:6px;
+  background:var(--s5);border-radius:calc(3px*var(--rk))}
+.span .fill{position:absolute;top:6px;height:6px;background:var(--acc);opacity:.6;
+  border-radius:calc(3px*var(--rk));pointer-events:none}
+.row .span input[type=range]{position:absolute;left:0;top:6px;width:100%;margin:0;pointer-events:none}
+.row .span input[type=range]::-webkit-slider-runnable-track{background:transparent}
+.row .span input[type=range]::-webkit-slider-thumb{pointer-events:auto}
+.row .span + .nbox{flex-basis:70px;width:70px}
+.row .nbox.lo{flex-basis:70px;width:70px}
 .nbox{
   flex:0 0 86px;width:86px;background:var(--s3);border:1px solid var(--l2);
   color:var(--hi);padding:6px 8px;border-radius:calc(5px*var(--rk));
@@ -886,6 +899,17 @@ const SPEC = [
 { id:'system', subs:[
   { id:'perf', groups:[
     { id:'loop', fields:[ {k:'tick_rate', u:'Hz', min:10, max:144, step:1, int:true, lv:3} ]},
+    /* Esploratore autonomo (lib/explore.rb, explore_hz): analisi della vista
+       al secondo secondo il calcolo libero. hi: un solo cursore a due
+       maniglie per la coppia [minimo, massimo] (anche in PAIRS); name: la
+       chiave dell'etichetta della riga; of: l'altra maniglia, senza riga sua. */
+    { id:'exscan', fields:[
+      {k:'explore_scan_adaptive', type:'bool', lv:2},
+      {k:'explore_scan_hz_min', u:'Hz', min:0.5, max:15, step:0.5, lv:2, dep:'explore_scan_adaptive',
+       hi:'explore_scan_hz_max', name:'explore_scan_hz'},
+      {k:'explore_scan_hz_max', u:'Hz', min:0.5, max:15, step:0.5, lv:2, dep:'explore_scan_adaptive',
+       of:'explore_scan_hz_min'},
+    ]},
   ]},
   { id:'keys',  special:'keys' },
   { id:'lang',  special:'lang' },
@@ -1151,10 +1175,25 @@ function has(k){ return L[k] !== undefined; }
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 function fieldHTML(f){
-  const hk = 'h.' + f.k;
-  const lbl = `<div class="lbl"><span class="name">${esc(T('f.' + f.k))}</span>`
+  if(f.of) return '';             // l'altra maniglia di un cursore a due: la disegna il minimo
+  const nk = f.name || f.k, hk = 'h.' + nk;
+  const lbl = `<div class="lbl"><span class="name">${esc(T('f.' + nk))}</span>`
             + (has(hk) ? `<span class="hint">${esc(T(hk))}</span>` : '') + `</div>`;
   const rst = `<button class="rst" title="${escA(T('ui.reset_one'))}" onclick="resetOne('${f.k}')">↺</button>`;
+  /* Coppia [minimo, massimo] su un cursore solo: casella del minimo, cursore, casella del massimo */
+  if(f.hi){
+    const box = (k, cls) => `<input class="nbox${cls}" id="${k}_v" type="text" inputmode="decimal" autocomplete="off"
+           title="${escA(T('f.' + k))}" oninput="sb(this,'${k}')" onchange="fix('${k}')" onblur="fix('${k}')">`;
+    const rng = k => `<input type="range" id="${k}" min="${f.min}" max="${f.max}" step="${f.step}"
+           title="${escA(T('f.' + k))}" oninput="sync(this)">`;
+    return `<div class="row" data-k="${f.k}" data-lv="${f.lv}">${lbl}
+    ${box(f.k, ' lo')}
+    <div class="span" id="${f.k}_span"><div class="fill"></div>${rng(f.k)}${rng(f.hi)}</div>
+    ${box(f.hi, '')}
+    <span class="unit">${esc(f.u || '')}</span>
+    ${rst}
+  </div>`;
+  }
   if(f.type === 'bool'){
     return `<div class="row" data-k="${f.k}" data-lv="${f.lv}">${lbl}
       <label class="sw"><input type="checkbox" id="${f.k}" onchange="live('${f.k}')"><span class="knob"></span></label>
@@ -1740,7 +1779,9 @@ function setBridge(b){
    pannello della sfera (lib/keyedit.rb); lo spazio fra due posizioni come
    {cmd:'add', name, i} (i = quante ne restano prima), e lì se ne aggiunge
    una dalla vista attuale (lib/pathkeys.rb). Mentre un percorso va,
-   pathMark(name, i) accende la sua posizione in corso. photos = foto
+   pathMark(name, i) accende la sua posizione in corso. Con più di due
+   posizioni, Dirada ({cmd:'thin', name}) fa unire a Ruby, dopo una
+   conferma, le sfere ammassate in una sola, la loro media. photos = foto
    scattate lungo il percorso (lib/gallery.rb): 📷, accanto a Video, apre
    la galleria nel browser ({cmd:'photos', name}); senza foto Ruby spiega
    come farne. Il secondo argomento di setPaths sono le
@@ -1774,7 +1815,7 @@ function pathRows(){
     + (p.keys ? `<span class="pk" title="${escA(T('path.keys.h'))}">◆ ${p.keys}</span>` : '')
     + `<span class="pd">${pathClock(p.dur)}</span>
     ${b('play', i, '▶ ' + esc(T('path.play')), 'pgo')}${b('scenes', i, esc(T('path.scenes')))}${b('frames', i, esc(T('path.frames')))}${pathPhotos(p, i, b)}
-    ${ed(p, i)}${p.keys && p.rec ? b('revert', i, '↺') : ''}${b('rename', i, '✎')}${b('delete', i, '✕')}</div>`
+    ${ed(p, i)}${p.keys > 2 ? b('thin', i, esc(T('path.thin'))) : ''}${p.keys && p.rec ? b('revert', i, '↺') : ''}${b('rename', i, '✎')}${b('delete', i, '✕')}</div>`
     + (open ? `<div class="ppts">${pts.map((q, j) => pathGap(i, j) + pathPoint(q, i, j)).join('')}${pathGap(i, pts.length)}</div>` : '') + '</div>';
   }).join('') + '</div>';
 }
@@ -2003,7 +2044,7 @@ function sync(sl){            // slider → casella
    caricando di più). Si applica ai valori confermati: slider, fine
    digitazione, ripristino; mentre si scrive "1" per arrivare a "12" no. */
 const PAIRS = [['kick_force_min', 'kick_force'], ['throw_force_min', 'throw_force_max'],
-               ['crouch_height', 'eye_height']];
+               ['crouch_height', 'eye_height'], ['explore_scan_hz_min', 'explore_scan_hz_max']];
 function numVal(k){ const el = document.getElementById(k + '_v'); return el ? num(el.value) : null; }
 function setNum(k, v){
   v = clampF(k, v);
@@ -2069,8 +2110,23 @@ function valueMod(k){
   return v !== null && fmt(k, clampF(k, v)) !== fmt(k, DEF[k]);
 }
 function markRow(k){
+  if(FIELDS[k] && FIELDS[k].of) k = FIELDS[k].of;     // la riga della coppia è del minimo
+  const hi = FIELDS[k] && FIELDS[k].hi;
   const r = document.querySelector(`.row[data-k="${k}"]`);
-  if(r) r.classList.toggle('mod', valueMod(k));
+  if(r) r.classList.toggle('mod', valueMod(k) || (!!hi && valueMod(hi)));
+  if(hi) spanFill(k);
+}
+/* Il tratto colorato fra le due maniglie (il centro di una maniglia da 18 px
+   va da 9 px dal bordo a 9 px dall'altro) */
+function spanFill(k){
+  const f = FIELDS[k], box = document.getElementById(k + '_span');
+  const a = document.getElementById(k), b = document.getElementById(f.hi);
+  if(!box || !a || !b) return;
+  const p = v => (Math.min(f.max, Math.max(f.min, +v)) - f.min) / (f.max - f.min);
+  const x0 = Math.min(p(a.value), p(b.value)), x1 = Math.max(p(a.value), p(b.value));
+  const fill = box.querySelector('.fill');
+  fill.style.left = `calc(9px + (100% - 18px) * ${x0})`;
+  fill.style.width = `calc((100% - 18px) * ${x1 - x0})`;
 }
 function markMod(k){ markRow(k); markUnit(k); markLevelMods(); markDeps(); if(LOOK_KEYS.includes(k)) applyLook(); }
 function refreshModified(){ Object.keys(FIELDS).forEach(k => { markRow(k); markUnit(k); }); markLevelMods(); markDeps(); applyLook(); }
@@ -2115,7 +2171,8 @@ function markLevelMods(){
 }
 function resetOne(k){
   if(DEF[k] === undefined) return;
-  loadSettings({ [k]: DEF[k] });
+  const hi = FIELDS[k] && FIELDS[k].hi;
+  loadSettings(hi && DEF[hi] !== undefined ? { [k]: DEF[k], [hi]: DEF[hi] } : { [k]: DEF[k] });
   pairFix(k);
   saveNow();
 }
@@ -2306,15 +2363,16 @@ function setInfo(k){
 /* Spiegazione lunga (d.*) se c'è, altrimenti la descrizione breve (h.*);
    poi intervallo e valore predefinito. */
 function infoHTML(k){
-  const f = FIELDS[k];
-  const txt = has('d.' + k) ? T('d.' + k) : (has('h.' + k) ? T('h.' + k) : '');
+  const f = FIELDS[k], nk = f.name || k;
+  const txt = has('d.' + nk) ? T('d.' + nk) : (has('h.' + nk) ? T('h.' + nk) : '');
   const u = f.u && !f.u.includes('–') ? ' ' + f.u : '';     // "0–1" è già un intervallo
   const meta = [];
   if(!f.type) meta.push(`${T('ui.range')}: ${fmt(k, f.min)} – ${fmt(k, f.max)}${u}`);
   if(DEF[k] !== undefined)
     meta.push(`${T('ui.default')}: ` + (f.type === 'bool' ? T(DEF[k] ? 'ui.on' : 'ui.off')
-      : f.type === 'choice' ? choiceLabel(f, DEF[k]) : f.type === 'color' ? DEF[k] : fmt(k, DEF[k]) + u));
-  return `<b>${esc(T('f.' + k))}</b>` + (txt ? ` — ${esc(txt)}` : '')
+      : f.type === 'choice' ? choiceLabel(f, DEF[k]) : f.type === 'color' ? DEF[k]
+      : fmt(k, DEF[k]) + (f.hi && DEF[f.hi] !== undefined ? ' – ' + fmt(f.hi, DEF[f.hi]) : '') + u));
+  return `<b>${esc(T('f.' + nk))}</b>` + (txt ? ` — ${esc(txt)}` : '')
        + (meta.length ? `<span class="meta">${esc(meta.join(' · '))}</span>` : '');
 }
 

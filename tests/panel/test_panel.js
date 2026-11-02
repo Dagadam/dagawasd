@@ -419,7 +419,7 @@ w.addEventListener('load', () => {
   // 20. Coppie minimo/massimo: portandone uno oltre l'altro, l'altro segue
   const rbPairs = [...rb.slice(rb.indexOf('MIN_MAX_PAIRS')).split('.freeze')[0].matchAll(/%w\[(\w+) (\w+)\]/g)]
     .map(m => [m[1], m[2]]);
-  ok(rbPairs.length === 3 && JSON.stringify(rbPairs) === JSON.stringify(w.eval('PAIRS')),
+  ok(rbPairs.length === 4 && JSON.stringify(rbPairs) === JSON.stringify(w.eval('PAIRS')),
      'coppie minimo/massimo uguali in panel.html e lib/config.rb');
   w.eval(`loadSettings(${JSON.stringify(Object.assign({}, RB_DEF, { kick_force_min: 3, kick_force: 8,
     throw_force_min: 3, throw_force_max: 15, crouch_height: 0.9, eye_height: 1.7 }))})`);
@@ -440,6 +440,23 @@ w.addEventListener('load', () => {
   ok(d.querySelector('.row[data-k="crouch_height"]').classList.contains('mod'), 'il valore spostato risulta modificato');
   w.eval("resetOne('eye_height')"); ps = saved[saved.length - 1];
   ok(ps.eye_height === RB_DEF.eye_height && ps.crouch_height === 0.6, 'ripristinando il massimo il minimo, già in ordine, resta');
+
+  // Cursore a due maniglie (Sistema › Prestazioni): analisi al secondo dell'esploratore
+  const lo = 'explore_scan_hz_min', hi = 'explore_scan_hz_max';
+  const spanRow = d.querySelector(`.row[data-k="${lo}"]`);
+  ok(!!spanRow && !d.querySelector(`.row[data-k="${hi}"]`) && spanRow.querySelectorAll('input[type=range]').length === 2 &&
+     !!spanRow.querySelector('#' + hi + '_v') && spanRow.querySelector('.name').textContent === it['f.explore_scan_hz'],
+     'analisi al secondo: una riga sola con due maniglie e due caselle');
+  ok(spanRow.classList.contains('off'), '…attenuata finché l\'analisi adattiva è spenta');
+  d.getElementById('explore_scan_adaptive').checked = true; w.eval("live('explore_scan_adaptive')");
+  ok(!spanRow.classList.contains('off') && saved[saved.length - 1].explore_scan_adaptive === true, '…accesa: la riga si accende');
+  const hsl = d.getElementById(hi);
+  hsl.value = '0.5'; hsl.dispatchEvent(new w.Event('input')); w.eval('saveNow()'); ps = saved[saved.length - 1];
+  ok(ps[hi] === 0.5 && ps[lo] === 0.5 && spanRow.classList.contains('mod'), 'maniglia del massimo sotto il minimo → il minimo la segue, riga modificata');
+  vbox(lo).value = '9'; w.eval(`fix('${lo}')`); ps = saved[saved.length - 1];
+  ok(ps[lo] === 9 && ps[hi] === 9, 'minimo scritto oltre il massimo → il massimo lo segue (9)');
+  w.eval(`resetOne('${lo}')`); ps = saved[saved.length - 1];
+  ok(ps[lo] === RB_DEF[lo] && ps[hi] === RB_DEF[hi] && !spanRow.classList.contains('mod'), '↺ della riga ripristina minimo e massimo');
 
   // Percorsi: elenco vuoto, poi due percorsi con i comandi
   const pl = () => d.getElementById('pathList');
@@ -468,6 +485,12 @@ w.addEventListener('load', () => {
   d.querySelector('.pnew button').click();
   ok(JSON.stringify(pathCalls) === JSON.stringify([{ cmd: 'edit', name: 'Giro' }, { cmd: 'revert', name: 'Giro' }, { cmd: 'new', name: '' }]),
      'Nascondi, ↺ e «Nuovo dalla vista» arrivano a Ruby');
+  const thin = r => [...r.querySelectorAll('button')].find(x => x.textContent.trim() === it['path.thin']);
+  ok(!!thin(r2[0]) && thin(r2[0]).title === it['path.thin.h'] && !thin(r2[1]) && !thin(rows[0]),
+     '«Dirada camere» solo con più di due posizioni nel modello');
+  pathCalls.length = 0;
+  thin(r2[0]).click();
+  ok(JSON.stringify(pathCalls) === JSON.stringify([{ cmd: 'thin', name: 'Giro' }]), '…e arriva a Ruby (che chiede conferma)');
   // Foto (lib/gallery.rb): 📷 sul percorso che ne ha, e sotto le serie senza percorso
   w.eval(`setPaths(${JSON.stringify([{ name: 'Giro', dur: 12, date: '1', photos: 4 }, { name: 'Senza', dur: 3, date: '2', photos: 0 }])},
                    ${JSON.stringify([{ id: '2026-10-28_20-10-40', n: 3, date: '2026-10-28 20:10:40' }])})`);

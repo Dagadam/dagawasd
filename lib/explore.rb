@@ -156,6 +156,8 @@ module DagaWASD
     EX_SLICE      = [2.0, 30.0].freeze   # ms di scansione per fotogramma, al meno e al più
     EX_SCAN_FILL  = 0.7      # parte di un passo (step_time) che la scansione può occupare
     EX_FRAME_K    = 0.2      # media dei tempi dei fotogrammi (esponenziale)
+    EX_HZ_RANGE   = [0.5, 15.0].freeze   # analisi al secondo della cadenza adattiva (pannello › Sistema › Prestazioni)
+    EX_CELL_K     = 0.3      # media del costo di una cella della retina (esponenziale)
 
     # ── Salienza ────────────────────────────────────────────────────
     # Pesi delle misure (senza occhio a colori il peso dei pixel si ridistribuisce)
@@ -346,6 +348,7 @@ module DagaWASD
         gw_f: o['grid'].to_f, gw: o['grid'], geo: nil,
         scan_goal: o['scan_ms'], slice: o['frame_ms'],  # budget di un'analisi e di un fotogramma (ms)
         fr_at: nil, fr_slice: 0.0, fr_other: nil,       # tempi veri dei fotogrammi
+        hz: nil, hz_lim: nil, cell_ms: nil, scan_w: 1.0, aspect: nil,   # cadenza delle analisi (explore_hz)
         target: nil, res: nil, scan: nil, next_scan: now, look: nil, blind: 0,
         mem: {}, walked: {}, bored: {}, visited: {}, kbored: {}, kvisited: {}, sweep: [],
         ctx: { memo: {}, omemo: {}, size: {}, fseq: 0, oseq: 0, t: now },
@@ -629,8 +632,8 @@ module DagaWASD
       return if ex[:scan].alive?
       ex[:scan] = nil
       ex[:plan_seq] += 1                 # la pianta può essere cambiata: i percorsi si ricontrollano
-      ex[:next_scan] = ex[:scan_t0] + ex[:o]['step_time']
       explore_adapt(ex)
+      ex[:next_scan] = ex[:scan_t0] + 1.0 / explore_hz(ex)
       explore_decide(ex, res, now)
     rescue => fps_err
       log_error(__method__, fps_err)
@@ -646,6 +649,7 @@ module DagaWASD
       vh = view.vpheight.to_f
       gw = ex[:gw]
       gh = (gw * vh / [vw, 1.0].max).round.clamp(6, 48)
+      ex[:aspect] = vh / [vw, 1.0].max
       geo = ex[:geo] = explore_geo(view, ex, gw, gh)
       rays = explore_rays(view, gw, gh, geo)
       img = ex[:pixels] ? explore_grab(view, ex) : nil
@@ -654,6 +658,11 @@ module DagaWASD
       walk = ex[:mode] == :walk
       ctx = explore_ctx(ex, now)
       nov = ->(p) { explore_novelty(ex, p, now) }
+      # con la cadenza adattiva un'analisi vale per il tempo dall'ultima, in
+      # passi: memoria, scia e cecità vanno come con una per passo, a ogni cadenza
+      lim = ex[:hz_lim] = explore_hz_limits
+      prev = ex[:scan_t0]
+      ex[:scan_w] = lim && prev ? ((now - prev) / ex[:o]['step_time']).clamp(0.1, 3.0) : 1.0
       ex[:scan_t0] = now
       ex[:scan_pose] = [ex[:x], ex[:y], ex[:yaw], explore_half_hfov(view)]
       ex[:scan_cpu] = 0.0
@@ -1126,7 +1135,7 @@ module DagaWASD
       ex[:steps] += 1
       ex[:scan_hits] = res[:hits]
       if res[:hits].zero?
-        ex[:blind] += 1
+        ex[:blind] += [ex[:scan_w] || 1.0, 1.0].min
         return explore_stop_later(ex) if ex[:blind] >= EX_BLIND_MAX   # niente da vedere da nessuna parte
       else
         ex[:blind] = 0
@@ -1175,7 +1184,8 @@ module DagaWASD
           cur[:front] = m[:front] if cur[:front]
           # avvicinandosi il punto si affina, senza scatti (lo spazio aperto si sposta con lo sguardo)
           # (un punto dato dall'IA resta quello)
-          cur[:pt] = Array.new(3) { |k| cur[:pt][k] + (m[:pt][k] - cur[:pt][k]) * 0.35 } unless cur[:arrived] || (cur[:ai] && cur[:ai][:act] == :to)
+          a = 1.0 - 0.65**(ex[:scan_w] || 1.0)   # 0,35 per analisi, a ogni cadenza
+          cur[:pt] = Array.new(3) { |k| cur[:pt][k] + (m[:pt][k] - cur[:pt][k]) * a } unless cur[:arrived] || (cur[:ai] && cur[:ai][:act] == :to)
           keep = m[:score] * o['sticky']
         elsif now - cur[:seen] < 2.5 || explore_routing?(ex, cur)
           # appena uscito di vista (una retina rada lo perde e lo ritrova), o
@@ -1544,7 +1554,8 @@ module DagaWASD
     def self.explore_seen(ex, res, now)
       keys = {}
       res[:cells].each { |c| keys[explore_vkey(c.p.x, c.p.y, c.p.z)] = true if c }
-      keys.each_key { |k| explore_mem_add(ex[:mem], k, EX_SEEN, now, EX_MEM_TAU) }
+      amount = EX_SEEN * (ex[:scan_w] || 1.0)
+      keys.each_key { |k| explore_mem_add(ex[:mem], k, amount, now, EX_MEM_TAU) }
     end
 
     def self.explore_novelty(ex, p, now)
@@ -1619,6 +1630,8 @@ module DagaWASD
     def self.explore_sweep_note(ex, now)
       pose = ex[:scan_pose] or return
       sw = ex[:sweep]
+      # analisi fitte: una posa per passo, se no la scia ricorderebbe pochi secondi
+      return if ex[:hz_lim] && sw.any? && now - sw[-1][4] < 0.9 * ex[:o]['step_time']
       sw << [pose[0], pose[1], pose[2], pose[3], now]
       sw.shift while sw.size > EX_SWEEP_N || (sw.any? && now - sw[0][4] > 3.0 * EX_SWEEP_TAU)
     end
@@ -2970,6 +2983,10 @@ module DagaWASD
     def self.explore_adapt(ex)
       ms = ex[:scan_cpu] * 1000.0
       ex[:scan_ms] = ms
+      if ms > 0.0 && ex[:scan_n].to_i > 0
+        c = ms / ex[:scan_n]
+        ex[:cell_ms] = ex[:cell_ms] ? ex[:cell_ms] + EX_CELL_K * (c - ex[:cell_ms]) : c
+      end
       explore_budget(ex)
       return if ms <= 0.0
       lo, hi = EX_RANGES['grid']
@@ -2981,13 +2998,46 @@ module DagaWASD
     # frame_ms). Per fotogramma: quanto manca a EX_FPS_GOAL, cioè molto su
     # un modello leggero, ma almeno EX_SLICE_SHARE di un fotogramma su uno
     # pesante (se no la scansione non finirebbe mai). Per analisi: quante
-    # fette stanno in una parte del passo, perché la decisione non tardi.
-    # Dove SketchUp ha fiato la retina si fa fitta, dove i fotogrammi
+    # fette stanno in una parte dell'intervallo fra due analisi (explore_hz:
+    # un passo, se la cadenza adattiva è spenta), perché la decisione non
+    # tardi. Dove SketchUp ha fiato la retina si fa fitta, dove i fotogrammi
     # rallentano si fa rada.
     def self.explore_budget(ex)
       return unless ex[:o]['adaptive'] && (other = ex[:fr_other])
       ex[:slice] = sl = [1000.0 / EX_FPS_GOAL - other, EX_SLICE_SHARE * other].max.clamp(*EX_SLICE)
-      ex[:scan_goal] = (EX_SCAN_FILL * ex[:o]['step_time'] * 1000.0 * sl / (other + sl)).clamp(*EX_RANGES['scan_ms'])
+      ex[:scan_goal] = (EX_SCAN_FILL * 1000.0 * sl / (other + sl) / explore_hz(ex)).clamp(*EX_RANGES['scan_ms'])
+    end
+
+    # Cadenza adattiva (pannello › Sistema › Prestazioni): [minimo, massimo]
+    # di analisi al secondo, o nil se è spenta.
+    def self.explore_hz_limits
+      c = @cfg or return nil
+      return nil unless c['explore_scan_adaptive']
+      a, b = [c['explore_scan_hz_min'], c['explore_scan_hz_max']].map { |v| (explore_num(v) || 1.0).clamp(*EX_HZ_RANGE) }
+      a <= b ? [a, b] : [b, a]
+    end
+
+    # Analisi al secondo. Spenta la cadenza adattiva, una per passo
+    # (step_time del profilo). Accesa, quante ne stanno nel calcolo che i
+    # fotogrammi lasciano alle fette (1000·slice/(other + slice) ms al
+    # secondo, di cui EX_SCAN_FILL per le analisi) con la retina di partenza
+    # (grid) al costo per cella misurato: su un modello leggero si sale verso
+    # il massimo (e il calcolo che avanza fa più fitta la retina), su uno
+    # pesante si scende fino al minimo, e solo sotto la retina si dirada
+    # (explore_adapt). Le fette per fotogramma restano quelle, quindi i
+    # fotogrammi e il cammino non rallentano: fra un'analisi e l'altra si va
+    # verso l'obiettivo di prima.
+    def self.explore_hz(ex)
+      lim = explore_hz_limits
+      step = 1.0 / ex[:o]['step_time']
+      ex[:hz] = if lim.nil? then step
+                elsif (c = ex[:cell_ms]) && (other = ex[:fr_other]) && ex[:aspect]
+                  q = ex[:o]['grid']
+                  cells = q * (q * ex[:aspect]).round.clamp(6, 48)
+                  sl = ex[:slice]
+                  (EX_SCAN_FILL * 1000.0 * sl / (other + sl) / (c * cells)).clamp(*lim)
+                else (ex[:hz] || step).clamp(*lim)
+                end
     end
 
     # La prima retina a misura del modello: quanto costa qui un raggio (nove,
@@ -3029,8 +3079,9 @@ module DagaWASD
     # velocità (cifre e simboli, niente da tradurre)
     def self.explore_hud_text(ex)
       res = ex[:res]
+      hz = ex[:hz_lim] && ex[:hz] ? " · #{format('%.1f', ex[:hz])}/s" : ''
       g = res ? "#{res[:gw]}×#{res[:gh]}" : '…'
-      "#{ex[:mode] == :fly ? '≈' : '»'} #{ex[:steps]} · #{ex[:scan_ms].round}/#{ex[:scan_goal].round} ms · #{g} · " \
+      "#{ex[:mode] == :fly ? '≈' : '»'} #{ex[:steps]} · #{ex[:scan_ms].round}/#{ex[:scan_goal].round} ms#{hz} · #{g} · " \
         "#{format('%.1f', ex[:speed])} m/s"
     end
 
@@ -3233,6 +3284,7 @@ module DagaWASD
                     'ms' => ex[:scan_ms].round(1), 'pixel_ms' => ex[:px_ms]&.round(1),
                     'goal_ms' => ex[:scan_goal].round(1), 'slice_ms' => ex[:slice].round(1),
                     'frame_ms' => ex[:fr_other]&.round(1),
+                    'hz' => ex[:hz]&.round(2), 'hz_limits' => ex[:hz_lim],
                     'fovea' => ex[:geo] && ex[:o]['fovea'] > 0.0 ? [ex[:geo][:fx].round(2), ex[:geo][:fy].round(2)] : nil },
         'candidates' => res ? res[:cands].first(5).map { |c| { 'label' => c[:label], 'score' => c[:score].round(3), 'dist_m' => m.(explore_dist_eye(ex, c[:pt])) } } : [],
         'visited' => ex[:visited].size, 'agenda' => ex[:agenda].size, 'ev_n' => ex[:ev_seq], 'log' => ex[:log]

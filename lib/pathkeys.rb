@@ -614,6 +614,90 @@ module DagaWASD
       nil
     end
 
+    # ── «Dirada»: sfere ammassate → una sola ─────────────────────
+    # Girandosi sul posto, o fermandosi a guardare, la registrazione lascia
+    # tante sfere una sull'altra (ognuna 10° di sguardo in più, KEY_ANG).
+    # Si raccolgono, nell'ordine del percorso, le posizioni di fila che stanno
+    # entro KEY_THIN dal centro del loro gruppo (sfere che si toccano) e che
+    # guardano a non più di KEY_THIN_ANG da ognuna delle altre del gruppo: un
+    # giro sul posto resta fatto di più sguardi, e la media non tradisce
+    # nessuno. Mai due passaggi diversi dallo stesso punto, l'ordine resta
+    # quello. Ogni gruppo diventa una posizione sola, la media delle sue (key_mean).
+    KEY_THIN = 2.0 * KEY_R
+    KEY_THIN_ANG = 45.0
+
+    # [[indici], …] dei gruppi di almeno due posizioni
+    def self.key_thin_groups(keys)
+      cos_max = Math.cos(KEY_THIN_ANG * Math::PI / 180)
+      same_way = ->(a, b) { a[3] * b[3] + a[4] * b[4] + a[5] * b[5] >= cos_max }
+      groups = []
+      cur = []
+      c = nil
+      keys.each_with_index do |k, i|
+        if c && key_dist3(k, c) <= KEY_THIN && cur.all? { |j| same_way.(keys[j], k) }
+          cur << i
+          n = cur.size.to_f
+          c = Array.new(3) { |a| c[a] + (k[a] - c[a]) / n }
+        else
+          groups << cur if cur.size >= 2
+          cur = [i]
+          c = k[0, 3]
+        end
+      end
+      groups << cur if cur.size >= 2
+      groups
+    end
+
+    # La media di più posizioni: occhio, sguardo e alto (versori mediati, poi
+    # ortogonali), zoom (media degli ingrandimenti, non dei gradi), velocità
+    # propria (fra quelle che ne hanno una). Le soste si sommano: la camera
+    # resta lì quanto restava fra tutte. Gli sguardi stanno entro
+    # KEY_THIN_ANG (key_thin_groups): la loro media non si annulla.
+    def self.key_mean(list)
+      n = list.size.to_f
+      m = Array.new(9) { |a| list.sum { |k| k[a].to_f } / n }
+      zoom = list.sum { |k| key_zoom(k[9]) } / n
+      fov = 2.0 * Math.atan(Math.tan(KEY_FOV0 * Math::PI / 360) / zoom) * 180 / Math::PI
+      vs = list.map { |k| k[11].to_f }.select(&:positive?)
+      path_orthonormal!(m) + [fov.clamp(1.0, 179.0), list.sum { |k| k[10].to_f }, vs.empty? ? 0.0 : vs.sum / vs.size]
+    end
+
+    # Dal pannello: quante sfere spariscono, conferma, poi in un'operazione
+    # sola (si annulla con Ctrl+Z) la prima di ogni gruppo prende la media e
+    # le altre si cancellano; materiale, tag e nome restano quelli della prima.
+    def self.key_thin(name)
+      return t('path.busy') if @path_job
+      model = Sketchup.active_model
+      list = key_instances(model)[name]
+      return t('path.missing') if list.nil? || list.empty?
+      keys = list.map { |e| key_of(e) }
+      groups = key_thin_groups(keys)
+      return t('path.thin_none') if groups.empty?
+      gone = groups.sum(&:size) - groups.size
+      return t('path.thin_few') if keys.size - gone < 2
+      ask = format(t('path.ask_thin'), n: groups.sum(&:size), g: groups.size, left: keys.size - gone, name: name)
+      return nil unless UI.messagebox(ask, MB_YESNO) == IDYES
+      path_write(t('path.op_thin'), model) do |m|
+        key_upgrade(m)
+        drop = []
+        groups.each do |g|
+          k = key_mean(g.map { |i| keys[i] })
+          e = list[g.first]
+          e.definition = key_def(m, k[9])                  # la freccia del suo zoom
+          e.transformation = key_transform(k)
+          e.set_attribute(KEY_DICT, 'fov', k[9].round(2))
+          k[10] > 0 ? e.set_attribute(KEY_DICT, 'sosta', k[10].round(2)) : e.delete_attribute(KEY_DICT, 'sosta')
+          k[11] > 0 ? e.set_attribute(KEY_DICT, 'v', k[11].round(2)) : e.delete_attribute(KEY_DICT, 'v')
+          drop.concat(g.drop(1).map { |i| list[i] })
+        end
+        m.entities.erase_entities(drop) # rubocop:disable SketchupSuggestions/ModelEntities
+        (list - drop).each_with_index { |e, i| e.set_attribute(KEY_DICT, 'i', i) }
+        key_purge(m)
+      end
+      Sketchup.status_text = format(t('path.thinned'), n: gone, name: name, left: keys.size - gone)
+      nil
+    end
+
     # ── Tag spento in modalità FPS e durante riproduzione e video ─
     # Ritorna true se l'ha spento lui (e dovrà riaccenderlo).
     def self.key_hide(model)

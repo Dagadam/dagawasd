@@ -576,6 +576,7 @@ module DagaWASD
             when 'delete' then path_delete(name)
             when 'edit'   then key_edit(name)       # lib/pathkeys.rb: posizioni nel modello
             when 'revert' then key_revert(name)
+            when 'thin'   then key_thin(name)       # sfere ammassate → una, la loro media
             when 'new'    then key_new
             when 'key'    then key_open_nth(name, i.to_i)
             when 'add'    then key_add_at(name, i)

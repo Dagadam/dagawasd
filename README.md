@@ -25,7 +25,9 @@ https://youtu.be/w6xE86y7iEw?is=7Gh12tF7atE_N9_K
   doppio clic sulla sua sfera (o Invio), apre le sue impostazioni, con
   l'anteprima di ciò che vede, e un clic fra due posizioni ne aggiunge una
   dalla vista attuale. Durante la riproduzione l'elenco accende la posizione
-  in corso.
+  in corso. «Dirada camere» unisce le sfere ammassate una sull'altra in una
+  sola, la loro media (posizione, sguardo, zoom), se non guardano a più di
+  45° l'una dall'altra.
 - **Esploratore autonomo**: la camera guarda la scena, sceglie la cosa più
   significativa, le fa un passo incontro guardandola e ricomincia; alla fine
   il giro è un percorso. Vedi sotto.
@@ -104,7 +106,10 @@ guardandolo → analizza**.
   mentre esplora.
 - **Fluido**: come la costruzione dal vivo del ponte, l'analisi è una Fiber
   che lavora a fette fra un fotogramma e l'altro; la retina si allarga o si
-  stringe secondo quanto costa un raggio in quel modello.
+  stringe secondo quanto costa un raggio in quel modello. Con *Sistema ›
+  Prestazioni › Analisi adattiva* anche la frequenza delle analisi segue il
+  calcolo libero, fra un minimo e un massimo al secondo, senza rallentare il
+  cammino.
 - **Comandi**: Esc o clic per fermarlo, tasto destro per pausa, «Cerca
   altro», mappa dell'attenzione, occhio a colori; rotella per la velocità; I
   nasconde o mostra le righe d'informazione in alto a sinistra. Un

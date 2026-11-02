@@ -41,6 +41,7 @@ module Attrs
   def attrs; @attrs ||= {}; end
   def get_attribute(d, k, default = nil); attrs.fetch(d, {}).fetch(k, default); end
   def set_attribute(d, k, v); (attrs[d] ||= {})[k] = v; end
+  def delete_attribute(d, k); attrs.fetch(d, {}).delete(k); end
 end
 class Layer
   attr_accessor :name, :visible
@@ -747,6 +748,72 @@ giu = false; F.ke_poll_enter; giu = true
 F.define_singleton_method(:su_main_foreground?) { false }
 F.ke_poll_enter
 ok(!(ke[:dialog]&.visible?), 'Invio dentro un dialogo (anche questo pannello): non conta')
+
+# ── «Dirada camere»: sfere ammassate → una, la loro media ────────────
+# Ci si ferma a guardare a (2, 0): tre sfere una sull'altra, sguardo a 0°,
+# 20°, 40° e zoom 1×, 2×, 3×; poi più avanti due sfere separate, e alla fine
+# un altro mucchietto di due, una con una sosta e una velocità propria.
+deg = ->(a) { [Math.cos(a * Math::PI / 180), Math.sin(a * Math::PI / 180), 0.0] }
+zfov = ->(z) { 2.0 * Math.atan(Math.tan(F::KEY_FOV0 * Math::PI / 360) / z) * 180 / Math::PI }
+giro = [key.(0, 0, 1.6),
+        key.(2, 0, 1.6, deg.(0)), key.(2.05, 0, 1.6, deg.(20)), key.(2, 0.05, 1.6, deg.(40)),
+        key.(4, 0, 1.6), key.(6, 0, 1.6),
+        key.(8, 0, 1.6), key.(8.1, 0, 1.6)]
+giro[1][9] = zfov.(1.0); giro[2][9] = zfov.(2.0); giro[3][9] = zfov.(3.0)
+giro.each { |k| k[10] ||= 0.0; k[11] ||= 0.0 }
+giro[6][10] = 1.5; giro[7][10] = 2.0; giro[7][11] = 0.8
+ok(F.key_thin_groups(giro) == [[1, 2, 3], [6, 7]], 'gruppi: solo le sfere di fila che si toccano (1-3 e 6-7)')
+ok(F.key_thin_groups([key.(0, 0, 1.6), key.(0.2, 0, 1.6), key.(0.4, 0, 1.6), key.(0.6, 0, 1.6)].map { |k| k + [0.0, 0.0] }) ==
+   [[0, 1], [2, 3]], 'camminando piano: il gruppo non si allunga lungo il percorso (al più KEY_THIN dal suo centro)')
+ok(F.key_thin_groups([key.(0, 0, 1.6), key.(5, 0, 1.6), key.(0, 0.01, 1.6)].map { |k| k + [0.0, 0.0] }).empty?,
+   'ripassando dallo stesso punto più tardi: due passaggi, non si uniscono')
+# Sguardi: mai più di 45° fra due sfere dello stesso gruppo
+sul_posto = ->(*gradi) { gradi.map { |a| key.(0, 0, 1.6, deg.(a)) + [0.0, 0.0] } }
+ok(F.key_thin_groups(sul_posto.(0, 30, 60)) == [[0, 1]] && F.key_thin_groups(sul_posto.(0, 45)) == [[0, 1]] &&
+   F.key_thin_groups(sul_posto.(0, 46)).empty?,
+   'sguardi oltre 45° restano separati: 0°-30° insieme, 60° (60° dal primo) da sola; 45° sì, 46° no')
+ok(F.key_thin_groups(sul_posto.(0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 180, 270)) == [[0, 1, 2, 3, 4], [5, 6, 7, 8, 9]],
+   'giro sul posto a passi di 10°: gruppi larghi al più 45° (0-40°, 50-90°), 180° e 270° da sole')
+m = F.key_mean(giro[1, 3])
+ok(near.(m[0, 3], [2.0167 * M, 0.0167 * M, 1.6 * M], 0.01 * M) && (Math.atan2(m[4], m[3]) * 180 / Math::PI - 20.0).abs < 1e-6 &&
+   (F.key_zoom(m[9]) - 2.0).abs < 1e-9 && near.(m[6, 3], [0, 0, 1]),
+   "media: posizione, sguardo a 20° (fra 0° e 40°), zoom 2× (media degli ingrandimenti: #{m[9].round(1)}°), alto in su")
+m2 = F.key_mean(giro[6, 2])
+ok(m2[10] == 3.5 && m2[11] == 0.8, 'le soste si sommano (3,5 s); la velocità propria è quella di chi ce l\'ha')
+
+pm.set_attribute(F::PATH_DICT, 'Mucchio', JSON.generate('date' => '2026-11-01', 's' => [], 'v' => 1.2))
+pm.start_operation('x'); F.key_place(pm, 'Mucchio', giro); pm.commit_operation
+prima = F.key_instances(pm)['Mucchio']
+prima.each { |e| e.material = 'rosso' }
+ok(F.path_list.find { |p| p['name'] == 'Mucchio' }['keys'] == 8, 'percorso con 8 sfere, 5 ammassate')
+$answer = IDNO
+boxes.clear
+F.path_command('thin', 'Mucchio')
+ok(F.key_instances(pm)['Mucchio'].size == 8 && boxes.last == format(F.t('path.ask_thin'), n: 5, g: 2, left: 5, name: 'Mucchio'),
+   '«Dirada camere» chiede conferma (5 sfere in 2 gruppi, ne restano 5); no: tutto com\'era')
+$answer = IDYES
+ops = pm.ops.size
+F.path_command('thin', 'Mucchio')
+dopo = F.key_instances(pm)['Mucchio']
+ks = dopo.map { |e| F.key_of(e) }
+ok(dopo.size == 5 && dopo.map { |e| e.get_attribute(F::KEY_DICT, 'i') } == [0, 1, 2, 3, 4] &&
+   dopo[1].equal?(prima[1]) && dopo[4].equal?(prima[6]) && dopo.all? { |e| e.material == 'rosso' } &&
+   pm.ops[ops..].count { |o| o[0] == :start } == 1,
+   'sì: 5 sfere, numerate di fila; la prima di ogni gruppo resta (materiale compreso), le altre via, in un\'operazione sola')
+ok(near.(ks[1][0, 9], m[0, 9], 1e-6) && (ks[1][9] - m[9].round(2)).abs < 1e-9 &&
+   dopo[1].definition.get_attribute(F::KEY_DICT, 'fov') == m[9].round && ks[4][10] == 3.5 && ks[4][11] == 0.8 &&
+   dopo[1].get_attribute(F::KEY_DICT, 'sosta').nil?,
+   "la sfera unita è la media: occhio, sguardo, zoom (freccia del suo zoom, #{m[9].round}°), sosta e velocità")
+ok(near.(ks[0][0, 3], giro[0][0, 3]) && near.(ks[2][0, 3], giro[4][0, 3]) && near.(ks[3][0, 3], giro[5][0, 3]),
+   'le sfere non ammassate restano dov\'erano')
+boxes.clear
+F.path_command('thin', 'Mucchio')
+ok(boxes == [F.t('path.thin_none')] && F.key_instances(pm)['Mucchio'].size == 5, 'di nuovo: niente da diradare, lo dice')
+F.key_instances(pm)['Mucchio'].drop(1).each { |e| e.transformation = F.key_transform(key.(0.05, 0, 1.6)) }
+boxes.clear
+F.path_command('thin', 'Mucchio')
+ok(boxes == [F.t('path.thin_few')] && F.key_instances(pm)['Mucchio'].size == 5, 'tutto in un punto: non resterebbero due posizioni, non si fa')
+F.path_command('delete', 'Mucchio')
 
 puts
 puts($fail.zero? ? 'TUTTI I TEST PASSATI' : "#{$fail} TEST FALLITI")

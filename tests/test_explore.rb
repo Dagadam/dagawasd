@@ -160,6 +160,33 @@ ok(leggero[:slice] > 25.0 && leggero[:scan_goal] > 200.0 && pesante[:slice].betw
    pesante[:scan_goal].between?(30.0, 60.0) && fisso[:slice] == 6.0 && fisso[:scan_goal] == 40.0,
    "budget: fotogrammi da 5 ms → #{leggero[:slice].round(1)} ms per fotogramma, #{leggero[:scan_goal].round} per analisi; " \
    "da 110 ms → #{pesante[:slice].round(1)} e #{pesante[:scan_goal].round}; adaptive spento: fisso")
+
+# ── Cadenza adattiva (pannello › Sistema › Prestazioni) ─────────────
+# Accesa: analisi al secondo secondo il calcolo che le fette lasciano, fra il
+# minimo e il massimo; spenta: una per passo, e il budget com'era.
+cad = ->(other, cell_ms) do
+  e = { o: F.explore_opts, fr_other: other, slice: 6.0, scan_goal: 40.0, cell_ms: cell_ms, aspect: 0.5625 }
+  F.explore_budget(e)
+  e
+end
+cfg.merge!('explore_scan_adaptive' => true, 'explore_scan_hz_min' => 1.0, 'explore_scan_hz_max' => 6.0)
+leggera = cad.(5.0, 0.02)       # 32×18 celle da 0,02 ms: c'è calcolo per molte più analisi
+pesa = cad.(110.0, 2.0)         # celle da 2 ms su fotogrammi da 110 ms: nemmeno una al secondo
+media = cad.(20.0, 0.15)
+ok(leggera[:hz] == 6.0 && pesa[:hz] == 1.0 && media[:hz].between?(1.0, 6.0) && media[:hz] > 1.5 && media[:hz] < 5.5,
+   "cadenza adattiva: modello leggero #{leggera[:hz]}/s (il massimo), pesante #{pesa[:hz]}/s (il minimo), " \
+   "medio #{media[:hz].round(2)}/s")
+ok((leggera[:scan_goal] - 0.7 * 1000.0 * leggera[:slice] / (5.0 + leggera[:slice]) / 6.0).abs < 1e-6 &&
+   pesa[:scan_goal] > pesante[:scan_goal],
+   "…la retina sta nell'intervallo: #{leggera[:scan_goal].round} ms a 6/s; al minimo più larga del passo " \
+   "(#{pesa[:scan_goal].round} contro #{pesante[:scan_goal].round} ms), quindi si dirada solo sotto il minimo")
+cfg['explore_scan_hz_min'] = 8.0
+ok(cad.(5.0, 0.02)[:hz] == 8.0 && F.explore_hz_limits == [6.0, 8.0], '…minimo oltre il massimo: si scambiano')
+cfg['explore_scan_adaptive'] = false
+spenta = cad.(5.0, 0.02)
+ok((spenta[:hz] - 1.0 / F.explore_opts['step_time']).abs < 1e-9 && (spenta[:scan_goal] - leggero[:scan_goal]).abs < 1e-6,
+   "…spenta: una analisi per passo (#{spenta[:hz].round(2)}/s) e lo stesso budget di prima")
+cfg.merge!('explore_scan_hz_min' => 1.0)
 fr = { fr_at: F.explore_cpu - 0.02, fr_slice: 5.0, fr_other: nil }
 F.explore_frame_time(fr)
 lungo = { fr_at: F.explore_cpu - 2.0, fr_slice: 0.0, fr_other: 12.0 }

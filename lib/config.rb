@@ -222,6 +222,11 @@ module DagaWASD
       'grab_out_time'       => 0.22,   # poi fino alla distanza di presa (ancora spente); 0+0 = niente strappo
       # ── Sistema ──────────────────────────────────────────────────
       'tick_rate'           => 60,
+      # Esploratore autonomo (lib/explore.rb): analisi della vista al secondo
+      # secondo il calcolo libero, fra un minimo e un massimo (spento: una per passo)
+      'explore_scan_adaptive' => false,
+      'explore_scan_hz_min' => 1.0,
+      'explore_scan_hz_max' => 6.0,
       # Ponte per Claude (lib/bridge.rb): esegue Ruby ricevuto da 127.0.0.1
       'bridge_enabled'      => false,
       'bridge_live'         => false,  # costruzione passo passo, visibile nella vista
@@ -328,7 +333,7 @@ module DagaWASD
     # panel.html, stesse coppie); qui si rimettono in ordine settings.json
     # scritti a mano e i file importati.
     MIN_MAX_PAIRS = [%w[kick_force_min kick_force], %w[throw_force_min throw_force_max],
-                     %w[crouch_height eye_height]].freeze
+                     %w[crouch_height eye_height], %w[explore_scan_hz_min explore_scan_hz_max]].freeze
 
     # Valori ammessi per le impostazioni a scelta (le etichette sono nel
     # pannello), non solo dell'aspetto: anche il dettaglio del ponte. Le altre impostazioni di testo che iniziano con '#' sono colori.

@@ -11,6 +11,23 @@ Il numero sta in un posto solo, `VERSION` in `dagawasd.rb`;
 ## [Non ancora uscito]
 
 ### Aggiunto
+- *Sistema › Prestazioni › Esploratore: analisi della vista* (livello
+  avanzato): con **Analisi adattiva** accesa l'esploratore autonomo guarda la
+  scena tanto più spesso quanto più calcolo lasciano liberi i fotogrammi, fra
+  il minimo e il massimo di analisi al secondo scelti con un cursore a due
+  maniglie. Le fette di calcolo per fotogramma restano quelle, quindi la
+  camminata non rallenta; su un modello pesante prima si scende verso il
+  minimo, e solo sotto la retina si dirada. Memoria, scia dello sguardo e
+  «niente da vedere» contano il tempo, non il numero di analisi: il carattere
+  dei profili resta lo stesso a ogni cadenza. Spenta (com'è all'inizio), una
+  analisi per passo come prima.
+- In *Camera › Percorsi*, sui percorsi con più di due posizioni nel modello,
+  **Dirada camere**: dopo una conferma le sfere ammassate una sull'altra
+  (tipiche di quando ci si gira sul posto registrando) diventano una sola,
+  con la media di posizione, sguardo e zoom; le soste si sommano. Si uniscono
+  solo sfere di fila nel percorso, mai due passaggi dallo stesso punto, e
+  solo se guardano a non più di 45° l'una dall'altra: un giro sul posto
+  resta fatto di più sguardi. Si annulla con Ctrl+Z.
 - In *Camera › Percorsi* il triangolo accanto al nome apre, rientrato sotto
   al percorso, l'elenco delle sue posizioni: numero (lo stesso accanto alla
   sfera), quando la camera ci arriva e, se ci sono, sosta, velocità propria e
