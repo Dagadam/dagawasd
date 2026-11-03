@@ -35,6 +35,8 @@ osoby pomocí WASD a myši, nebo s herním ovladačem.
   prohlížeči: polaroidy na stole s poznámkami. Viz níže.
 - **Herní ovladač** XInput a rozhlížení numerickou klávesnicí.
 - Panel nastavení v 36 jazycích.
+- **Přístupnost**: *Přístupnost › Bez záblesků* vypne všechny záblesky,
+  fotek i blesků (viz [ACCESSIBILITY.md](.github/ACCESSIBILITY.md)).
 
 Požadavky: SketchUp 2023 nebo novější ve Windows. Na Macu se rozšíření
 nainstaluje, ale nespustí se, a oznámí to.
@@ -280,6 +282,13 @@ pozastaví). U fotek více autorů (vy, průzkumník, AI) je filtrují razítka
 nahoře. `#3` v adrese vede na fotku 3, `#3z` ji otevře ve velkém. Stránka
 se čistě tiskne (fotky s poznámkami), funguje bez sítě a lze ji poslat
 někomu i se složkou.
+
+**Upravit** mění texty přímo tam, kde jsou, stejným písmem: název galerie i
+každé fotky, *Co*, *Proč*, razítko a poznámky AI; ✕ vyjme fotku z galerie
+(soubor zůstane) a ↺ ji vrátí. Texty ze SketchUpu se nikdy neztratí: každý
+se může vrátit k původnímu. Změny se hned uchovají v prohlížeči; *Uložit do
+složky* (Edge, Chrome) je zapíše do `galleria_modifiche.json` vedle fotek a
+do samotné stránky, takže cestují spolu se složkou.
 
 ## Dva balíčky
 

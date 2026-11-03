@@ -36,6 +36,9 @@ WASD y el ratón, o con un mando.
   notas. Ver más abajo.
 - **Mando** XInput, y mirar alrededor con el teclado numérico.
 - Panel de ajustes en 36 idiomas.
+- **Accesibilidad**: *Accesibilidad › Sin destellos* apaga todos los
+  destellos, de las fotos y de los relámpagos (ver
+  [ACCESSIBILITY.md](.github/ACCESSIBILITY.md)).
 
 Requisitos: SketchUp 2023 o posterior, en Windows. En Mac la extensión se
 instala pero no arranca, y lo dice.
@@ -295,6 +298,14 @@ espaciadora la detiene). Con fotos de varios autores (tú, el explorador, la
 IA) los sellos de arriba las filtran. `#3` en la dirección lleva a la foto
 3, `#3z` la abre en grande. Se imprime limpia (las fotos con sus notas),
 funciona sin conexión y se puede enviar a alguien junto con su carpeta.
+
+**Editar** cambia los textos ahí mismo, con la misma letra: el título de la
+galería y de cada foto, *Qué*, *Por qué*, el sello y las notas de la IA; ✕
+quita una foto de la galería (el archivo se queda) y ↺ la devuelve. Los
+textos de SketchUp nunca se pierden: cada uno puede volver al original. Los
+cambios se guardan al momento en el navegador; *Guardar en la carpeta*
+(Edge, Chrome) los escribe en `galleria_modifiche.json` junto a las fotos y
+en la propia página, así viajan con la carpeta.
 
 ## Dos paquetes
 

@@ -30,6 +30,7 @@ module DagaWASD
     GAL_FLASH    = 0.3    # s del lampo dello scatto
     GAL_JSON     = 'galleria.json'
     GAL_HTML     = 'galleria.html'
+    GAL_EDITS    = 'galleria_modifiche.json'   # le modifiche di chi guarda: le scrive la pagina, mai SketchUp
     # nomi che SketchUp dà da sé: non dicono niente, meglio il materiale
     GAL_GENERIC  = /\A(?:gruppo|group|gruppe|groupe|grupo|groep|grupa|skupina|ryhmä|componente|component|komponente|composant|komponent)\s*#?\s*\d*(?:#\d+)?\z/i
 
@@ -262,8 +263,10 @@ module DagaWASD
       nil
     end
 
-    # Lampo dello scatto (lib/tool.rb, sopra la vista): bianco che svanisce
+    # Lampo dello scatto (lib/tool.rb, sopra la vista): bianco che svanisce.
+    # Con Accessibilità › Niente lampi non c'è: lo scatto lo dice la barra di stato.
     def self.gal_flash
+      return (@gal_flash = nil) if @cfg && @cfg['no_flashes']
       return nil unless @gal_flash
       a = 1.0 - (Time.now.to_f - @gal_flash) / GAL_FLASH
       return (@gal_flash = nil) if a <= 0.0
@@ -384,7 +387,12 @@ module DagaWASD
                 'count' => 'gal.count', 'route' => 'gal.route', 'you' => 'gal.by_you', 'explorer' => 'gal.by_explorer',
                 'ai' => 'gal.by_ai', 'strip' => 'gal.view.strip', 'table' => 'gal.view.table', 'tidy' => 'gal.tidy',
                 'play' => 'gal.play', 'all' => 'gal.all', 'said' => 'gal.said', 'end' => 'gal.end', 'dur' => 'gal.dur',
-                'dist' => 'gal.dist' }.freeze
+                'dist' => 'gal.dist',
+                'edit' => 'gal.ed.edit', 'ed_title' => 'gal.ed.title', 'ed_hint' => 'gal.ed.hint', 'done' => 'gal.ed.done',
+                'ph_title' => 'gal.ed.ph_title', 'ph_what' => 'gal.ed.ph_what', 'ph_why' => 'gal.ed.ph_why', 'orig' => 'gal.ed.orig',
+                'hide' => 'gal.ed.hide', 'unhide' => 'gal.ed.unhide', 'st_browser' => 'gal.ed.st_browser', 'st_saving' => 'gal.ed.st_saving',
+                'st_folder' => 'gal.ed.st_folder', 'st_err' => 'gal.ed.st_err', 'st_wrong' => 'gal.ed.st_wrong', 'save' => 'gal.ed.save',
+                'pick' => 'gal.ed.pick', 'download' => 'gal.ed.download', 'dl_help' => 'gal.ed.dl_help' }.freeze
 
     # La pagina dallo stampo, con i dati dentro; ritorna il suo file. notes:
     # i commenti dell'IA lungo il percorso ([[t, testo]], lib/path.rb).
@@ -393,11 +401,34 @@ module DagaWASD
       tpl = File.read(File.join(PLUGIN_DIR, GAL_HTML), encoding: 'UTF-8')
       page = { 'id' => File.basename(dir), 'title' => title.to_s, 'model' => data['model'].to_s, 'date' => data['date'].to_s,
                'photos' => data['photos'].to_a, 'track' => data['track'].to_a, 'notes' => notes.to_a,
-               'lang' => @lang_code.to_s, 'rtl' => !!@lang_rtl, 'txt' => GAL_TXT.transform_values { |k| t(k) } }
+               'lang' => @lang_code.to_s, 'rtl' => !!@lang_rtl, 'txt' => GAL_TXT.transform_values { |k| t(k) },
+               'spare' => gal_spare?(dir) }
       json = JSON.generate(page).gsub('</', '<\/')
+      # le modifiche fra i loro due segni, che la pagina ritrova per riscriverle;
+      # < diventa < (niente </script> né <!--) e */ diventa *\/
+      bs = 92.chr
+      edits = JSON.generate(gal_edits(dir)).gsub('<', "#{bs}u003c").gsub('*/', "*#{bs}/")
       file = File.join(dir, GAL_HTML)
-      File.write(file, tpl.sub('/*DATI*/null') { json }, mode: 'wb')
+      html = tpl.sub('/*DATI*/null') { json }.sub('/*MODIFICHE*/null/*FINE*/') { "/*MODIFICHE*/#{edits}/*FINE*/" }
+      File.write(file, html, mode: 'wb')
       file
+    end
+
+    # Una serie in %APPDATA% (modello mai salvato): Edge e Chrome non lasciano
+    # scegliere cartelle lì dentro, e la pagina propone di scaricare le modifiche.
+    def self.gal_spare?(dir)
+      File.expand_path(dir).downcase.start_with?(File.expand_path(gal_spare_root).downcase + '/')
+    end
+
+    # galleria_modifiche.json (titoli, testi, foto tolte: lo scrive la pagina)
+    # o nil; un file rotto non ferma la galleria, che si apre senza.
+    def self.gal_edits(dir)
+      file = File.join(dir, GAL_EDITS)
+      return nil unless File.file?(file)
+      e = JSON.parse(File.read(file, encoding: 'UTF-8'))
+      e.is_a?(Hash) && e['v'] == 1 ? e : nil
+    rescue SystemCallError, JSON::ParserError, EncodingError
+      nil
     end
 
     def self.gal_open(dir, title, notes = [])

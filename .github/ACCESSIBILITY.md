@@ -15,17 +15,23 @@ Setting names below are as they appear in the settings panel
 Two things make the view flash. If you are sensitive to flashing light,
 read this first.
 
+**One switch turns both off:** *Accessibility › No flashes* in the settings
+panel (from the next release, after 1.2.1). Photos are still taken and the
+status bar confirms each one; thunderstorms stay rain or snow, with no
+lightning and no brightening of the sky.
+
 - **Photo flash.** Taking a photo (**P**, or RB on the gamepad) turns the
   whole 3D view almost white for 0.3 seconds. The autonomous explorer also
   takes photos by itself, at most one every 8 seconds, when the walk is
-  being recorded as a path. **This flash cannot be turned off yet** (see
-  *Known limitations*). To avoid it: don't press P, and untick «Record the
-  path» in the explorer's start window.
+  being recorded as a path. *No flashes* removes it. In 1.2.1 and earlier
+  it cannot be turned off: don't press P, and untick «Record the path» in
+  the explorer's start window.
 - **Lightning.** Thunderstorms light up the sky and the scene for about half
   a second, at random moments, 1 to 30 times a minute. They are **off by
   default**. They are turned on by *Weather › Rain & snow › Thunderstorm*,
   or by the «Summer thunderstorm» ready-made scene. To stop them, untick
-  *Thunderstorm*; *Lightning* sets how many per minute.
+  *Thunderstorm* (or turn on *No flashes*); *Lightning* sets how many per
+  minute.
 
 ## Motion sickness
 
@@ -75,6 +81,18 @@ read this first.
   *Show descriptions* hides the short explanation under each setting. In
   the explorer, **I** hides the information lines at the top left.
 
+## The photo gallery
+
+- The gallery is a web page that opens in your browser: browser zoom
+  (Ctrl + / Ctrl −) enlarges everything, and it follows Windows'
+  *reduce motion* setting (no smooth scrolling or animations).
+- Everything works with the keyboard: arrow keys move between photos,
+  Enter opens one large, Esc closes it, Space pauses the slideshow; on
+  the table, arrow keys move the focused photo.
+- Texts can be edited (*Edit*): Tab reaches each text, Enter opens and
+  confirms it, Esc cancels.
+- It prints cleanly, without the wooden table: photos with their notes.
+
 ## Language and sound
 
 - The interface is in **36 languages**, including right-to-left Arabic and
@@ -84,8 +102,8 @@ read this first.
 
 ## Known limitations
 
-- **The photo flash cannot be turned off.** A setting to disable it is
-  planned.
+- **In 1.2.1 and earlier the photo flash cannot be turned off**: the
+  *No flashes* switch arrives with the next release.
 - **The 3D view cannot be read by a screen reader.** The settings panel is
   a web page inside SketchUp, but it has not been tested with screen
   readers (NVDA, JAWS, Narrator) and some controls, such as the two-handle

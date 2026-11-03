@@ -39,6 +39,9 @@ personne avec WASD et la souris, ou avec une manette.
   photos instantanées sur une table, avec des notes. Voir plus bas.
 - **Manette** XInput, et regard au pavé numérique.
 - Panneau de réglages en 36 langues.
+- **Accessibilité** : *Accessibilité › Aucun flash* supprime tous les
+  flashs, des photos comme des éclairs (voir
+  [ACCESSIBILITY.md](.github/ACCESSIBILITY.md)).
 
 Configuration requise : SketchUp 2023 ou ultérieur, sous Windows. Sur Mac,
 l'extension s'installe mais ne démarre pas, et le dit.
@@ -311,6 +314,15 @@ l'explorateur, l'IA), les tampons en haut les filtrent. `#3` dans l'adresse
 mène à la photo 3, `#3z` l'ouvre en grand. Elle s'imprime proprement (les
 photos avec leurs notes), fonctionne hors ligne et peut être envoyée à
 quelqu'un avec son dossier.
+
+**Modifier** change les textes là où ils sont, avec la même écriture : le
+titre de la galerie et de chaque photo, *Quoi*, *Pourquoi*, le tampon et les
+notes de l'IA ; ✕ retire une photo de la galerie (le fichier reste) et ↺ la
+remet. Les textes de SketchUp ne se perdent jamais : chacun peut revenir à
+l'original. Les modifications sont gardées tout de suite dans le navigateur
+; *Enregistrer dans le dossier* (Edge, Chrome) les écrit dans
+`galleria_modifiche.json` à côté des photos et dans la page elle-même, elles
+voyagent donc avec le dossier.
 
 ## Deux paquets
 

@@ -602,6 +602,7 @@ const ICONS = {
   backup: '<path d="M12 3v12m-4-4l4 4 4-4M4 17v3h16v-3"/>',
   log:    '<path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.2"/>',
   bridge: '<path d="M2 18h20M4 18v-4a8 8 0 0116 0v4M8 18v-3M12 18v-4M16 18v-3"/>',
+  access: '<circle cx="12" cy="12" r="9.5"/><circle cx="12" cy="6.8" r="1.4"/><path d="M6.5 9.5l5.5 1.2 5.5-1.2M12 10.7v3.6M12 14.3l-2.8 4.4M12 14.3l2.8 4.4"/>',
   weather:'<circle cx="8" cy="8" r="3.2"/><path d="M8 1.5v1.6M8 12.9v1.6M1.5 8h1.6M3.4 3.4l1.1 1.1M12.6 3.4l-1.1 1.1"/><path d="M9 20h9a3.5 3.5 0 000-7 5 5 0 00-9.6 1.5A2.8 2.8 0 009 20z"/>',
   time:   '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>',
   paths:  '<circle cx="5" cy="18.5" r="2.2"/><circle cx="19" cy="5.5" r="2.2"/><path d="M7.2 18.5H14a3.2 3.2 0 000-6.4h-4a3.2 3.2 0 010-6.4h6.8"/>',
@@ -894,6 +895,15 @@ const SPEC = [
   ]},
   /* Situazioni pronte: pulsanti che impostano tutto il meteo (weather_preset in lib/sky.rb) */
   { id:'presets', special:'presets' },
+]},
+
+/* Accessibilità (.github/ACCESSIBILITY.md): ciò che serve a chi ha
+   bisogno di una vista senza lampi. Le altre regolazioni di comfort stanno
+   dove agiscono (head bob, campo visivo, tasti, tema): la nota le indica. */
+{ id:'access', subs:[
+  { id:'access', note:'access.note', groups:[
+    { id:'flash', fields:[ {k:'no_flashes', type:'bool'} ]},
+  ]},
 ]},
 
 { id:'system', subs:[

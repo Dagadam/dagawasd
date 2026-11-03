@@ -36,6 +36,8 @@ WASD e mouse, o con un gamepad.
   sua galleria nel browser, Polaroid su un tavolo con gli appunti. Vedi sotto.
 - **Gamepad** XInput e visuale con il tastierino numerico.
 - Pannello delle impostazioni in 36 lingue.
+- **Accessibilità**: *Accessibilità › Niente lampi* spegne ogni lampo, delle
+  foto e dei fulmini (vedi [ACCESSIBILITY.md](.github/ACCESSIBILITY.md)).
 
 Requisiti: SketchUp 2023 o successivo, su Windows. Su Mac l'estensione si
 installa ma non parte, e lo dice.
@@ -291,6 +293,14 @@ spazio la ferma). Con foto di più autori (tu, l'esploratore, l'IA) i timbri
 in testa le filtrano. `#3` nell'indirizzo porta alla foto 3, `#3z` la apre
 in grande. Si stampa pulita (le foto con i loro appunti), funziona senza
 rete e si può mandare a qualcuno con la sua cartella.
+
+**Modifica** cambia i testi lì dove sono, nella stessa calligrafia: il
+titolo della galleria e delle foto, *Che cosa*, *Perché*, il timbro e i
+commenti dell'IA; ✕ toglie una foto dalla galleria (il file resta) e ↺ la
+rimette. I testi di SketchUp non si perdono mai: ognuno può tornare
+all'originale. Le modifiche si tengono subito nel browser; *Salva nella
+cartella* (Edge, Chrome) le scrive in `galleria_modifiche.json` accanto alle
+foto e nella pagina stessa, così viaggiano con la cartella.
 
 ## Due pacchetti
 

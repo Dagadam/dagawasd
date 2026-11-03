@@ -38,6 +38,9 @@ Modell, mit WASD und Maus oder mit einem Gamepad.
   mit Notizen. Siehe unten.
 - XInput-**Gamepad**, und Umschauen mit dem Ziffernblock.
 - Einstellungs-Panel in 36 Sprachen.
+- **Barrierefreiheit**: *Barrierefreiheit › Keine Blitze* schaltet jeden
+  Blitz ab, von Fotos und von Gewittern (siehe
+  [ACCESSIBILITY.md](.github/ACCESSIBILITY.md)).
 
 Voraussetzungen: SketchUp 2023 oder neuer, unter Windows. Auf dem Mac lässt
 sich die Erweiterung installieren, startet aber nicht, und sagt das auch.
@@ -312,6 +315,14 @@ KI) filtern die Stempel oben. `#3` in der Adresse führt zu Foto 3, `#3z`
 öffnet es groß. Sie lässt sich sauber drucken (die Fotos mit ihren
 Notizen), funktioniert offline und lässt sich mitsamt ihrem Ordner
 weitergeben.
+
+**Bearbeiten** ändert die Texte direkt dort, wo sie stehen, in derselben
+Handschrift: den Titel der Galerie und jedes Fotos, *Was*, *Warum*, den
+Stempel und die Notizen der KI; ✕ nimmt ein Foto aus der Galerie (die Datei
+bleibt) und ↺ legt es zurück. Die Texte von SketchUp gehen nie verloren:
+Jeder kann zum Original zurück. Änderungen bleiben sofort im Browser; *Im
+Ordner speichern* (Edge, Chrome) schreibt sie in `galleria_modifiche.json`
+neben den Fotos und in die Seite selbst, so reisen sie mit dem Ordner.
 
 ## Zwei Pakete
 

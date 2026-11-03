@@ -38,6 +38,9 @@ WASD och musen, eller med en handkontroll.
 - XInput-**handkontroll**, och att se sig omkring med numeriska
   tangentbordet.
 - Inställningspanel på 36 språk.
+- **Tillgänglighet**: *Tillgänglighet › Inga blixtar* stänger av alla
+  blixtar, från foton och från åska (se
+  [ACCESSIBILITY.md](.github/ACCESSIBILITY.md)).
 
 Krav: SketchUp 2023 eller senare, på Windows. På Mac installeras tillägget
 men startar inte, och säger det.
@@ -293,6 +296,14 @@ pausar). Med foton från flera upphovspersoner (du, utforskaren, AI:n)
 filtrerar stämplarna överst dem. `#3` i adressen går till foto 3, `#3z`
 öppnar det stort. Sidan skrivs ut rent (fotona med sina anteckningar),
 fungerar utan nät och kan skickas till någon tillsammans med sin mapp.
+
+**Redigera** ändrar texterna där de står, med samma handstil: galleriets och
+varje fotos titel, *Vad*, *Varför*, stämpeln och AI:ns anteckningar; ✕ tar
+ut ett foto ur galleriet (filen finns kvar) och ↺ lägger tillbaka det.
+SketchUps egna texter försvinner aldrig: var och en kan gå tillbaka till
+originalet. Ändringar sparas direkt i webbläsaren; *Spara i mappen* (Edge,
+Chrome) skriver dem till `galleria_modifiche.json` bredvid fotona och in i
+själva sidan, så att de följer med mappen.
 
 ## Två paket
 

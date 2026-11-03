@@ -37,6 +37,9 @@ met WASD en de muis, of met een gamepad.
   Zie hieronder.
 - XInput-**gamepad**, en rondkijken met het numerieke toetsenblok.
 - Instellingenpaneel in 36 talen.
+- **Toegankelijkheid**: *Toegankelijkheid › Geen flitsen* zet elke flits
+  uit, van foto's en van bliksem (zie
+  [ACCESSIBILITY.md](.github/ACCESSIBILITY.md)).
 
 Vereisten: SketchUp 2023 of later, op Windows. Op een Mac installeert de
 extensie wel, maar start niet, en meldt dat.
@@ -303,6 +306,15 @@ spatiebalk pauzeert). Met foto's van meerdere makers (jij, de verkenner, de
 AI) filteren de stempels bovenaan ze. `#3` in het adres gaat naar foto 3,
 `#3z` opent die groot. De pagina print netjes (de foto's met hun
 notities), werkt offline en kan met zijn map naar iemand worden gestuurd.
+
+**Bewerken** wijzigt de teksten waar ze staan, in hetzelfde handschrift: de
+titel van de galerij en van elke foto, *Wat*, *Waarom*, het stempel en de
+notities van de AI; ✕ haalt een foto uit de galerij (het bestand blijft) en
+↺ zet hem terug. De teksten van SketchUp gaan nooit verloren: elke tekst kan
+terug naar het origineel. Wijzigingen worden meteen in de browser bewaard;
+*Opslaan in de map* (Edge, Chrome) schrijft ze naar
+`galleria_modifiche.json` naast de foto's en in de pagina zelf, zodat ze met
+de map meereizen.
 
 ## Twee pakketten
 

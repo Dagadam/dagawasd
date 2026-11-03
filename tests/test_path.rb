@@ -291,6 +291,7 @@ small.close
 ok(File.size(File.join(tmp, 'vuoto.avi')) == 224 + 8, 'video senza fotogrammi: solo intestazione e indice vuoto')
 
 # Più fotogrammi per giro: un write_image da 0,1 s, giro da 0,35 s → 4 per giro
+# (3 quando sleep di Windows sfora di qualche millisecondo: conta che siano più d'uno)
 F.send(:remove_const, :PATH_BATCH); F.const_set(:PATH_BATCH, 0.35)
 slow = view.method(:write_image)
 view.define_singleton_method(:write_image) { |o| sleep 0.1; slow.call(o) }
@@ -301,7 +302,7 @@ view.anim.nextFrame(view)
 per_giro = view.images.size
 F::PathTool.new.onCancel(0, view)
 view.singleton_class.send(:remove_method, :write_image)
-ok(per_giro == 4, "un giro dell'animazione scrive più fotogrammi (#{per_giro}): il ridisegno fra un giro e l'altro pesa meno")
+ok(per_giro.between?(3, 4), "un giro dell'animazione scrive più fotogrammi (#{per_giro}): il ridisegno fra un giro e l'altro pesa meno")
 F.send(:remove_const, :PATH_BATCH); F.const_set(:PATH_BATCH, batch)
 
 # ── Finestra durante il video (lib/attesa.rb) ────────────────────────

@@ -324,8 +324,18 @@ module DagaWASD
       end
     end
 
+    # Con Accessibilità › Niente lampi il temporale resta pioggia o neve:
+    # niente fulmini, niente vista che si schiarisce. Spegnendolo a metà di
+    # un lampo, la luce torna subito quella di prima.
     def self.storm_step(t)
-      return @storm = nil unless storm_on?
+      unless storm_on? && !cf('no_flashes')
+        @storm = nil
+        if @storm_glow.to_f > 0.0
+          @storm_glow = 0.0
+          sky_frame(true) if @sky_model
+        end
+        return nil
+      end
       @storm_next ||= t + storm_wait
       if t >= @storm_next
         rnd = @precip_rnd

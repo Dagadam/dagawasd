@@ -36,6 +36,8 @@ pierwszoosobowym za pomocą WASD i myszy albo pada.
   niżej.
 - **Pad** XInput i rozglądanie się klawiaturą numeryczną.
 - Panel ustawień w 36 językach.
+- **Dostępność**: *Dostępność › Bez błysków* wyłącza każdy błysk, zdjęć i
+  błyskawic (zob. [ACCESSIBILITY.md](.github/ACCESSIBILITY.md)).
 
 Wymagania: SketchUp 2023 lub nowszy, w systemie Windows. Na Macu
 rozszerzenie się instaluje, ale nie uruchamia, i o tym informuje.
@@ -290,6 +292,13 @@ po drugim; spacja wstrzymuje). Przy zdjęciach kilku autorów (ty, odkrywca,
 SI) pieczątki u góry je filtrują. `#3` w adresie prowadzi do zdjęcia 3,
 `#3z` otwiera je w dużym rozmiarze. Strona drukuje się czysto (zdjęcia z
 notatkami), działa bez sieci i można ją wysłać komuś razem z folderem.
+
+**Edytuj** zmienia teksty tam, gdzie są, tym samym pismem: tytuł galerii i
+każdego zdjęcia, *Co*, *Dlaczego*, pieczątkę i notatki AI; ✕ usuwa zdjęcie z
+galerii (plik zostaje), a ↺ je przywraca. Teksty SketchUpa nigdy nie giną:
+każdy może wrócić do oryginału. Zmiany od razu zostają w przeglądarce;
+*Zapisz w folderze* (Edge, Chrome) zapisuje je w `galleria_modifiche.json`
+obok zdjęć i w samej stronie, więc podróżują razem z folderem.
 
 ## Dwa pakiety
 

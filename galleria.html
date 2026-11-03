@@ -22,7 +22,15 @@
      c'è quando gli autori sono più d'uno. #3 nell'indirizzo porta alla
      foto 3, #3z la apre in grande. Niente di esterno e niente innerHTML (i
      testi arrivano dal modello): funziona senza rete, aperta dal disco, e
-     si stampa pulita. -->
+     si stampa pulita.
+     Modifica: i testi (titolo della galleria e delle foto, che cosa, perché,
+     timbro, commenti dell'IA) si cambiano dove sono; ✕ toglie una foto
+     dalla galleria (il JPG resta). Le modifiche stanno sopra i dati, che
+     non cambiano mai: fra i segni MODIFICHE e FINE (gal_report le mette
+     da galleria_modifiche.json), subito in localStorage, e con «Salva
+     nella cartella» (File System Access: Edge, Chrome) in
+     galleria_modifiche.json e in questa stessa pagina. Dove il browser non
+     scrive nelle cartelle (o D.spare: foto in %APPDATA%) si scaricano. -->
 <html lang="it">
 <head>
 <meta charset="utf-8">
@@ -302,6 +310,63 @@ body.table-view #prev,body.table-view #next{display:none}
 .lbprog.run{animation:prog var(--ms, 5s) linear forwards}
 @keyframes prog{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 
+/* ── modificare: i testi si cambiano dove sono, con la stessa calligrafia;
+      un foglietto giallo dice che si sta modificando e dove vanno le modifiche ── */
+.tb.edit[aria-pressed=true]{background:#f3d36b;color:#3a2610}
+.tb.edit[aria-pressed=true]:hover{background:#f7dd85}
+.editcard{position:fixed;z-index:8;top:76px;inset-inline-end:22px;width:min(330px, calc(100vw - 44px));
+  padding:18px 20px 14px;color:var(--ink2);font-size:.86rem;line-height:1.4;
+  background:linear-gradient(172deg, #fff8bf, #f7e88e 62%, #f0dc6c);transform:rotate(1.1deg);
+  box-shadow:0 18px 22px -12px rgba(0,0,0,.6), 0 1px 2px rgba(0,0,0,.2)}
+.editcard::before{content:"";position:absolute;top:-12px;left:50%;width:96px;height:26px;margin-left:-48px;
+  background:repeating-linear-gradient(90deg, rgba(255,255,255,.2) 0 6px, transparent 6px 12px), var(--tape);transform:rotate(-3deg)}
+.editcard h2{margin:0 0 4px;font:400 1.5rem/1.15 var(--hand);color:var(--ink)}
+.editcard p{margin:0 0 10px}
+.est{display:flex;align-items:center;gap:8px;font-weight:600;color:#4b3a22}
+.est:empty{display:none}
+.est::before{content:"";flex:0 0 auto;width:10px;height:10px;border-radius:50%;background:#d08a12;box-shadow:0 0 0 3px rgba(208,138,18,.2)}
+.est.folder::before{background:#2f8a52;box-shadow:0 0 0 3px rgba(47,138,82,.2)}
+.est.saving::before{background:#8a8a8a;animation:blink 1s ease-in-out infinite}
+.est.err::before{background:var(--red);box-shadow:0 0 0 3px rgba(184,50,43,.2)}
+@keyframes blink{50%{opacity:.3}}
+.erow{display:flex;flex-wrap:wrap;gap:8px}
+.eb{padding:7px 15px;border:0;border-radius:999px;background:var(--ink);color:#fff;font-weight:600;font-size:.84rem;cursor:pointer}
+.eb:hover{background:#30437a}
+.eb.alt{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1.5px currentColor}
+.eb.alt:hover{background:rgba(36,51,95,.08)}
+.eb:focus-visible,.edx:focus-visible,.edchip button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.editcard .esub{margin:10px 0 0;font-size:.78rem;color:#6f5a3e}
+body.editing [data-ed]{cursor:text;border-radius:3px;outline:1.5px dashed rgba(36,51,95,.3);outline-offset:3px;
+  transition:outline-color .15s, background-color .15s}
+body.editing .stamp[data-ed]{outline-color:currentColor}
+body.editing [data-ed]:hover{outline-color:rgba(36,51,95,.7);background-color:rgba(255,226,90,.38)}
+body.editing [data-ed]:focus-visible{outline:2px solid var(--ink)}
+[data-ed].typing{outline:2px solid var(--ink)!important;outline-offset:3px;background-color:rgba(255,255,255,.72)!important;
+  cursor:text;-webkit-line-clamp:unset!important;overflow:visible!important;user-select:text;-webkit-user-select:text}
+body.editing [data-ed]:empty::before{content:attr(data-ph);color:#9b9088;font-size:.86em}
+/* ciò che è stato cambiato: un segno a matita accanto */
+body.editing [data-ed].mod:not(.typing)::after{content:"✎";margin-inline-start:.3em;font:400 .8em/1 var(--sans);color:#b87a10}
+.note .sec.empty,.postit p.empty{display:none}
+body.editing .note .sec.empty,body.editing .postit p.empty{display:block}
+body:not(.editing) .postit:not(:has(p:not(.empty))),body:not(.editing) .said:not(:has(p:not(.empty))){display:none}
+/* togliere una foto dalla galleria (il JPG resta) e rimetterla */
+.edx{display:none}
+body.editing .edx{display:flex;align-items:center;justify-content:center;position:absolute;z-index:3;top:-13px;inset-inline-end:-13px;
+  width:34px;height:34px;padding:0;border:0;border-radius:50%;background:var(--red);color:#fff;font:700 16px/1 var(--sans);
+  cursor:pointer;box-shadow:0 3px 8px rgba(0,0,0,.4);transition:transform .15s}
+body.editing .edx:hover{transform:scale(1.12)}
+body.editing .gone .edx{background:#2f8a52}
+/* tolta: sbiadisce tutto tranne ↺, che resta pieno per rimetterla */
+body.editing .gone .polaroid > :not(.edx),body.editing .polaroid.gone > :not(.edx),body.editing .gone .note,.fr.gone{filter:grayscale(1);opacity:.4}
+body.editing .gone .polaroid,body.editing .polaroid.gone{background:rgba(250,246,236,.5);box-shadow:0 10px 18px -12px rgba(0,0,0,.5)}
+body.editing .gone .edx,body.editing .polaroid.gone .edx{width:40px;height:40px;top:-16px;inset-inline-end:-16px;font-size:20px;
+  box-shadow:0 0 0 4px rgba(47,138,82,.3), 0 3px 8px rgba(0,0,0,.4)}
+/* sopra il testo che si sta scrivendo: tornare all'originale */
+.edchip{position:fixed;z-index:30;display:flex;gap:6px;padding:4px;border-radius:999px;background:var(--ink);
+  box-shadow:0 6px 16px rgba(0,0,0,.4);transform:translateY(-100%)}
+.edchip button{padding:4px 12px;border:0;border-radius:999px;background:transparent;color:#fff;font:600 .78rem/1.4 var(--sans);cursor:pointer}
+.edchip button:hover{background:rgba(255,255,255,.16)}
+
 /* ── schermi medi: i comandi senza le scritte; la mappa piccola solo se c'è posto ── */
 @media (max-width: 1200px){
   .tb .tl{display:none}
@@ -330,6 +395,7 @@ body.table-view #prev,body.table-view #next{display:none}
   .lb{flex-direction:column;padding:64px 14px 80px;overflow:auto;justify-content:flex-start}
   .lb .photo{width:calc(100vw - 56px)}
   .lb .note{width:calc(100vw - 40px)}
+  .editcard{top:auto;bottom:66px;inset-inline:12px;width:auto;transform:none}
 }
 @media (prefers-reduced-motion: reduce){
   .photo img,.photo .chem,.polaroid,.lb,.lb .polaroid,.ti,.mini,.hint{transition:none!important}
@@ -339,7 +405,10 @@ body.table-view #prev,body.table-view #next{display:none}
 @media print{
   @page{margin:12mm}
   html,body{height:auto;overflow:visible;background:#fff!important;color:#000}
-  .wood,.light,.tools,.nav,.film,.mini,.lb,.desk,.deco,.who{display:none!important}
+  .wood,.light,.tools,.nav,.film,.mini,.lb,.desk,.deco,.who,.editcard,.edchip,.edx,.gone{display:none!important}
+  [data-ed]{outline:none!important;background:none!important}
+  [data-ed]::after,[data-ed]:empty::before{content:none!important}
+  .note .sec.empty,.postit p.empty{display:none!important}
   .label{position:static;transform:none;box-shadow:none;margin:0 0 8mm;max-width:none;padding:0}
   .label::before{display:none}
   .strip,.strip[hidden]{display:block!important;height:auto;overflow:visible;padding:0}
@@ -365,7 +434,16 @@ body.table-view #prev,body.table-view #next{display:none}
   </div>
   <button class="tb" id="tidy" hidden><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2" y="2" width="7" height="7" rx="1"/><rect x="11" y="2" width="7" height="7" rx="1"/><rect x="2" y="11" width="7" height="7" rx="1"/><rect x="11" y="11" width="7" height="7" rx="1"/></svg><span class="tl" id="tidyL"></span></button>
   <button class="tb" id="play"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 3.5v13l11-6.5z"/></svg><span class="tl" id="playL"></span></button>
+  <button class="tb edit" id="edit" aria-pressed="false"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M13.6 2.6a2 2 0 012.8 0l1 1a2 2 0 010 2.8L7.3 16.5 2.5 17.5l1-4.8z"/><path d="M12.2 4l3.8 3.8" stroke="rgba(0,0,0,.35)" stroke-width="1.2"/></svg><span class="tl" id="editL"></span></button>
 </div>
+<section class="editcard" id="editcard" hidden aria-labelledby="edT">
+  <h2 id="edT"></h2>
+  <p id="edH"></p>
+  <p class="est" id="edS" role="status" aria-live="polite"></p>
+  <div class="erow"><button class="eb" id="edSave" type="button" hidden></button><button class="eb alt" id="edDone" type="button"></button></div>
+  <p class="esub" id="edSub" hidden></p>
+</section>
+<div class="edchip" id="edchip" hidden><button id="edOrig" type="button"></button></div>
 <main class="strip" id="strip" tabindex="-1"></main>
 <div class="desk" id="desk" hidden><div class="desk-in" id="deskIn"></div></div>
 <button class="nav prev" id="prev" aria-label="‹">‹</button>
@@ -387,7 +465,14 @@ const TX = Object.assign({ what: 'What', why: 'Why', hint: '', hint_table: '', c
                            you: 'taken by you', explorer: 'chosen by the explorer', ai: 'chosen by the AI',
                            strip: 'In a row', table: 'Scattered on the table', tidy: 'Tidy up', play: 'Slideshow',
                            all: 'All', said: 'Said along the way', end: 'End of the walk', dur: 'Duration',
-                           dist: 'Distance walked' }, D.txt || {});
+                           dist: 'Distance walked', edit: 'Edit', ed_title: 'Editing', ed_hint: 'Click any text to change it.',
+                           done: 'Done', ph_title: 'A title…', ph_what: 'What is in the photo?', ph_why: 'Why this photo?',
+                           orig: 'Back to the original', hide: 'Remove from the gallery', unhide: 'Put back',
+                           st_browser: 'Changes kept in this browser', st_saving: 'Saving…', st_folder: 'Saved in the photo folder',
+                           st_err: 'Could not write to the folder: changes stay in this browser.',
+                           st_wrong: 'This is not the folder of this gallery: choose «%{dir}».', save: 'Save to the folder',
+                           pick: 'The browser will ask for the photo folder: choose «%{dir}».', download: 'Download the changes',
+                           dl_help: 'This browser cannot write to folders: put the downloaded file in the folder «%{dir}».' }, D.txt || {});
 const PH = (Array.isArray(D.photos) ? D.photos : []).filter(p => p && typeof p.file === 'string');
 const NOTES = (Array.isArray(D.notes) ? D.notes : [])
   .filter(a => Array.isArray(a) && Number.isFinite(+a[0]) && typeof a[1] === 'string' && a[1].trim())
@@ -453,8 +538,64 @@ function titleOf(p){
 }
 const whenOf = p => p.t != null ? clock(p.t) : String(p.clock || '').slice(0, 5);
 const who = p => p.by === 'you' || p.by === 'ai' ? p.by : 'explorer';
-const byOf = p => TX[who(p)];
+const byOf = p => p.byl || TX[who(p)];
 const noOf = (p, i) => p.n || i + 1;
+
+/* ── le modifiche di chi guarda: stanno sopra i dati di SketchUp, che restano
+      com'erano (ogni testo può tornare all'originale). Nella pagina (E0, fra
+      i due segni, scritto da gal_report o da saveNow) e in
+      galleria_modifiche.json accanto alle foto: {v: 1, title, photos: {"n":
+      {title, what, why, by, hide}}, notes: {"t": testo}}. Finché non sono
+      nella cartella aspettano in questo browser. ── */
+const E0 = /*MODIFICHE*/null/*FINE*/;
+const EFILE = 'galleria_modifiche.json', HFILE = 'galleria.html', EKEY = KEY + '/modifiche';
+const obj = o => (o && typeof o === 'object' && !Array.isArray(o)) ? o : {};
+const str = v => typeof v === 'string';
+function normEd(e){
+  e = obj(e);
+  const photos = {}, notes = {};
+  Object.entries(obj(e.photos)).forEach(([k, v]) => {
+    const q = {};
+    ['title', 'what', 'why', 'by'].forEach(f => { if(str(v && v[f])) q[f] = v[f]; });
+    if(v && v.hide === true) q.hide = true;
+    if(Object.keys(q).length) photos[k] = q;
+  });
+  Object.entries(obj(e.notes)).forEach(([k, v]) => { if(str(v)) notes[k] = v; });
+  const r = { v: 1, photos, notes };
+  if(str(e.title) && e.title.trim()) r.title = e.title;
+  return r;
+}
+let ED = normEd(E0), DIRTY = false, EDIT = false, VER = 0;
+{
+  const dr = store.get(EKEY);                       /* modifiche non ancora nella cartella */
+  if(dr && dr.v === 1 && dr.ed){ ED = normEd(dr.ed); DIRTY = true; }
+}
+const autoTitle = what => { const w = String(what || '').split(/[.:;!?。]/)[0].trim(); return w.length > 46 ? w.slice(0, 44) + '…' : w; };
+const pkey = (p, i) => String(noOf(p, i));
+const edOf = i => obj(ED.photos[pkey(PH[i], i)]);
+function applyPhoto(p, i){
+  if(!p._o) p._o = { title: str(p.title) ? p.title : '', what: p.what == null ? '' : String(p.what), why: p.why == null ? '' : String(p.why) };
+  const e = edOf(i);
+  ['title', 'what', 'why'].forEach(f => { p[f] = str(e[f]) ? e[f] : p._o[f]; });
+  p.byl = str(e.by) && e.by.trim() ? e.by : '';
+  p.gone = e.hide === true;
+}
+PH.forEach(applyPhoto);
+/* i commenti dell'IA: la chiave è il secondo in cui sono stati detti (due nello stesso: ~2, ~3…) */
+{
+  const seen = {};
+  NOTES.forEach(n => {
+    const b = n[0].toFixed(2);
+    seen[b] = (seen[b] || 0) + 1;
+    n[2] = seen[b] > 1 ? b + '~' + seen[b] : b;
+    n[3] = n[1];
+  });
+}
+function applyNote(n){ n[1] = str(ED.notes[n[2]]) ? ED.notes[n[2]] : n[3]; }
+NOTES.forEach(applyNote);
+const galTitle = () => ED.title || D.title || '';
+const editAttrs = (f, i, ph, k) => ({ 'data-ed': f, 'data-i': i == null ? null : String(i), 'data-k': k == null ? null : k,
+                                     'data-ph': ph || null, tabindex: EDIT ? '0' : null });
 
 /* ── il tavolo di legno: assi con venature, nodi e giunture, disegnate una
       volta grandi quanto lo schermo (niente si ridisegna scorrendo) ── */
@@ -538,31 +679,43 @@ function plank(ctx, x0, y0, w, h, base, R){
 let DIST = 0;
 for(let j = 1; j < TRACK.length; j++) DIST += Math.hypot(TRACK[j][0] - TRACK[j - 1][0], TRACK[j][1] - TRACK[j - 1][1]);
 const DUR = Math.max(0, TRACK.length ? +TRACK[TRACK.length - 1][2] || 0 : 0, ...PH.map(p => +p.t || 0));
-const AUTH = ['you', 'explorer', 'ai'].map(a => [a, PH.filter(p => who(p) === a).length]).filter(a => a[1] > 0);
+const live = () => PH.filter(p => !p.gone);         /* le foto che la galleria mostra (non tolte) */
+let AUTH = [];
 function statsList(){
   const s = [];
   if(DUR > 0) s.push(['⏱', clock(DUR), TX.dur]);
   if(TRACK.length >= 2 && DIST > 0) s.push(['👣', dist(DIST), TX.dist]);
-  s.push(['📷', count(PH.length), TX.count.replace('%{n}', '').trim()]);
+  s.push(['📷', count(live().length), TX.count.replace('%{n}', '').trim()]);
   return s;
 }
-document.title = D.title || 'Galleria';
-$('title').textContent = D.title || '';
+const titleEl = $('title');
+Object.entries(editAttrs('gtitle', null, D.title || TX.ph_title)).forEach(([k, v]) => { if(v != null) titleEl.setAttribute(k, v); });
 $('meta').textContent = [D.model, String(D.date || '').slice(0, 16)].filter(Boolean).join('  ·  ');
-statsList().forEach(([ic, v, h]) => $('stats').appendChild(el('span', { title: h }, [document.createTextNode(ic + ' '), el('b', { text: v, dir: 'auto' })])));
 let FILTER = 'all';
-if(AUTH.length > 1){
-  [['all', PH.length]].concat(AUTH).forEach(([a, n]) => {
-    const b = el('button', { class: a, 'data-a': a, 'aria-pressed': String(a === 'all'), text: (a === 'all' ? TX.all : TX[a]) + ' · ' + n });
+function renderHead(){
+  const t = galTitle();
+  document.title = t || 'Galleria';
+  if(!titleEl.classList.contains('typing')) titleEl.textContent = t;
+  $('stats').replaceChildren(...statsList().map(([ic, v, h]) => el('span', { title: h }, [document.createTextNode(ic + ' '), el('b', { text: v, dir: 'auto' })])));
+  AUTH = ['you', 'explorer', 'ai'].map(a => [a, live().filter(p => who(p) === a).length]).filter(a => a[1] > 0);
+  if(FILTER !== 'all' && !AUTH.some(a => a[0] === FILTER)) FILTER = 'all';
+  $('who').replaceChildren();
+  $('who').hidden = AUTH.length <= 1;
+  if(AUTH.length > 1) [['all', live().length]].concat(AUTH).forEach(([a, n]) => {
+    const b = el('button', { class: a, 'data-a': a, 'aria-pressed': String(a === FILTER), text: (a === 'all' ? TX.all : TX[a]) + ' · ' + n });
     b.addEventListener('click', () => setFilter(a));
     $('who').appendChild(b);
   });
-} else $('who').hidden = true;
+}
+renderHead();
 $('vStripL').textContent = TX.strip; $('vStrip').title = TX.strip;
 $('vTableL').textContent = TX.table; $('vTable').title = TX.table;
 $('tidyL').textContent = TX.tidy; $('tidy').title = TX.tidy;
 $('playL').textContent = TX.play; $('play').title = TX.play;
 $('lbplayL').textContent = TX.play;
+$('editL').textContent = TX.edit; $('edit').title = TX.edit;
+$('edT').textContent = '✎ ' + TX.ed_title; $('edH').textContent = TX.ed_hint; $('edDone').textContent = TX.done;
+$('edOrig').textContent = '↺ ' + TX.orig;
 
 /* ── una Polaroid e il suo foglietto ── */
 function polaroid(p, i, mode){                      /* mode: strip, table, big */
@@ -570,14 +723,17 @@ function polaroid(p, i, mode){                      /* mode: strip, table, big *
   const r = rnd(seedOf(p, i));
   const rot = mode === 'strip' ? (r() * 9 - 4.5) : 0;
   const img = el('img', { src: p.file, alt: titleOf(p), draggable: 'false' });
-  const fig = el('figure', { class: 'polaroid' + (mode === 'big' ? ' dev' : ''), tabindex: mode === 'strip' ? '0' : null,
+  const fig = el('figure', { class: 'polaroid' + (mode === 'big' ? ' dev' : '') + (mode === 'big' && p.gone ? ' gone' : ''),
+                             tabindex: mode === 'strip' ? '0' : null, 'data-pi': String(i),
                              'aria-label': noOf(p, i) + ' · ' + titleOf(p),
                              style: `--ar:${ar.toFixed(4)};--rot:${rot.toFixed(2)}deg` }, [
     el('div', { class: 'photo' }, [img, el('span', { class: 'chem' })]),
     el('figcaption', { class: 'cap' }, [
       el('span', { class: 'no', text: '№ ' + noOf(p, i), dir: 'ltr' }),
-      el('span', { class: 'tt', text: titleOf(p), dir: 'auto' }),
-      el('span', { class: 'tm', text: whenOf(p), dir: 'ltr' })])
+      el('span', Object.assign({ class: 'tt', text: titleOf(p), dir: 'auto' }, editAttrs('title', i, TX.ph_title))),
+      el('span', { class: 'tm', text: whenOf(p), dir: 'ltr' })]),
+    el('button', { class: 'edx', type: 'button', 'data-x': String(i), text: p.gone ? '↺' : '✕',
+                   title: p.gone ? TX.unhide : TX.hide, 'aria-label': p.gone ? TX.unhide : TX.hide })
   ]);
   img.addEventListener('error', () => fig.classList.add('broken'));
   return fig;
@@ -602,12 +758,13 @@ function note(p, i, big){
   const r = rnd(seedOf(p, i) * 7 + 3);
   const kids = [];
   /* i testi del modello e dell'IA nella loro direzione, anche in una pagina araba o ebraica */
-  if(p.what){ kids.push(el('h3', { text: TX.what })); kids.push(el('p', { text: String(p.what), dir: 'auto' })); }
-  if(p.why){ kids.push(el('h3', { text: TX.why })); kids.push(el('p', { text: String(p.why), dir: 'auto' })); }
+  /* un testo vuoto non si vede, ma modificando c'è (col suggerimento), per scriverlo */
+  ['what', 'why'].forEach(f => kids.push(el('div', { class: 'sec' + (p[f] ? '' : ' empty') }, [
+    el('h3', { text: TX[f] }), el('p', Object.assign({ text: String(p[f] || ''), dir: 'auto' }, editAttrs(f, i, TX['ph_' + f])))])));
   const meta = el('span', { class: 'nmeta', dir: 'ltr' });
   if(Number.isFinite(+p.yaw) && p.yaw !== null) meta.appendChild(compass(+p.yaw));
   if(p.clock) meta.appendChild(document.createTextNode(String(p.clock).slice(0, 5)));
-  kids.push(el('div', { class: 'nfoot' }, [el('span', { class: 'stamp ' + who(p), text: byOf(p) }), meta]));
+  kids.push(el('div', { class: 'nfoot' }, [el('span', Object.assign({ class: 'stamp ' + who(p), text: byOf(p) }, editAttrs('by', i, TX[who(p)]))), meta]));
   const clip = !big && r() < .3;
   const n = el('aside', { class: 'note' + (clip ? ' clip' : ''),
                           style: big ? null : `--nrot:${(r() * 5 - 2.5).toFixed(2)}deg;--trot:${(r() * 8 - 4).toFixed(1)}deg` }, kids);
@@ -742,10 +899,16 @@ function saidBlock(k){
   const box = el('div', { class: 'said' });
   for(let j = 0; j < list.length; j += 3){
     const kids = j ? [] : [el('h4', { text: TX.said })];
-    list.slice(j, j + 3).forEach(([t, s]) => kids.push(el('p', {}, [el('time', { text: clock(t), dir: 'ltr' }), el('span', { text: s, dir: 'auto' })])));
+    list.slice(j, j + 3).forEach(([t, s, k]) => kids.push(el('p', { class: s ? null : 'empty' }, [el('time', { text: clock(t), dir: 'ltr' }),
+      el('span', Object.assign({ text: s, dir: 'auto' }, editAttrs('said', null, '…', k)))])));
     box.appendChild(el('div', { class: 'postit', style: `--r:${(r() * 7 - 3.5).toFixed(2)}deg` }, kids));
   }
   return box;
+}
+
+/* la scheda in fondo: titolo e numeri del giro (le foto tolte non contano) */
+function endKids(){
+  return [el('h2', { text: TX.end })].concat(statsList().map(([ic, v]) => el('p', {}, [document.createTextNode(ic + '  '), el('span', { text: v, dir: 'auto' })])));
 }
 
 /* ── in fila ── */
@@ -773,9 +936,8 @@ PH.forEach((p, i) => {
   if(said) strip.appendChild(said);
 });
 if(PH.length){
-  const st = statsList().map(([ic, v]) => el('p', {}, [document.createTextNode(ic + '  '), el('span', { text: v, dir: 'auto' })]));
   endSpread = el('section', { class: 'spread', 'data-k': 'end', style: '--dy:2vh' }, [
-    el('div', { class: 'endcard', tabindex: '0', role: 'button' }, [el('h2', { text: TX.end })].concat(st))]);
+    el('div', { class: 'endcard', tabindex: '0', role: 'button' }, endKids())]);
   const back = () => go(0);
   endSpread.firstChild.addEventListener('click', back);
   endSpread.firstChild.addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); back(); } });
@@ -796,7 +958,7 @@ if(RD){
   frames.appendChild(routeFrame);
 }
 PH.forEach((p, i) => {
-  const f = el('button', { class: 'fr', title: noOf(p, i) + ' · ' + titleOf(p), 'aria-label': noOf(p, i) + ' · ' + titleOf(p) },
+  const f = el('button', { class: 'fr', 'data-pi': String(i), title: noOf(p, i) + ' · ' + titleOf(p), 'aria-label': noOf(p, i) + ' · ' + titleOf(p) },
                [el('img', { src: p.file, alt: '', draggable: 'false' })]);
   f.addEventListener('click', () => { if(view === 'strip') goPhoto(i); else openLb(i); });
   frameOf[i] = f;
@@ -811,16 +973,19 @@ const develop = f => io ? io.observe(f) : f.classList.add('dev');
 strip.querySelectorAll('.polaroid').forEach(develop);
 
 /* ── chi ha scattato: il filtro ── */
-const shown = i => FILTER === 'all' || who(PH[i]) === FILTER;
+/* una foto tolta dalla galleria si vede solo modificando (sbiadita, per rimetterla) */
+const shown = i => (EDIT || !PH[i].gone) && (FILTER === 'all' || who(PH[i]) === FILTER);
 function vis(){ return PH.map((_, i) => i).filter(shown); }
 function setFilter(a){
   FILTER = a;
   $('who').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.a === a)));
   PH.forEach((_, i) => {
-    const h = !shown(i);
+    const h = !shown(i), g = !!PH[i].gone;
     spreadOf[i].hidden = h;
     frameOf[i].hidden = h;
-    if(TI[i + 1]) TI[i + 1].el.hidden = h;
+    spreadOf[i].classList.toggle('gone', g);
+    frameOf[i].classList.toggle('gone', g);
+    if(TI[i + 1]){ TI[i + 1].el.hidden = h; TI[i + 1].el.classList.toggle('gone', g); }
     PINS.forEach(m => { const pin = m.get(i); if(pin){ if(h) pin.setAttribute('hidden', ''); else pin.removeAttribute('hidden'); } });
   });
   show();
@@ -929,7 +1094,7 @@ function buildDesk(){
     const fig = polaroid(p, i, 'table');
     TI.push({ el: el('div', { class: 'ti', tabindex: '0', 'data-i': String(i), 'aria-label': noOf(p, i) + ' · ' + titleOf(p), role: 'button' }, [fig]), i });
   });
-  TI.forEach(t => { if(t){ t.el.hidden = t.i >= 0 && !shown(t.i); deskIn.appendChild(t.el); } });
+  TI.forEach(t => { if(t){ t.el.hidden = t.i >= 0 && !shown(t.i); t.el.classList.toggle('gone', t.i >= 0 && !!PH[t.i].gone); deskIn.appendChild(t.el); } });
   const saved = store.get(KEY);
   layoutDesk();
   if(saved && saved.v === 1 && saved.it) TI.forEach(t => {
@@ -1162,6 +1327,7 @@ lb.addEventListener('pointerup', e => {
 });
 
 document.addEventListener('keydown', e => {
+  if(editing) return;                                /* si sta scrivendo: i tasti sono del testo */
   const fwd = RTL ? 'ArrowLeft' : 'ArrowRight', back = RTL ? 'ArrowRight' : 'ArrowLeft';
   if(lbi >= 0){
     if(e.key === 'Escape') closeLb();
@@ -1186,6 +1352,315 @@ document.addEventListener('keydown', e => {
   hideHint();
 });
 
+/* ═══ modificare i testi, dove sono ═══
+   Un clic su un testo (o Invio) lo apre: Invio conferma (Maiuscolo+Invio va a
+   capo nei testi lunghi), Esc annulla, cliccare altrove conferma. Sopra il
+   testo aperto «↺ Originale» rimette quello di SketchUp. */
+let editing = null;                                  /* { el, f, i, k, before } */
+const MULTI = { what: true, why: true, said: true };
+const chip = $('edchip');
+function curVal(x){
+  const f = x.dataset.ed, i = x.dataset.i != null ? +x.dataset.i : -1;
+  if(f === 'gtitle') return galTitle();
+  if(f === 'said'){ const n = NOTES.find(q => q[2] === x.dataset.k); return n ? n[1] : ''; }
+  const p = PH[i];
+  return f === 'title' ? titleOf(p) : f === 'by' ? byOf(p) : String(p[f] || '');
+}
+function isMod(x){
+  const f = x.dataset.ed;
+  if(f === 'gtitle') return ED.title != null;
+  if(f === 'said') return str(ED.notes[x.dataset.k]);
+  const e = edOf(+x.dataset.i);
+  return f in e;
+}
+function origOf(x){
+  const f = x.dataset.ed;
+  if(f === 'gtitle') return D.title || '';
+  if(f === 'said'){ const n = NOTES.find(q => q[2] === x.dataset.k); return n ? n[3] : ''; }
+  const p = PH[+x.dataset.i];
+  return f === 'title' ? (p._o.title || autoTitle(p._o.what)) : f === 'by' ? TX[who(p)] : p._o[f];
+}
+function placeChip(){
+  if(!editing || !isMod(editing.el) && editing.el.textContent === origOf(editing.el)){ chip.hidden = true; return; }
+  const r = editing.el.getBoundingClientRect();
+  const off = r.right < 0 || r.left > window.innerWidth || r.bottom < 0 || r.top > window.innerHeight;
+  chip.hidden = off && r.width > 0;                  /* il testo è uscito dalla vista: niente etichetta sospesa altrove */
+  if(chip.hidden) return;
+  chip.style.top = Math.max(48, r.top - 8) + 'px';
+  chip.style.left = Math.max(8, Math.min(window.innerWidth - (chip.offsetWidth || 160) - 8, RTL ? r.right - (chip.offsetWidth || 160) : r.left)) + 'px';
+}
+function begin(x){
+  if(editing) commit();
+  editing = { el: x, f: x.dataset.ed, i: x.dataset.i != null ? +x.dataset.i : -1, k: x.dataset.k, before: x.textContent };
+  x.classList.add('typing');
+  x.setAttribute('contenteditable', 'plaintext-only');
+  if(x.isContentEditable === false) x.setAttribute('contenteditable', 'true');   /* browser che non lo conoscono */
+  x.setAttribute('role', 'textbox');
+  x.setAttribute('aria-multiline', String(!!MULTI[x.dataset.ed]));
+  x.spellcheck = true;
+  try { x.focus({ preventScroll: true }); } catch(e){ /* niente */ }
+  try {
+    const s = window.getSelection(), r = document.createRange();
+    r.selectNodeContents(x); r.collapse(false); s.removeAllRanges(); s.addRange(r);
+  } catch(e){ /* niente */ }
+  placeChip();
+}
+function finish(x){
+  x.removeAttribute('contenteditable');
+  x.removeAttribute('role');
+  x.removeAttribute('aria-multiline');
+  x.classList.remove('typing');
+  editing = null;
+  chip.hidden = true;
+}
+function commit(){
+  if(!editing) return;
+  const { el: x, f, i, k } = editing;
+  const raw = typeof x.innerText === 'string' ? x.innerText : x.textContent;
+  let v = String(raw).replace(/\r/g, '').replace(/ /g, ' ');
+  v = MULTI[f] ? v.replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim() : v.replace(/\s+/g, ' ').trim();
+  finish(x);
+  setVal(f, i, k, v);
+}
+function cancel(){
+  if(!editing) return;
+  const x = editing.el;
+  x.textContent = editing.before;
+  finish(x);
+  refreshAll();
+}
+function setVal(f, i, k, v){
+  if(f === 'gtitle'){ if(!v || v === (D.title || '')) delete ED.title; else ED.title = v; }
+  else if(f === 'said'){
+    const n = NOTES.find(q => q[2] === k);
+    if(!n) return;
+    if(v === n[3]) delete ED.notes[k]; else ED.notes[k] = v;
+  } else {
+    const p = PH[i], key = pkey(p, i), e = Object.assign({}, edOf(i));
+    if(f === 'by'){ if(!v || v === TX[who(p)]) delete e.by; else e.by = v; }
+    else if(f === 'title'){ if(!v || v === (p._o.title || autoTitle(p._o.what))) delete e.title; else e.title = v; }
+    else if(v === p._o[f]) delete e[f]; else e[f] = v;
+    if(Object.keys(e).length) ED.photos[key] = e; else delete ED.photos[key];
+  }
+  changed();
+}
+function toggleGone(i){
+  const p = PH[i], key = pkey(p, i), e = Object.assign({}, edOf(i));
+  if(p.gone) delete e.hide; else e.hide = true;
+  if(Object.keys(e).length) ED.photos[key] = e; else delete ED.photos[key];
+  changed();
+}
+function changed(){ refreshAll(); persist(); }
+
+/* tutto ciò che mostra una foto o un testo, rifatto dai dati di adesso */
+function refreshAll(){
+  PH.forEach(applyPhoto);
+  NOTES.forEach(applyNote);
+  document.querySelectorAll('[data-ed]').forEach(x => {
+    if(editing && x === editing.el) return;
+    const v = curVal(x);
+    if(x.textContent !== v) x.textContent = v;
+    x.classList.toggle('mod', isMod(x));
+    if(EDIT) x.tabIndex = 0; else x.removeAttribute('tabindex');
+    const sec = x.closest('.sec');
+    if(sec) sec.classList.toggle('empty', !v);
+    if(x.dataset.ed === 'said') x.parentNode.classList.toggle('empty', !v);
+  });
+  PH.forEach((p, i) => {
+    const lab = noOf(p, i) + ' · ' + titleOf(p);
+    document.querySelectorAll(`[data-pi="${i}"]`).forEach(x => {
+      if(x.classList.contains('fr')) x.title = lab;
+      x.setAttribute('aria-label', lab);
+      const im = x.classList.contains('polaroid') && x.querySelector('.photo img');
+      if(im) im.alt = titleOf(p);
+    });
+    if(TI[i + 1]) TI[i + 1].el.setAttribute('aria-label', lab);
+    PINS.forEach(m => { const pin = m.get(i); const t = pin && pin.querySelector('title'); if(t) t.textContent = lab; });
+  });
+  document.querySelectorAll('.edx').forEach(b => {
+    const g = !!PH[+b.dataset.x].gone;
+    b.textContent = g ? '↺' : '✕';
+    b.title = g ? TX.unhide : TX.hide;
+    b.setAttribute('aria-label', b.title);
+    const fig = b.closest('.polaroid');
+    if(fig && fig.closest('.lb')) fig.classList.toggle('gone', g);
+  });
+  renderHead();
+  if(endSpread) endSpread.firstChild.replaceChildren(...endKids());
+  setFilter(FILTER);
+}
+
+function setEdit(on){
+  if(!on && editing) commit();
+  EDIT = !!on;
+  document.body.classList.toggle('editing', EDIT);
+  $('edit').setAttribute('aria-pressed', String(EDIT));
+  $('editcard').hidden = !EDIT;
+  if(EDIT) hideHint();
+  refreshAll();
+  status();
+}
+$('edit').addEventListener('click', () => setEdit(!EDIT));
+$('edDone').addEventListener('click', () => setEdit(false));
+
+/* prima di tutti gli altri: un clic su un testo lo apre invece di aprire la
+   foto o di trascinare; ✕/↺ toglie o rimette la foto */
+document.addEventListener('pointerdown', e => {
+  if(EDIT && e.target.closest && e.target.closest('[data-ed], .edx')) e.stopPropagation();
+}, true);
+document.addEventListener('click', e => {
+  if(!EDIT || !e.target.closest) return;
+  const x = e.target.closest('.edx');
+  if(x){ e.preventDefault(); e.stopPropagation(); if(editing) commit(); toggleGone(+x.dataset.x); return; }
+  const f = e.target.closest('[data-ed]');
+  if(f){ e.preventDefault(); e.stopPropagation(); if(!editing || editing.el !== f) begin(f); }
+}, true);
+document.addEventListener('keydown', e => {
+  if(editing && editing.el.contains(e.target)){
+    if(e.key === 'Escape'){ e.preventDefault(); cancel(); }
+    else if(e.key === 'Enter' && !(e.shiftKey && MULTI[editing.f])){ e.preventDefault(); commit(); }
+    e.stopPropagation();                             /* le frecce, lo spazio… restano al testo */
+    return;
+  }
+  if(!EDIT) return;
+  if(e.key === 'Enter' && e.target.matches && e.target.matches('[data-ed]')){ e.preventDefault(); e.stopPropagation(); begin(e.target); }
+  else if(e.key === 'Escape' && lbi < 0){ e.preventDefault(); e.stopPropagation(); setEdit(false); }
+}, true);
+document.addEventListener('input', e => { if(editing && e.target === editing.el) placeChip(); }, true);
+document.addEventListener('focusout', e => {
+  if(editing && e.target === editing.el && e.relatedTarget !== $('edOrig')) commit();
+}, true);
+document.addEventListener('paste', e => {              /* solo testo, mai HTML */
+  if(!editing || !editing.el.contains(e.target) || !e.clipboardData) return;
+  e.preventDefault();
+  const t = e.clipboardData.getData('text/plain');
+  if(!(document.execCommand && document.execCommand('insertText', false, t))) editing.el.textContent += t;
+}, true);
+chip.addEventListener('pointerdown', e => e.preventDefault());   /* il testo resta aperto */
+$('edOrig').addEventListener('click', () => {
+  if(!editing) return;
+  editing.el.textContent = origOf(editing.el);
+  commit();
+});
+window.addEventListener('resize', placeChip);
+strip.addEventListener('scroll', () => { if(editing) placeChip(); }, { passive: true });
+
+/* ── dove vanno le modifiche: subito in questo browser; con «Salva nella
+      cartella» (Edge, Chrome: File System Access) in galleria_modifiche.json
+      e nella pagina stessa, così restano anche mandando la cartella a
+      qualcuno. La cartella scelta si ricorda (IndexedDB): le volte dopo il
+      browser chiede solo il permesso, e poi si salva da sé. ── */
+/* D.spare: le foto sono in %APPDATA%, dove Edge e Chrome non lasciano scegliere cartelle */
+const CAN_DIR = typeof window.showDirectoryPicker === 'function' && !D.spare;
+let DIR = null, DIRPERM = false, ST = '', saveT = 0;
+const embed = e => JSON.stringify(e).replace(/</g, '\\u003c').replace(/\*\//g, '*\\/');
+const edEmpty = () => !ED.title && !Object.keys(ED.photos).length && !Object.keys(ED.notes).length;
+const dirName = () => D.id || '';
+function persist(){
+  VER++;
+  DIRTY = true;
+  store.set(EKEY, { v: 1, at: Date.now(), ed: ED });
+  if(ST === 'wrong' || ST === 'err') ST = '';
+  if(DIR && DIRPERM) saveSoon();
+  status();
+}
+function status(){
+  const s = $('edS'), sv = $('edSave'), sub = $('edSub');
+  let txt = '', cls = '', btn = '', help = '';
+  if(ST === 'saving'){ txt = TX.st_saving; cls = 'saving'; }
+  else if(ST === 'wrong'){ txt = TX.st_wrong.replace('%{dir}', dirName()); cls = 'err'; btn = TX.save; }
+  else if(ST === 'err'){ txt = TX.st_err; cls = 'err'; btn = TX.save; }
+  else if(DIRTY){
+    txt = TX.st_browser;
+    if(CAN_DIR){ btn = TX.save; if(!DIR) help = TX.pick.replace('%{dir}', dirName()); }
+    else { btn = TX.download; help = TX.dl_help.replace('%{dir}', dirName()); }
+  } else if(!edEmpty() || ST === 'folder'){ txt = TX.st_folder; cls = 'folder'; }
+  s.textContent = txt;
+  s.className = 'est' + (cls ? ' ' + cls : '');
+  sv.hidden = !btn;
+  sv.textContent = btn;
+  sub.hidden = !help;
+  sub.textContent = help;
+}
+function saveSoon(){ clearTimeout(saveT); saveT = setTimeout(saveNow, 700); }
+async function writeFile(dir, name, text){
+  const h = await dir.getFileHandle(name, { create: true });
+  const w = await h.createWritable();
+  await w.write(text);
+  await w.close();
+}
+/* la cartella giusta: quella col nome della serie, o con le foto di questa galleria */
+async function isOurs(h){
+  try {
+    const j = JSON.parse(await (await (await h.getFileHandle('galleria.json')).getFile()).text());
+    const there = new Set((Array.isArray(j.photos) ? j.photos : []).map(p => p && p.file));
+    return (!!dirName() && h.name === dirName()) || (PH.length > 0 && PH.every(p => there.has(p.file)));
+  } catch(e){ return false; }
+}
+async function saveNow(){
+  if(!DIR) return;
+  clearTimeout(saveT);
+  const ver = VER;
+  ST = 'saving'; status();
+  try {
+    await writeFile(DIR, EFILE, JSON.stringify(Object.assign({}, ED, { saved: new Date().toISOString() }), null, 1) + '\n');
+    try {                                            /* la pagina stessa, se è ancora quella con i segni */
+      const html = await (await (await DIR.getFileHandle(HFILE)).getFile()).text();
+      const re = /\/\*MODIFICHE\*\/[\s\S]*?\/\*FINE\*\//;
+      if(re.test(html)) await writeFile(DIR, HFILE, html.replace(re, () => '/*MODIFICHE*/' + embed(ED) + '/*FINE*/'));
+    } catch(e){ /* niente: SketchUp la rifà da galleria_modifiche.json */ }
+    ST = 'folder';
+    if(ver === VER){ DIRTY = false; store.set(EKEY, null); } else saveSoon();
+  } catch(e){ DIRPERM = false; ST = 'err'; }
+  status();
+}
+async function toFolder(){
+  try {
+    if(DIR && !DIRPERM && DIR.requestPermission) DIRPERM = (await DIR.requestPermission({ mode: 'readwrite' })) === 'granted';
+    if(!DIR || !DIRPERM){
+      const h = await window.showDirectoryPicker({ id: 'dagawasd-foto', mode: 'readwrite' });
+      if(!(await isOurs(h))){ ST = 'wrong'; status(); return; }
+      DIR = h; DIRPERM = true;
+      dbPut(h);
+    }
+    await saveNow();
+  } catch(e){
+    if(!(e && e.name === 'AbortError')){ ST = 'err'; status(); }
+  }
+}
+function download(){
+  try {
+    const a = el('a', { href: URL.createObjectURL(new Blob([JSON.stringify(ED, null, 1) + '\n'], { type: 'application/json' })), download: EFILE });
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  } catch(e){ /* niente */ }
+}
+$('edSave').addEventListener('click', () => { if(CAN_DIR) toFolder(); else download(); });
+function db(){
+  return new Promise((ok, ko) => {
+    try {
+      const r = window.indexedDB.open('dagawasd-galleria', 1);
+      r.onupgradeneeded = () => r.result.createObjectStore('cartelle');
+      r.onsuccess = () => ok(r.result);
+      r.onerror = () => ko(r.error);
+    } catch(e){ ko(e); }
+  });
+}
+async function dbPut(h){ try { (await db()).transaction('cartelle', 'readwrite').objectStore('cartelle').put(h, KEY); } catch(e){ /* niente */ } }
+async function dbGet(){
+  try {
+    const d = await db();
+    return await new Promise(ok => { const q = d.transaction('cartelle').objectStore('cartelle').get(KEY); q.onsuccess = () => ok(q.result || null); q.onerror = () => ok(null); });
+  } catch(e){ return null; }
+}
+if(CAN_DIR && window.indexedDB) dbGet().then(async h => {
+  if(!h || !h.queryPermission) return;
+  DIR = h;
+  try { DIRPERM = (await h.queryPermission({ mode: 'readwrite' })) === 'granted'; } catch(e){ DIRPERM = false; }
+  if(DIRPERM && DIRTY) saveSoon();
+  status();
+});
+
 /* #3: la foto 3 sul tavolo; #3z: in grande */
 function fromHash(){
   const m = /^#(\d+)(z?)$/.exec(location.hash || '');
@@ -1198,7 +1673,9 @@ function fromHash(){
 }
 window.addEventListener('hashchange', fromHash);
 
-if(!PH.length){ $('play').hidden = true; $('seg').hidden = true; }
+if(!PH.length){ $('play').hidden = true; $('seg').hidden = true; $('edit').hidden = true; }
+if(PH.some(p => p.gone)) setFilter(FILTER);          /* le foto tolte (modifiche già salvate) non si vedono */
+status();
 wood();
 showHint(TX.hint);
 playUI();

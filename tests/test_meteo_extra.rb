@@ -114,6 +114,19 @@ F.instance_variable_set(:@storm_glow, 0.8)
 v = XView.new
 F.storm_draw(v)
 ok(v.calls.count { |c| c[1] == GL_LINE_STRIP } == 2 && v.calls.any? { |c| c[0] == :draw2d }, 'lampo: fulmine (alone e linea) e vista schiarita')
+cfg['no_flashes'] = true
+F.storm_step(101.0)
+ok(F.instance_variable_get(:@storm).nil? && F.instance_variable_get(:@storm_glow).to_f.zero?,
+   'Accessibilità › Niente lampi: il lampo in corso si spegne subito')
+F.instance_variable_set(:@storm_next, 200.0)
+F.storm_step(200.0)
+ok(F.instance_variable_get(:@storm).nil? && F.storm_on?, 'Niente lampi: il temporale resta (pioggia), senza fulmini')
+v2 = XView.new
+F.storm_draw(v2)
+ok(v2.calls.empty?, 'Niente lampi: nulla da disegnare')
+cfg['no_flashes'] = false
+F.instance_variable_set(:@storm_glow, 0.8)
+F.instance_variable_set(:@storm, s)
 lit, = F.cloud_colors
 cfg['storm'] = false
 lit2, = F.cloud_colors

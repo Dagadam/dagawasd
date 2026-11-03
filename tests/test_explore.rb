@@ -1303,6 +1303,18 @@ ok(dati_pagina && dati_pagina['title'] == salvato && dati_pagina['photos'].size 
    dati_pagina['txt']['why'] == F.t('gal.why') && dati_pagina['lang'] == pagina && dati_pagina['track'].size == 2 &&
    html.scan('</script>').size == 1 && !html.include?('/*DATI*/'),
    "galleria.html accanto alle foto, coi dati dentro (un </script> nei testi non la rompe)")
+ok(html.include?('/*MODIFICHE*/null/*FINE*/'), 'senza modifiche: il loro posto nella pagina, vuoto')
+# le modifiche di chi guarda (le scrive la pagina): nella pagina, fra i loro segni, e mai prese per HTML
+mod_file = File.join(gal[:dir], F::GAL_EDITS)
+File.write(mod_file, JSON.generate('v' => 1, 'title' => 'Sera </script><!-- */', 'photos' => { '1' => { 'what' => 'Il cratere' } }), mode: 'wb')
+html = File.read(F.gal_report(gal[:dir], salvato), encoding: 'UTF-8')
+mod_js = html[%r{/\*MODIFICHE\*/(.*?)/\*FINE\*/}m, 1].to_s
+ok(JSON.parse(mod_js)['photos']['1']['what'] == 'Il cratere' && JSON.parse(mod_js)['title'] == 'Sera </script><!-- */' &&
+   html.scan('</script>').size == 1 && !mod_js.include?('<') && !mod_js.include?('*/'),
+   'galleria_modifiche.json nella pagina; </script>, <!-- e */ nei testi non la rompono')
+File.write(mod_file, '{rotto', mode: 'wb')
+ok(File.read(F.gal_report(gal[:dir], salvato), encoding: 'UTF-8').include?('/*MODIFICHE*/null/*FINE*/'), 'un file di modifiche rotto: la galleria si apre senza')
+File.delete(mod_file)
 ok(F.gal_url('C:\\Foto mie\\è #1.html') == 'file:///C:/Foto%20mie/%C3%A8%20%231.html', 'indirizzo file:/// della galleria, con spazi e accenti')
 aperto = nil
 UI.define_singleton_method(:openURL) { |u| aperto = u }
@@ -1334,6 +1346,9 @@ F.instance_variable_set(:@gal_loose, nil)
 fuori = F.gal_human(view, 5.0)
 ok(fuori && fuori['by'] == 'you' && fuori['t'].nil? && fuori['what'].to_s.size > 3 && $status.include?('1') && F.gal_flash.to_f > 0,
    "foto di chi cammina, fuori da una registrazione: «#{fuori && fuori['what']}», col lampo")
+F.instance_variable_get(:@cfg)['no_flashes'] = true
+ok(F.gal_flash.nil? && F.instance_variable_get(:@gal_flash).nil?, 'Accessibilità › Niente lampi: lo scatto non fa lampo')
+F.instance_variable_get(:@cfg)['no_flashes'] = false
 F.instance_variable_set(:@path_rec, { t0: 0.0, last: nil, shown: -1,
                                       s: [[0.0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 60], [5.0, 3 * M, 0, 0, 1, 0, 0, 0, 0, 1, 60]] })
 dentro = F.gal_human(view, 2.5)
@@ -1360,6 +1375,8 @@ F.define_singleton_method(:gal_spare_root) { File.join(tmp, 'riserva') }
 ris = F.gal_new(model)
 F.instance_variable_set(:@gal_root, File.join(tmp, 'foto'))
 ok(ris && File.dirname(ris[:dir]) == File.join(tmp, 'riserva') && File.directory?(ris[:dir]), 'cartella del modello in sola lettura: le foto in riserva')
+ok(F.gal_spare?(ris[:dir]) && !F.gal_spare?(File.join(tmp, 'foto', 'x')) && !F.gal_spare?(File.join(tmp, 'riserva_altra', 'x')),
+   'una serie in riserva (%APPDATA%) la galleria lo sa: lì il browser non sceglie cartelle, si scaricano le modifiche')
 # La graduatoria: una meta vista prima e ora raggiunta conta una volta, col suo punteggio di allora
 exg = { snaps: true, snap_want: nil, x: 0.0, y: 0.0, yaw: 0.0, gal_st: { n: 0, t: -1e9, open_t: -1e9, scores: [1.0, 5.0], ids: [], poses: [] } }
 F.gal_consider(exg, { id: 'a', score: 6.0, gal_rank: 1.0 }, 100.0)

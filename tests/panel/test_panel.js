@@ -73,6 +73,12 @@ w.addEventListener('load', () => {
   ok(d.querySelector('#tabs1 button[data-t="camera"]').classList.contains('hit'), 'tab Camera evidenziato');
   ok(w.eval('curTab') === 'camera', 'salta al tab con risultati');
   ok(d.querySelector('#tabs2 button.act').classList.contains('hit'), 'sotto-tab attivo evidenziato');
+  // 1b. Accessibilità: tab proprio, con icona, e «Niente lampi» si trova cercando
+  const tabAcc = d.querySelector('#tabs1 button[data-t="access"]');
+  ok(tabAcc && tabAcc.querySelector('svg path') && tabAcc.textContent.includes('Accessibilità'), 'tab Accessibilità, con la sua icona');
+  type('niente lampi');
+  ok(w.eval('curTab') === 'access' && d.querySelector('.row[data-k="no_flashes"]').classList.contains('hit'),
+     '"niente lampi" porta ad Accessibilità › Niente lampi');
   // 2. senza accenti / maiuscole
   type('DENSITA');
   ok(d.querySelector('.row[data-k="obj_density"]').classList.contains('hit'), '"DENSITA" trova "Densità" (accenti e maiuscole ignorati)');

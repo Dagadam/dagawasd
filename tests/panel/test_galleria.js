@@ -69,7 +69,9 @@ const key = (w, el, k) => el.dispatchEvent(new w.KeyboardEvent('keydown', { key:
   ok(d.querySelectorAll('#strip .polaroid').length === 5 && d.querySelectorAll('#strip .note').length === 5 &&
      d.querySelectorAll('#strip .polaroid.dev').length === 5, 'ogni foto col suo foglietto; senza IntersectionObserver già sviluppate');
   const n2 = d.querySelectorAll('#strip .note')[1];
-  ok(n2.textContent.includes(it['gal.what']) && !n2.textContent.includes(it['gal.why']) && n2.querySelector('.stamp.you') &&
+  const vis2 = x => w.getComputedStyle(x).display !== 'none';
+  const secs2 = [...n2.querySelectorAll('.sec')];
+  ok(secs2.length === 2 && vis2(secs2[0]) && secs2[0].textContent.includes(it['gal.what']) && !vis2(secs2[1]) && n2.querySelector('.stamp.you') &&
      n2.querySelector('.stamp').textContent === it['gal.by_you'], 'la foto di chi cammina: che cosa senza perché, timbro «tu»');
   const caps = [...d.querySelectorAll('#strip .cap .tt')].map(x => x.textContent);
   ok(caps[0] === 'Titolo 1' && caps[1] === '<img src=x onerror="window', 'didascalia: il titolo, o il che cosa fino al primo punto');
@@ -191,3 +193,190 @@ const key = (w, el, k) => el.dispatchEvent(new w.KeyboardEvent('keydown', { key:
   ok(d.querySelector('.note h3').textContent === 'What' && !d.querySelector('.sheet') && d.querySelectorAll('#strip > .spread').length === 2 &&
      !errs.length, 'senza testi e senza giro: in inglese, niente mappa');
 }
+
+// ── modificare i testi, dove sono (WYSIWYG) ──
+// le modifiche dentro la pagina come le scrive gal_report; la cartella delle
+// foto finta (File System Access) per «Salva nella cartella».
+const withEd = (d, ed) => page(d).replace('/*MODIFICHE*/null/*FINE*/',
+  () => '/*MODIFICHE*/' + JSON.stringify(ed).replace(/</g, '\\u003c').replace(/\*\//g, '*\\/') + '/*FINE*/');
+const ITKEY = 'dagawasd-galleria/2026-10-28_20-19-38/2026-10-28 20:19:38/modifiche';
+function openEd(html, o){
+  o = o || {};
+  const errs = [];
+  const vc = new VirtualConsole();
+  vc.on('jsdomError', e => { if(!/Not implemented/.test(e.message)) errs.push(e.message); });
+  const dom = new JSDOM(html, {
+    url: 'http://localhost/foto/galleria.html', runScripts: 'dangerously', pretendToBeVisual: true, virtualConsole: vc,
+    beforeParse(w){
+      w.HTMLElement.prototype.scrollIntoView = function(){ w.scrolled = this; };
+      if(o.draft) w.localStorage.setItem(ITKEY, JSON.stringify(o.draft));
+      if(o.dir) w.showDirectoryPicker = async () => o.dir.h;
+    }
+  });
+  return { w: dom.window, d: dom.window.document, errs };
+}
+function fakeDir(name, files){
+  const writes = {};
+  const h = { name, kind: 'directory',
+    async getFileHandle(n, opt){
+      if(!(n in files) && !(opt && opt.create)){ const e = new Error('manca ' + n); e.name = 'NotFoundError'; throw e; }
+      return { async getFile(){ return { async text(){ return files[n]; } }; },
+               async createWritable(){ let b = ''; return { async write(t){ b += t; }, async close(){ files[n] = b; writes[n] = b; } }; } };
+    },
+    async queryPermission(){ return 'granted'; }, async requestPermission(){ return 'granted'; } };
+  return { h, files, writes };
+}
+const tick = ms => new Promise(r => setTimeout(r, ms || 30));
+const typeIn = (w, x, s) => { x.textContent = s; key(w, x, 'Enter'); };
+(async () => {
+  ok(page(DATA).split('/*MODIFICHE*/null/*FINE*/').length === 2, 'lo stampo ha un segnaposto per le modifiche');
+  {
+    const { w, d, errs } = openEd(page(DATA));
+    const $ = id => d.getElementById(id);
+    const cap1 = () => d.querySelector('#strip .spread[data-i="0"] .cap .tt');
+    ok($('edit') && !$('edit').hidden && $('editL').textContent === it['gal.ed.edit'] && $('editcard').hidden &&
+       !d.body.classList.contains('editing'), 'il pulsante «' + it['gal.ed.edit'] + '»; il foglietto della modifica nascosto');
+    $('edit').click();
+    ok(d.body.classList.contains('editing') && !$('editcard').hidden && $('edit').getAttribute('aria-pressed') === 'true' &&
+       $('edT').textContent.includes(it['gal.ed.title']) && cap1().getAttribute('tabindex') === '0',
+       'modificando: il foglietto giallo, i testi raggiungibili col tasto Tab');
+    ok(!$('edS').textContent && $('edSave').hidden, 'ancora nessuna modifica: nessuno stato, niente da salvare');
+    ev(w, cap1(), 'click');
+    ok(cap1().getAttribute('contenteditable') && cap1().classList.contains('typing') && !$('lb').classList.contains('on'),
+       'un clic sul titolo lo apre dove sta, invece di aprire la foto');
+    const sx = w.scrolled;
+    cap1().textContent = 'Il cratere';
+    key(w, cap1(), 'ArrowRight');
+    ok(w.scrolled === sx && cap1().getAttribute('contenteditable'), 'scrivendo, le frecce restano al testo (la fila non scorre)');
+    key(w, cap1(), 'Enter');
+    ok(!cap1().hasAttribute('contenteditable') && cap1().textContent === 'Il cratere' && cap1().classList.contains('mod'),
+       'Invio conferma: il titolo nuovo, col segno a matita');
+    ok(d.querySelector('.fr[data-pi="0"]').title === '1 · Il cratere' &&
+       d.querySelector('#strip .polaroid[data-pi="0"]').getAttribute('aria-label') === '1 · Il cratere',
+       'il titolo nuovo anche nel rullino e per chi legge lo schermo');
+    let dr = JSON.parse(w.localStorage.getItem(ITKEY));
+    ok(dr && dr.v === 1 && dr.ed.photos['1'].title === 'Il cratere', 'la modifica aspetta in questo browser');
+    ok($('edS').textContent === it['gal.ed.st_browser'] && $('edSave').textContent === it['gal.ed.download'] && !$('edSub').hidden &&
+       $('edSub').textContent.includes('2026-10-28_20-19-38'), 'browser che non scrive nelle cartelle: «' + it['gal.ed.download'] + '», e dove metterlo');
+    // Esc annulla
+    const what2 = d.querySelector('#strip .spread[data-i="1"] .note p[data-ed="what"]');
+    const prima = what2.textContent;
+    ev(w, what2, 'click');
+    what2.textContent = 'Non va bene';
+    key(w, what2, 'Escape');
+    ok(what2.textContent === prima && !what2.hasAttribute('contenteditable') && d.body.classList.contains('editing'), 'Esc annulla: il testo di prima');
+    // un testo vuotato: guardando sparisce, modificando resta (per riscriverlo)
+    ev(w, what2, 'click');
+    typeIn(w, what2, '   ');
+    const sec = what2.closest('.sec');
+    ok(sec.classList.contains('empty') && w.getComputedStyle(sec).display !== 'none' && what2.getAttribute('data-ph') === it['gal.ed.ph_what'],
+       'un testo vuotato: modificando resta, col suggerimento «' + it['gal.ed.ph_what'] + '»');
+    // il perché che non c'era, su due righe
+    const why2 = d.querySelector('#strip .spread[data-i="1"] .note p[data-ed="why"]');
+    ev(w, why2, 'click');
+    why2.textContent = 'Riga uno\nriga due';
+    key(w, why2, 'Enter');
+    ok(why2.textContent === 'Riga uno\nriga due' && !why2.closest('.sec').classList.contains('empty'), 'un perché che mancava; due righe restano due');
+    // tornare all'originale
+    ev(w, cap1(), 'click');
+    ok(!$('edchip').hidden, 'sopra un testo cambiato: «' + it['gal.ed.orig'] + '»');
+    $('edOrig').click();
+    ok(cap1().textContent === 'Titolo 1' && !cap1().classList.contains('mod') && !JSON.parse(w.localStorage.getItem(ITKEY)).ed.photos['1'],
+       '↺ rimette il titolo di SketchUp, e la modifica sparisce');
+    // il timbro e il titolo della galleria
+    const st1 = d.querySelector('#strip .spread[data-i="0"] .stamp');
+    ev(w, st1, 'click'); typeIn(w, st1, 'Marco');
+    ev(w, $('title'), 'click'); typeIn(w, $('title'), 'Stromboli, di sera');
+    ok(st1.textContent === 'Marco' && st1.classList.contains('explorer') && $('title').textContent === 'Stromboli, di sera' &&
+       d.title === 'Stromboli, di sera', 'il timbro dice chi vuoi (il filtro resta per autore); il titolo della galleria anche nella scheda');
+    // togliere una foto
+    const sp3 = d.querySelector('#strip .spread[data-i="2"]');
+    sp3.querySelector('.edx').click();
+    ok(sp3.classList.contains('gone') && !sp3.hidden && sp3.querySelector('.edx').textContent === '↺' &&
+       sp3.querySelector('.edx').getAttribute('aria-label') === it['gal.ed.unhide'] && $('stats').textContent.includes('4 foto'),
+       'togliere una foto: modificando resta, sbiadita, con ↺; i numeri contano 4 foto');
+    // un commento dell'IA vuotato
+    const said = d.querySelector('.said span[data-ed="said"]');
+    ev(w, said, 'click'); typeIn(w, said, '');
+    $('edDone').click();
+    ok(!d.body.classList.contains('editing') && $('editcard').hidden && cap1().getAttribute('tabindex') == null,
+       '«' + it['gal.ed.done'] + '»: si torna a guardare');
+    ok(sp3.hidden && d.querySelector('.fr[data-pi="2"]').hidden, 'guardando, la foto tolta non c\'è (né nel rullino)');
+    ok(w.getComputedStyle(sec).display === 'none' && w.getComputedStyle(said.parentNode).display === 'none',
+       'guardando, il testo vuotato e il commento tolto non si vedono');
+    ev(w, cap1(), 'click');
+    ok(!d.querySelector('#strip .cap .tt[contenteditable]'), 'guardando, un clic sul titolo non lo apre');
+    key(w, d.body, 'Escape');
+    $('play').click();
+    const seen = [d.querySelector('#lb .cap .no').textContent];
+    for(let k = 0; k < 6 && !$('lbnext').disabled; k++){ $('lbnext').click(); seen.push(d.querySelector('#lb .cap .no').textContent); }
+    ok(seen.length === 4 && !seen.includes('№ 3'), 'la presentazione salta la foto tolta: ' + seen.join(' '));
+    key(w, d.body, 'Escape');
+    dr = JSON.parse(w.localStorage.getItem(ITKEY));
+    ok(dr.ed.title === 'Stromboli, di sera' && dr.ed.photos['1'].by === 'Marco' && dr.ed.photos['2'].what === '' &&
+       dr.ed.photos['3'].hide === true && Object.values(dr.ed.notes).includes(''),
+       'tutto nella bozza: titolo, timbro, testo vuotato, foto tolta, commento tolto');
+    ok(!errs.length, 'nessun errore modificando' + (errs.length ? ': ' + errs[0] : ''));
+  }
+  // la pagina con le modifiche dentro (da gal_report o da «Salva nella cartella»)
+  {
+    const ed = { v: 1, title: 'Titolo <b>nuovo</b>', photos: { '4': { what: '<img src=x onerror="window.rotto=1"> */ </script>' }, '5': { hide: true } },
+                 notes: { '2.00': 'Detto meglio' } };
+    const { w, d, errs } = openEd(withEd(DATA, ed));
+    ok(!errs.length && d.getElementById('title').textContent === 'Titolo <b>nuovo</b>' && !w.rotto &&
+       d.querySelector('#strip .spread[data-i="3"] .note p').textContent === '<img src=x onerror="window.rotto=1"> */ </script>',
+       'le modifiche nella pagina si vedono, e restano testo (anche con */ e </script>)');
+    ok(d.querySelector('#strip .spread[data-i="4"]').hidden && d.getElementById('stats').textContent.includes('4 foto') &&
+       [...d.querySelectorAll('.said span')].some(s => s.textContent === 'Detto meglio'), 'la foto tolta non c\'è, il commento è quello riscritto');
+    d.getElementById('edit').click();
+    ok(d.getElementById('edS').textContent === it['gal.ed.st_folder'] && d.getElementById('edSave').hidden,
+       'modifiche già nella cartella: «' + it['gal.ed.st_folder'] + '», niente da salvare');
+  }
+  // la bozza si ritrova; «Salva nella cartella»; poi si salva da sé
+  {
+    const empty = { v: 1, photos: {}, notes: {} };
+    const files = { 'galleria.json': JSON.stringify({ photos: DATA.photos.map(p => ({ file: p.file })) }), 'galleria.html': withEd(DATA, empty) };
+    const fd = fakeDir('2026-10-28_20-19-38', files);
+    const { w, d, errs } = openEd(withEd(DATA, empty), { dir: fd, draft: { v: 1, ed: { v: 1, photos: { '1': { title: 'Dalla bozza' } }, notes: {} } } });
+    const $ = id => d.getElementById(id);
+    ok(d.querySelector('#strip .spread[data-i="0"] .cap .tt').textContent === 'Dalla bozza', 'la bozza di questo browser si ritrova');
+    $('edit').click();
+    ok($('edS').textContent === it['gal.ed.st_browser'] && $('edSave').textContent === it['gal.ed.save'] &&
+       $('edSub').textContent === it['gal.ed.pick'].replace('%{dir}', '2026-10-28_20-19-38'), '«' + it['gal.ed.save'] + '», e quale cartella scegliere');
+    $('edSave').click();
+    await tick(60);
+    const saved = JSON.parse(fd.writes['galleria_modifiche.json'] || 'null');
+    ok(saved && saved.v === 1 && saved.photos['1'].title === 'Dalla bozza' && saved.saved, 'scritto galleria_modifiche.json nella cartella');
+    const m = /\/\*MODIFICHE\*\/([\s\S]*?)\/\*FINE\*\//.exec(fd.writes['galleria.html'] || '');
+    ok(m && JSON.parse(m[1]).photos['1'].title === 'Dalla bozza', 'e nella pagina stessa: mandandola a qualcuno, le modifiche ci sono');
+    ok($('edS').textContent === it['gal.ed.st_folder'] && $('edS').classList.contains('folder') && $('edSave').hidden &&
+       w.localStorage.getItem(ITKEY) === 'null', 'salvate: «' + it['gal.ed.st_folder'] + '», la bozza non serve più');
+    const c2 = d.querySelector('#strip .spread[data-i="1"] .cap .tt');
+    ev(w, c2, 'click'); typeIn(w, c2, 'Il porto');
+    await tick(900);
+    ok(JSON.parse(fd.files['galleria_modifiche.json']).photos['2'].title === 'Il porto' && $('edS').textContent === it['gal.ed.st_folder'],
+       'cartella scelta: le modifiche dopo si salvano da sé');
+    ok(!errs.length, 'nessun errore salvando' + (errs.length ? ': ' + errs[0] : ''));
+  }
+  // la cartella sbagliata
+  {
+    const fd = fakeDir('Documenti', { 'galleria.json': JSON.stringify({ photos: [{ file: 'altro.jpg' }] }) });
+    const { w, d } = openEd(page(DATA), { dir: fd });
+    d.getElementById('edit').click();
+    const c = d.querySelector('#strip .spread[data-i="0"] .cap .tt');
+    ev(w, c, 'click'); typeIn(w, c, 'X');
+    d.getElementById('edSave').click();
+    await tick(60);
+    ok(!fd.writes['galleria_modifiche.json'] && d.getElementById('edS').textContent === it['gal.ed.st_wrong'].replace('%{dir}', '2026-10-28_20-19-38') &&
+       d.getElementById('edS').classList.contains('err'), 'un\'altra cartella: non scrive, e dice quale scegliere');
+  }
+})();
+// le foto in %APPDATA% (D.spare): anche con Edge si scaricano le modifiche
+(async () => {
+  const fd = fakeDir('x', {});
+  const { w, d } = openEd(page(Object.assign({}, DATA, { spare: true })), { dir: fd });
+  d.getElementById('edit').click();
+  const c = d.querySelector('#strip .spread[data-i="0"] .cap .tt');
+  ev(w, c, 'click'); typeIn(w, c, 'Y');
+  ok(d.getElementById('edSave').textContent === it['gal.ed.download'], 'foto in %APPDATA%: «' + it['gal.ed.download'] + '» anche dove il browser scrive nelle cartelle');
+})();

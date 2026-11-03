@@ -10,6 +10,30 @@ Il numero sta in un posto solo, `VERSION` in `dagawasd.rb`;
 
 ## [Non ancora uscito]
 
+### Aggiunto
+- Pannello: nuova scheda **Accessibilità** con **Niente lampi**, per chi è
+  sensibile alle luci lampeggianti: niente lampo bianco quando si scatta una
+  foto (propria o dell'esploratore) e niente fulmini né cielo che si
+  schiarisce nei temporali, che restano pioggia o neve. La barra di stato
+  conferma comunque ogni foto. La scheda dice dove stanno le altre
+  regolazioni di comfort (head bob, campo visivo, tasti, contrasto elevato).
+- Galleria: **Modifica**. I testi si cambiano lì dove sono, nella stessa
+  calligrafia: titolo della galleria e delle foto, «Che cosa», «Perché», il
+  timbro dell'autore, i commenti dell'IA. ✕ toglie una foto dalla galleria
+  (il JPG resta) e ↺ la rimette; «↺ Torna all'originale» rimette il testo di
+  SketchUp. Invio conferma, Esc annulla, Maiuscolo+Invio va a capo.
+  Le modifiche si tengono subito nel browser; «Salva nella cartella» (Edge,
+  Chrome) le scrive in `galleria_modifiche.json` accanto alle foto e nella
+  pagina stessa, così restano anche mandando la cartella a qualcuno, e da lì
+  in poi si salvano da sole. Negli altri browser «Scarica le modifiche».
+  SketchUp non tocca mai quel file e lo rimette nella pagina ogni volta che
+  la apre.
+- `.github/ACCESSIBILITY.md`: la dichiarazione di accessibilità.
+
+### Corretto
+- Test: il conteggio dei fotogrammi per giro dell'esportazione video non
+  fallisce più quando `sleep` di Windows sfora di qualche millisecondo.
+
 ## [1.2.1] — 2026-11-02
 
 ### Corretto

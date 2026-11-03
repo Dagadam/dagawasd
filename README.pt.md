@@ -36,6 +36,9 @@ com WASD e o rato, ou com um comando de jogos.
   galeria no navegador: fotos instantâneas numa mesa, com notas. Ver abaixo.
 - **Comando** XInput, e olhar em redor com o teclado numérico.
 - Painel de definições em 36 línguas.
+- **Acessibilidade**: *Acessibilidade › Sem clarões* desliga todos os
+  clarões, das fotos e dos relâmpagos (ver
+  [ACCESSIBILITY.md](.github/ACCESSIBILITY.md)).
 
 Requisitos: SketchUp 2023 ou posterior, em Windows. Num Mac a extensão
 instala-se mas não arranca, e avisa.
@@ -293,6 +296,14 @@ explorador, a IA), os carimbos no topo filtram-nas. `#3` no endereço leva à
 foto 3, `#3z` abre-a em grande. Imprime-se limpa (as fotos com as suas
 notas), funciona sem rede e pode ser enviada a alguém juntamente com a sua
 pasta.
+
+**Editar** muda os textos no próprio sítio, com a mesma letra: o título da
+galeria e de cada foto, *O quê*, *Porquê*, o carimbo e as notas da IA; ✕
+tira uma foto da galeria (o ficheiro fica) e ↺ repõe-na. Os textos do
+SketchUp nunca se perdem: cada um pode voltar ao original. As alterações
+ficam logo guardadas no navegador; *Guardar na pasta* (Edge, Chrome)
+escreve-as em `galleria_modifiche.json` ao lado das fotos e na própria
+página, e assim viajam com a pasta.
 
 ## Dois pacotes
 

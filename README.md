@@ -36,6 +36,9 @@ WASD and the mouse, or with a gamepad.
   See below.
 - XInput **gamepad**, and looking around with the numeric keypad.
 - Settings panel in 36 languages.
+- **Accessibility**: *Accessibility › No flashes* turns off every flash, of
+  photos and of lightning (see
+  [ACCESSIBILITY.md](.github/ACCESSIBILITY.md)).
 
 Requirements: SketchUp 2023 or later, on Windows. On a Mac the extension
 installs but does not start, and says so.
@@ -292,6 +295,14 @@ space pauses it). With photos by several authors (you, the explorer, the AI)
 the stamps at the top filter them. `#3` in the address goes to photo 3,
 `#3z` opens it large. It prints cleanly (the photos with their notes), works
 offline and can be sent to someone together with its folder.
+
+**Edit** changes the texts right where they are, in the same handwriting:
+the title of the gallery and of each photo, *What*, *Why*, the stamp and the
+AI's notes; ✕ takes a photo out of the gallery (the file stays) and ↺ puts
+it back. SketchUp's own texts are never lost: each one can go back to the
+original. Changes are kept at once in the browser; *Save to the folder*
+(Edge, Chrome) writes them to `galleria_modifiche.json` next to the photos
+and into the page itself, so they travel with the folder.
 
 ## Two packages
 

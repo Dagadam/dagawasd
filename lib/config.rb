@@ -220,6 +220,8 @@ module DagaWASD
       'throw_charge_time'   => 1.5,
       'grab_pull_time'      => 0.18,   # strappo verso il player alla presa (collisioni spente)
       'grab_out_time'       => 0.22,   # poi fino alla distanza di presa (ancora spente); 0+0 = niente strappo
+      # ── Accessibilità ────────────────────────────────────────────
+      'no_flashes'          => false,  # niente lampo della foto né lampi del temporale (fotosensibilità)
       # ── Sistema ──────────────────────────────────────────────────
       'tick_rate'           => 60,
       # Esploratore autonomo (lib/explore.rb): analisi della vista al secondo
