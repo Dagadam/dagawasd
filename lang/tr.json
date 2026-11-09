@@ -484,6 +484,7 @@
 "rt.explore_pause":"Kaşif duraklatıldı — sağ tık › Devam et",
 "rt.explore_off":"Kaşif durduruldu",
 "rt.explore_busy":"Kaşif: önce yürümeyi, yol oynatmayı veya Claude'un canlı inşasını durdurun",
+"rt.bridge_busy":"Claude modelde canlı inşa ediyor: bitmesini bekleyin",
 "explore.pause":"Duraklat",
 "explore.resume":"Devam et",
 "explore.next":"Başka bir şey ara",

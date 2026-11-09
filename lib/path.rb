@@ -418,9 +418,28 @@ module DagaWASD
         extra[:avi] = MjpegAvi.new(file, w, h, fps)
         extra[:jpg] = File.join(Dir.tmpdir, "dagawasd_fotogramma_#{Process.pid}.jpg")
       end
-      err = path_start(:frames, name, extra.merge(bytes: 0), tr)
-      attesa_open(@path_job) unless err      # lib/attesa.rb: personaggio, avanzamento, battute
-      err
+      err = begin
+        path_start(:frames, name, extra.merge(bytes: 0), tr)
+      rescue StandardError
+        # il lavoro era già nato: lo si chiude (e con lui il video); se no il
+        # video aperto qui resterebbe un file vuoto e bloccato
+        @path_job && @path_job[:avi].equal?(extra[:avi]) ? path_finish(@path_job, :errore) : path_avi_discard(extra)
+        raise
+      end
+      return path_avi_discard(extra) && err if err
+      attesa_open(@path_job)                 # lib/attesa.rb: personaggio, avanzamento, battute
+      nil
+    end
+
+    # Il video appena aperto da path_export_frames, mai partito: chiuso e tolto.
+    def self.path_avi_discard(extra)
+      avi = extra[:avi] or return true
+      avi.close
+      File.delete(avi.path) if File.exist?(avi.path)
+      true
+    rescue SystemCallError, IOError => fps_err
+      log_error(__method__, fps_err)
+      true
     end
 
     # Più fotogrammi per giro dell'animazione, per ~PATH_BATCH s: fra un giro
@@ -478,9 +497,13 @@ module DagaWASD
         base = path_safe(job[:name])
         srt = path_srt_write(job, File.join(job[:dir], "#{base}.srt"))   # i commenti dell'IA, nel video come sottotitoli
         bat = File.join(job[:dir], 'crea_video.bat')
-        File.write(bat, "@echo off\r\ncd /d \"%~dp0\"\r\n" \
-                        "ffmpeg -y -framerate #{job[:fps]} -i frame_%%05d.png #{srt ? "-i \"#{base}.srt\" -c:s mov_text " : ''}" \
-                        "-c:v libx264 -pix_fmt yuv420p -crf 18 \"#{base}.mp4\"\r\npause\r\n")
+        # in un .bat un % del nome aprirebbe una variabile: «Sconto 50%» perdeva mezza riga.
+        # Il file è UTF-8 e cmd lo leggerebbe nella codepage OEM (850…): un nome
+        # con lettere non ASCII («Маршрут 1», «è») non si troverebbe. chcp 65001.
+        b = base.gsub('%', '%%')
+        File.write(bat, "@echo off\r\nchcp 65001 >nul\r\ncd /d \"%~dp0\"\r\n" \
+                        "ffmpeg -y -framerate #{job[:fps]} -i frame_%%05d.png #{srt ? "-i \"#{b}.srt\" -c:s mov_text " : ''}" \
+                        "-c:v libx264 -pix_fmt yuv420p -crf 18 \"#{b}.mp4\"\r\npause\r\n", mode: 'wb')   # wb: \r\n e non \r\r\n
       end
       info = { 'n' => n, 'time' => path_clock(n.to_f / job[:fps]), 'mb' => (job[:bytes].to_i / 1_048_576.0).round(1),
                'dir' => job[:dir].tr('/', '\\') }
@@ -544,13 +567,13 @@ module DagaWASD
       cam = view.camera
       saved = [cam.eye, cam.target, cam.up, cam.perspective?, cam.fov]
       flags = defined?(PAGE_USE_CAMERA) ? PAGE_USE_CAMERA : 1
-      re = /\A#{Regexp.escape(name)} \d{3,}\z/
       made = 0
       path_write(t('path.op_scenes'), model) do |m|
-        m.pages.to_a.select { |pg| pg.name =~ re }.each { |pg| m.pages.erase(pg) }
+        m.pages.to_a.select { |pg| path_scene_ours?(pg, name) }.each { |pg| m.pages.erase(pg) }
         times.each_with_index do |tt, i|
           path_set_camera(view, path_frame_at(frames, tt))
           pg = m.pages.add(format('%s %03d', name, i + 1), flags)
+          pg.set_attribute(PATH_DICT, 'percorso', name)    # nostra: rifacendole si toglie solo questa
           pg.transition_time = i.zero? ? 1.0 : (tt - times[i - 1]) / speed
           pg.description = said[i].join(' · ') if said.key?(i)
           pg.delay_time = 0.0
@@ -565,8 +588,25 @@ module DagaWASD
       nil
     end
 
+    # Una scena fatta da path_make_scenes per questo percorso? Quelle nuove
+    # lo dicono in un attributo. Quelle di prima (senza) si riconoscono dal
+    # nome «<percorso> 001» e dal fatto che salvano solo la camera: una scena
+    # dell'utente con lo stesso nome salva anche stile e tag, e resta.
+    def self.path_scene_ours?(pg, name)
+      mine = pg.get_attribute(PATH_DICT, 'percorso')
+      return mine == name unless mine.nil?
+      return false unless pg.name.match?(/\A#{Regexp.escape(name)} \d{3,}\z/)
+      %i[use_style? use_rendering_options? use_hidden_layers? use_shadow_info?]
+        .none? { |q| pg.respond_to?(q) && pg.public_send(q) }
+    end
+
     # ── Comandi dal pannello ──────────────────────────────────────
+    # Mentre un ponte costruisce dal vivo (lib/lifecycle.rb, bridge_refuse)
+    # si possono solo fermare la riproduzione e guardare le foto.
+    PATH_CMD_ANYTIME = %w[stop photos gallery].freeze
+
     def self.path_command(cmd, name, i = nil)
+      return if !PATH_CMD_ANYTIME.include?(cmd) && bridge_refuse
       err = case cmd
             when 'play'   then path_start(:play, name)
             when 'scenes' then path_make_scenes(name)

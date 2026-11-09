@@ -31,6 +31,28 @@ Il numero sta in un posto solo, `VERSION` in `dagawasd.rb`;
 - `.github/ACCESSIBILITY.md`: la dichiarazione di accessibilità.
 
 ### Corretto
+- Ponte per Claude: mentre Claude costruisce dal vivo, i comandi che
+  cambierebbero il modello (scene, video, rinomina, elimina, posizioni dei
+  percorsi, pannello della sfera, modalità FPS) non partono più e dicono di
+  aspettare che finisca. Prima chiudevano a metà l'operazione della
+  costruzione: il resto finiva fuori, e un errore non annullava più tutto.
+  Fermare una riproduzione e guardare le foto si può sempre.
+- Ponte per Claude: un invio il cui codice apre un messaggio di SketchUp non
+  lascia più partire un secondo invio dentro il primo.
+- Galleria: un nome nel modello che contiene `<!--<script>` non svuota più la
+  pagina.
+- Video come immagini: `crea_video.bat` funziona anche con un `%` nel nome
+  del percorso e con lettere non ASCII (accenti, cirillico, giapponese…).
+- Scene di un percorso: rifacendole si tolgono solo quelle fatte da DagaWASD,
+  non più anche una scena dell'utente con lo stesso nome («Percorso 1 003»).
+- Pannello della sfera: un errore a metà di una modifica la annulla per
+  intero, invece di lasciare l'operazione aperta.
+- Video: se l'avvio dell'esportazione fallisce, il file `.avi` appena creato
+  non resta aperto e vuoto.
+- Modalità FPS: se l'aggancio della tastiera fallisce, le sfere dei percorsi
+  tornano visibili.
+- `installa.bat` funziona anche con un `!` nel percorso (nome utente,
+  cartella).
 - Test: il conteggio dei fotogrammi per giro dell'esportazione video non
   fallisce più quando `sleep` di Windows sfora di qualche millisecondo.
 

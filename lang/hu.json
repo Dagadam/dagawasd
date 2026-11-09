@@ -484,6 +484,7 @@
 "rt.explore_pause":"Felfedező szüneteltetve — jobb gomb › Folytatás",
 "rt.explore_off":"Felfedező leállítva",
 "rt.explore_busy":"Felfedező: előbb állítsd le a sétát, az útvonal lejátszását vagy Claude élő építését",
+"rt.bridge_busy":"Claude éppen élőben épít a modellben: várd meg, amíg befejezi",
 "explore.pause":"Szünet",
 "explore.resume":"Folytatás",
 "explore.next":"Más keresése",

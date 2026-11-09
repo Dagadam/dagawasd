@@ -1,5 +1,6 @@
 @echo off
-setlocal enabledelayedexpansion
+rem senza enabledelayedexpansion: toglierebbe i ! dai percorsi (C:\Users\Ciao!\...)
+setlocal
 title DagaWASD - Installazione
 
 rem ==================================================================
@@ -21,15 +22,14 @@ echo  Sorgente: %SRC%
 
 rem --- i file sorgente ci sono tutti? ---------------------------------
 set "MISSING="
-for %%F in (main.rb panel.html attesa.html keyedit.html exprofiles.html exstart.html galleria.html dagawasd.rb) do (
-  if not exist "%SRC%\%%F" set "MISSING=!MISSING! %%F"
+for %%F in (main.rb panel.html attesa.html keyedit.html exprofiles.html exstart.html galleria.html dagawasd.rb icons lang lib\config.rb) do (
+  if not exist "%SRC%\%%F" (
+    echo  [X] Manca nella sorgente: %%F
+    set "MISSING=1"
+  )
 )
-if not exist "%SRC%\icons" set "MISSING=!MISSING! icons\"
-if not exist "%SRC%\lang"  set "MISSING=!MISSING! lang\"
-if not exist "%SRC%\lib\config.rb" set "MISSING=!MISSING! lib\"
-if not "!MISSING!"=="" (
+if defined MISSING (
   echo.
-  echo  [X] File mancanti nella sorgente:!MISSING!
   echo      Installazione annullata.
   echo.
   pause

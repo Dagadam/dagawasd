@@ -403,11 +403,16 @@ module DagaWASD
                'photos' => data['photos'].to_a, 'track' => data['track'].to_a, 'notes' => notes.to_a,
                'lang' => @lang_code.to_s, 'rtl' => !!@lang_rtl, 'txt' => GAL_TXT.transform_values { |k| t(k) },
                'spare' => gal_spare?(dir) }
-      json = JSON.generate(page).gsub('</', '<\/')
-      # le modifiche fra i loro due segni, che la pagina ritrova per riscriverle;
-      # < diventa < (niente </script> né <!--) e */ diventa *\/
+      # Dati e modifiche dentro lo <script>, con i testi che arrivano dal
+      # modello: < diventa \u003c (niente </script>, né <!--<script> che fa
+      # prendere tutto il resto della pagina per script) e */ diventa *\/
+      # (niente segni /*MODIFICHE*/…/*FINE*/ finti, che la pagina cerca per
+      # riscrivere le modifiche). Dentro le stringhe JSON valgono uguale.
       bs = 92.chr
-      edits = JSON.generate(gal_edits(dir)).gsub('<', "#{bs}u003c").gsub('*/', "*#{bs}/")
+      safe = ->(o) { JSON.generate(o).gsub('<', "#{bs}u003c").gsub('*/', "*#{bs}/") }
+      json = safe.(page)
+      # le modifiche fra i loro due segni, che la pagina ritrova per riscriverle
+      edits = safe.(gal_edits(dir))
       file = File.join(dir, GAL_HTML)
       html = tpl.sub('/*DATI*/null') { json }.sub('/*MODIFICHE*/null/*FINE*/') { "/*MODIFICHE*/#{edits}/*FINE*/" }
       File.write(file, html, mode: 'wb')

@@ -186,6 +186,10 @@ module DagaWASD
     def self.ke_set(f, v, run = nil)
       e = @ke && @ke[:inst]
       return unless key_editable?(e) && !@path_job
+      # un ponte costruisce (lib/lifecycle.rb): niente, e il pannello torna ai
+      # valori veri; detto nella barra di stato (le variazioni continue
+      # arrivano ~10 al secondo: un messaggio per volta sarebbe troppo)
+      return ke_push if bridge_refuse(false)
       k = key_of(e)
       x = v.is_a?(Numeric) ? v.to_f : (Float(v.to_s.tr(',', '.')) rescue nil)
       return ke_push if x.nil? && f != 'vauto'          # non è un numero: resta il valore di prima
@@ -219,15 +223,15 @@ module DagaWASD
       model = e.model
       unisci = !run.nil? && run == @ke[:run]
       @ke[:run] = run
-      model.start_operation(op, true, false, unisci)
-      e.transformation = key_transform(k)
-      e.definition = key_def(model, k[9]) unless e.definition.get_attribute(KEY_DICT, 'fov') == k[9].round.clamp(1, 179)
-      e.set_attribute(KEY_DICT, 'fov', k[9].to_f.round(2))
-      { 'sosta' => k[10], 'v' => k[11] }.each do |a, val|
-        val.to_f > 0 ? e.set_attribute(KEY_DICT, a, val.to_f.round(2)) : e.delete_attribute(KEY_DICT, a)
+      with_op(model, op, unisci) do            # un errore a metà: annullata, non lasciata aperta
+        e.transformation = key_transform(k)
+        e.definition = key_def(model, k[9]) unless e.definition.get_attribute(KEY_DICT, 'fov') == k[9].round.clamp(1, 179)
+        e.set_attribute(KEY_DICT, 'fov', k[9].to_f.round(2))
+        { 'sosta' => k[10], 'v' => k[11] }.each do |a, val|
+          val.to_f > 0 ? e.set_attribute(KEY_DICT, a, val.to_f.round(2)) : e.delete_attribute(KEY_DICT, a)
+        end
+        key_purge(model)
       end
-      key_purge(model)
-      model.commit_operation
       path_set_camera(model.active_view, k) if @ke[:preview]   # agganciata: la vista segue la sfera
       ke_push
     end
@@ -465,6 +469,7 @@ module DagaWASD
     def self.ke_act(what)
       e = @ke && @ke[:inst]
       return unless key_editable?(e) && !@path_job
+      return if bridge_refuse                  # un ponte costruisce (lib/lifecycle.rb)
       model = e.model
       name = e.get_attribute(KEY_DICT, 'path').to_s
       list = key_instances(model)[name] || [e]
@@ -492,9 +497,7 @@ module DagaWASD
         3.times { |c| nk[c] += nk[c + 3] * 2.0 * M_TO_IN }
         nk[10] = 0.0; nk[11] = 0.0
       end
-      model.start_operation(t('ke.op'), true)
-      n = key_insert_at(model, e.get_attribute(KEY_DICT, 'path').to_s, list, i + 1, nk)   # lib/pathkeys.rb
-      model.commit_operation
+      n = with_op(model, t('ke.op')) { key_insert_at(model, e.get_attribute(KEY_DICT, 'path').to_s, list, i + 1, nk) }   # lib/pathkeys.rb
       ke_select(n)
       ke_goto(n)
     end
@@ -504,11 +507,11 @@ module DagaWASD
       model = e.model
       rest = list.reject { |x| x.equal?(e) }
       nxt = rest[[i, rest.size - 1].min]
-      model.start_operation(t('ke.op'), true)
-      e.erase!
-      rest.each_with_index { |x, j| x.set_attribute(KEY_DICT, 'i', j) }
-      key_purge(model)
-      model.commit_operation
+      with_op(model, t('ke.op')) do
+        e.erase!
+        rest.each_with_index { |x, j| x.set_attribute(KEY_DICT, 'i', j) }
+        key_purge(model)
+      end
       ke_select(nxt)
       @ke[:inst] = nxt
       ke_push

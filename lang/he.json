@@ -484,6 +484,7 @@
 "rt.explore_pause":"החוקר מושהה — לחיצה ימנית › המשך",
 "rt.explore_off":"החוקר נעצר",
 "rt.explore_busy":"החוקר: עצרו קודם את ההליכה, את הפעלת המסלול או את הבנייה החיה של Claude",
+"rt.bridge_busy":"Claude בונה כעת בשידור חי במודל: המתינו עד שיסיים",
 "explore.pause":"השהיה",
 "explore.resume":"המשך",
 "explore.next":"חיפוש משהו אחר",

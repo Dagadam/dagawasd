@@ -484,6 +484,7 @@
 "rt.explore_pause":"Explorer paused — right-click › Resume",
 "rt.explore_off":"Explorer stopped",
 "rt.explore_busy":"Explorer: first stop walking, path playback or Claude's live building",
+"rt.bridge_busy":"Claude is building live in the model: wait until it has finished",
 "explore.pause":"Pause",
 "explore.resume":"Resume",
 "explore.next":"Look for something else",

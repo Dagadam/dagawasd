@@ -50,7 +50,16 @@ class FakeView
     true
   end
 end
-Page = Struct.new(:name, :flags, :eye_x, :transition_time, :delay_time, :description)
+Page = Struct.new(:name, :flags, :eye_x, :transition_time, :delay_time, :description) do
+  def attrs; @attrs ||= {}; end
+  def get_attribute(d, k, dflt = nil); attrs.fetch([d, k], dflt); end
+  def set_attribute(d, k, v); attrs[[d, k]] = v; end
+  # flag delle scene di SketchUp: 2 stile e resa, 4 ombre, 32 tag
+  def use_rendering_options?; flags.to_i & 2 != 0; end
+  def use_style?; flags.to_i & 2 != 0; end
+  def use_shadow_info?; flags.to_i & 4 != 0; end
+  def use_hidden_layers?; flags.to_i & 32 != 0; end
+end
 class FakePages
   include Enumerable
   def initialize(view); @view = view; @list = []; end
@@ -197,6 +206,19 @@ sc2 = pm.pages.select { |p| p.name.start_with?('Percorso 1 ') }
 ok(sc2.size == 4 && pm.pages.size == 5 && pm.pages.first.name == 'Ingresso', 'rifatte: sostituite, le altre scene restano')
 ok((sc2[1].transition_time - 0.5).abs < 1e-9, 'a velocità 2 le transizioni durano metà')
 ok(boxes.last.include?('4'), 'messaggio con il numero di scene')
+# Prima: rifacendole si toglieva ogni scena chiamata «Percorso 1 NNN», anche
+# una fatta a mano dall'utente. Ora solo le nostre (attributo), e quelle di
+# prima dell'attributo se salvano solo la camera.
+ok(sc2.all? { |p| p.get_attribute(F::PATH_DICT, 'percorso') == 'Percorso 1' }, 'le scene fatte sanno di che percorso sono')
+mano = pm.pages.add('Percorso 1 007', 4095)            # dell'utente: salva tutto
+vecchia = pm.pages.add('Percorso 1 009', 1)            # di una versione di prima: solo camera, senza attributo
+altro = pm.pages.add('Percorso 10 001', 1)
+altro.set_attribute(F::PATH_DICT, 'percorso', 'Percorso 10')
+F.path_make_scenes('Percorso 1')
+ok(pm.pages.to_a.include?(mano) && pm.pages.to_a.include?(altro) && !pm.pages.to_a.include?(vecchia),
+   'rifatte: resta la scena dell\'utente con lo stesso nome e quella di un altro percorso; via quella di prima')
+ok(pm.pages.count { |p| p.get_attribute(F::PATH_DICT, 'percorso') == 'Percorso 1' } == 4, 'e le nostre sono di nuovo 4')
+[mano, altro].each { |p| pm.pages.erase(p) }
 
 # ── Immagini per il video ────────────────────────────────────────────
 cfg.merge!('path_speed' => 1.0, 'path_video_fps' => 10, 'path_video_size' => 'hd', 'path_video_format' => 'png')
@@ -280,6 +302,16 @@ ok(b.byteslice(4, 4).unpack1('V') == b.bytesize - 8 && b.byteslice(48, 4).unpack
 ok(!File.exist?(srt_avi), 'mezzo secondo di video, nessun commento: il .srt di prima tolto')
 UI.define_singleton_method(:savepanel) { |*_a| nil }
 ok(F.path_export_frames('Percorso 2').nil? && !F.path_busy?, 'nessun file scelto: non parte')
+# Prima: se l'avvio falliva dopo aver aperto il video, il file restava aperto
+# (bloccato finché SketchUp non si chiudeva) e vuoto.
+rotto = File.join(tmp, 'rotto.avi')
+UI.define_singleton_method(:savepanel) { |*_a| rotto }
+orig_ps = F.method(:path_start)
+F.define_singleton_method(:path_start) { |*_a| raise IOError, 'avvio fallito' }
+alzato = (F.path_export_frames('Percorso 2') rescue :raised)
+F.define_singleton_method(:path_start, orig_ps)
+ok(alzato == :raised && !File.exist?(rotto) && !F.path_busy?, 'avvio del video fallito: il file aperto viene chiuso e tolto')
+UI.define_singleton_method(:savepanel) { |*_a| nil }
 small = F::MjpegAvi.new(File.join(tmp, 'vuoto.avi'), 64, 48, 25)
 begin
   small.add('non un jpeg')

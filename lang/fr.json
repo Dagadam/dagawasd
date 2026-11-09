@@ -484,6 +484,7 @@
 "rt.explore_pause":"Explorateur en pause — clic droit › Reprendre",
 "rt.explore_off":"Explorateur arrêté",
 "rt.explore_busy":"Explorateur : arrêtez d'abord la marche, la lecture du parcours ou la construction en direct de Claude",
+"rt.bridge_busy":"Claude construit en direct dans le modèle : attendez qu'il ait terminé",
 "explore.pause":"Mettre en pause",
 "explore.resume":"Reprendre",
 "explore.next":"Chercher autre chose",

@@ -484,6 +484,7 @@
 "rt.explore_pause":"탐험가 일시 중지됨 — 오른쪽 클릭 › 계속",
 "rt.explore_off":"탐험가 중지됨",
 "rt.explore_busy":"탐험가: 먼저 걷기, 경로 재생 또는 Claude의 실시간 구축을 중지하세요",
+"rt.bridge_busy":"Claude가 모델에서 실시간으로 구축하는 중입니다: 끝날 때까지 기다리세요",
 "explore.pause":"일시 중지",
 "explore.resume":"계속",
 "explore.next":"다른 것 찾기",

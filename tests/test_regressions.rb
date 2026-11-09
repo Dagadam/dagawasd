@@ -377,6 +377,128 @@ walk = false
 F.instance_variable_set(:@active, false)
 orig.each { |n, m| F.define_singleton_method(n, m) }
 
+# ── Il ponte costruisce dal vivo: niente operazioni in mezzo ──────────
+# Prima: la sua operazione resta aperta fra un passo e l'altro, e i comandi
+# del pannello (scene, rinomina, una sfera spostata…) ne aprivano un'altra,
+# che in SketchUp chiude quella aperta: il resto della costruzione finiva
+# fuori e un errore a metà non annullava più tutto. Ora rifiutano e lo dicono.
+busy = F.t('rt.bridge_busy')
+ok(busy != 'rt.bridge_busy', "il messaggio esiste («#{busy}»)")
+boxes = []
+fatti = []
+stato = []
+orig_ui = UI.method(:messagebox)
+UI.define_singleton_method(:messagebox) { |msg, *_a| boxes << msg; 6 }
+orig_st = Sketchup.method(:status_text=)
+Sketchup.define_singleton_method(:status_text=) { |s| stato << s }
+stub_cmd = { path_make_scenes: ->(n) { fatti << [:scenes, n]; nil }, path_abort: ->(*_a) { fatti << [:stop]; nil },
+             gal_open_path: ->(n) { fatti << [:photos, n]; nil } }
+orig_cmd = stub_cmd.keys.to_h { |n| [n, F.method(n)] }
+stub_cmd.each { |n, l| F.define_singleton_method(n, &l) }
+F.instance_variable_set(:@bridge_job, { fiber: nil })
+F.path_command('scenes', 'Percorso 1')
+ok(fatti.empty? && boxes == [busy], 'mentre il ponte costruisce, «Scene» non parte e lo dice')
+F.path_command('stop', 'Percorso 1')
+F.path_command('photos', 'Percorso 1')
+ok(fatti == [[:stop], [:photos, 'Percorso 1']] && boxes.size == 1, 'fermare la riproduzione e guardare le foto si può sempre')
+ke_ops = []
+ke_model = Object.new
+ke_model.define_singleton_method(:start_operation) { |*a| ke_ops << :start; true }
+ke_model.define_singleton_method(:commit_operation) { ke_ops << :commit; true }
+ke_model.define_singleton_method(:abort_operation) { ke_ops << :abort; true }
+ke_e = Object.new
+ke_e.define_singleton_method(:model) { ke_model }
+spinte = 0
+stub_ke = { key_editable?: ->(_e) { true }, ke_push: -> { spinte += 1 }, key_of: ->(_e) { [0.0] * 3 + [1.0, 0, 0, 0, 0, 1.0, 60.0, 0.0, 0.0] } }
+orig_ke = stub_ke.keys.to_h { |n| [n, F.method(n)] }
+stub_ke.each { |n, l| F.define_singleton_method(n, &l) }
+F.instance_variable_set(:@ke, { inst: ke_e })
+F.ke_set('x', 2.0)
+ok(ke_ops.empty? && spinte == 1 && stato.last == busy, 'pannello della sfera: nessuna operazione, valori veri di nuovo nel pannello, detto nella barra di stato')
+F.instance_variable_set(:@active, false)
+F.start
+ok(!F.instance_variable_get(:@active) && stato.last == busy, 'Ctrl+PagSu mentre il ponte costruisce: non parte, e lo dice')
+F.instance_variable_set(:@bridge_job, nil)
+
+# Un errore a metà di una modifica dal pannello della sfera: annullata,
+# non lasciata aperta (la prossima operazione l'avrebbe confermata a metà).
+def ke_e.transformation=(_t); raise ArgumentError, 'rotto'; end
+ke_ops.clear
+alzata = (F.ke_apply(ke_e, [0.0] * 3 + [1.0, 0, 0, 0, 0, 1.0, 60.0, 0.0, 0.0], 'Sfera') rescue :raised)
+ok(alzata == :raised && ke_ops == %i[start abort], "errore a metà della modifica di una sfera: operazione annullata (#{ke_ops.inspect})")
+orig_ke.each { |n, m| F.define_singleton_method(n, m) }
+orig_cmd.each { |n, m| F.define_singleton_method(n, m) }
+F.instance_variable_set(:@ke, nil)
+
+# ── Il ponte dentro sé stesso ────────────────────────────────────────
+# Prima: il codice ricevuto che apriva un UI.messagebox lasciava scattare il
+# timer del ponte durante il dialogo, e un secondo invio partiva dentro il primo.
+serviti = 0
+srv = Object.new
+def srv.accept_nonblock(**_o); Object.new; end
+F.instance_variable_set(:@bridge_srv, srv)
+orig_serve = F.method(:bridge_serve)
+F.define_singleton_method(:bridge_serve) do |_c|
+  serviti += 1
+  F.bridge_poll if serviti == 1          # il timer che scatta durante il dialogo del primo invio
+  nil
+end
+F.bridge_poll
+ok(serviti == 4, "a ogni giro al più 4 richieste, nessuna dentro un'altra (#{serviti})")
+serviti = 10
+F.bridge_poll
+ok(serviti == 14, 'finito il giro, il successivo serve di nuovo')
+F.define_singleton_method(:bridge_serve, orig_serve)
+F.instance_variable_set(:@bridge_srv, nil)
+
+# ── Galleria con testi strani dal modello ────────────────────────────
+# Prima: i dati nella pagina avevano solo </ cambiato in <\/. Un nome con
+# <!--<script> faceva prendere tutto il resto della pagina per script (pagina
+# vuota), e un testo con /*MODIFICHE*/null/*FINE*/ si prendeva il posto
+# delle modifiche.
+gdir = File.join(tmp, 'serie')
+FileUtils.mkdir_p(gdir)
+strano = 'Casa <!--<script> /*MODIFICHE*/null/*FINE*/'
+File.write(File.join(gdir, F::GAL_JSON), JSON.generate('v' => 1, 'model' => strano, 'date' => '2026-11-09 10:00:00',
+                                                       'photos' => [{ 'n' => 1, 'file' => 'foto_001.jpg', 'what' => strano }],
+                                                       'track' => []), mode: 'wb')
+ghtml = File.read(F.gal_report(gdir, strano), encoding: 'UTF-8')
+gdati = ghtml[/const D = (\{.*?\}) \|\| \{ title/m, 1].to_s
+gd = (JSON.parse(gdati) rescue nil)
+ok(gd && gd['model'] == strano && gd['title'] == strano && gd['photos'][0]['what'] == strano,
+   'galleria: i testi arrivano intatti alla pagina')
+ok(!gdati.include?('<') && !gdati.include?('*/'), 'nei dati della pagina niente < né */ (niente <!--<script> che la svuota)')
+stampo = File.read(File.join(F::PLUGIN_DIR, F::GAL_HTML), encoding: 'UTF-8')
+ok(ghtml.scan('/*MODIFICHE*/').size == stampo.scan('/*MODIFICHE*/').size && ghtml.scan('/*MODIFICHE*/null/*FINE*/').size == 1,
+   'il posto delle modifiche è uno solo, quello vero')
+
+# ── crea_video.bat con nomi non semplici ─────────────────────────────
+# Prima: un % nel nome del percorso apriva una variabile di cmd («Sconto 50%»
+# perdeva mezza riga), e il .bat UTF-8 letto nella codepage OEM non trovava
+# i file con lettere non ASCII («è», «Маршрут 1»).
+vdir = File.join(tmp, 'video')
+FileUtils.mkdir_p(vdir)
+UI.define_singleton_method(:messagebox) { |*_a| 6 }
+F.path_frames_done({ dir: vdir, name: 'Sconto 50% è', k: 3, fps: 10, notes: [[0.0, 'Ciao']], speed: 1.0, bytes: 0 }, :fine)
+vbat = File.binread(File.join(vdir, 'crea_video.bat')).force_encoding('UTF-8')
+ok(vbat.include?('chcp 65001') && vbat.include?('"Sconto 50%% è.srt"') && vbat.include?('"Sconto 50%% è.mp4"') &&
+   !vbat.include?("\r\r"), 'crea_video.bat: % raddoppiato, codepage UTF-8, righe in \r\n')
+if Gem.win_platform?
+  # Lo si fa girare davvero, con la codepage di un doppio clic (850), al posto
+  # di ffmpeg un echo e un controllo che il .srt si trovi.
+  srt_arg = vbat[/-i "([^"]+\.srt)"/, 1]
+  prova = vbat.sub(/^ffmpeg [^\r\n]*/) { |l| "echo #{l}\r\nif exist \"#{srt_arg}\" (echo TROVATO) else (echo MANCA)" }
+              .sub(/^pause\r?\n/, '')
+  File.binwrite(File.join(vdir, 'prova.bat'), prova)
+  lancio = File.join(tmp, 'lancio.bat')
+  File.binwrite(lancio, "@chcp 850 >nul\r\n@call \"#{File.join(vdir, 'prova.bat').tr('/', '\\')}\"\r\n")
+  uscita = IO.popen(['cmd.exe', '/c', lancio.tr('/', '\\')], &:read).force_encoding('UTF-8').scrub
+  ok(uscita.include?('TROVATO') && uscita.include?('"Sconto 50% è.mp4"'),
+     "crea_video.bat in cmd: trova «Sconto 50% è.srt» e scrive «Sconto 50% è.mp4» (#{uscita.lines.last.to_s.strip})")
+end
+UI.define_singleton_method(:messagebox, orig_ui)
+Sketchup.define_singleton_method(:status_text=, orig_st)
+
 # ── Fuori da Windows ─────────────────────────────────────────────────
 # Prima: su Mac main.rb caricava lib/input.rb (user32) e si rompeva all'avvio.
 # Ora non carica nulla e avvisa una volta sola. In un processo a parte, perché

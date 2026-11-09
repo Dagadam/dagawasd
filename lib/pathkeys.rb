@@ -744,7 +744,7 @@ module DagaWASD
     # quella che ha fatto la copia.
     def self.key_fix_order(model)
       dup = key_instances(model).select { |_, l| l.map { |e| e.get_attribute(KEY_DICT, 'i') }.uniq.size < l.size }
-      return if dup.empty?
+      return if dup.empty? || bridge_building?   # mai in mezzo all'operazione aperta di un ponte
       model.start_operation(t('path.op_keys'), true, false, true)
       dup.each_value { |l| l.each_with_index { |e, i| e.set_attribute(KEY_DICT, 'i', i) } }
       model.commit_operation

@@ -484,6 +484,7 @@
 "rt.explore_pause":"Prieskumník pozastavený — pravé tlačidlo › Pokračovať",
 "rt.explore_off":"Prieskumník zastavený",
 "rt.explore_busy":"Prieskumník: najprv zastavte chôdzu, prehrávanie trasy alebo živú stavbu od Clauda",
+"rt.bridge_busy":"Claude práve živo stavia v modeli: počkajte, kým skončí",
 "explore.pause":"Pozastaviť",
 "explore.resume":"Pokračovať",
 "explore.next":"Hľadať niečo iné",

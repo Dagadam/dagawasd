@@ -484,6 +484,7 @@
 "rt.explore_pause":"Explorador em pausa — botão direito › Retomar",
 "rt.explore_off":"Explorador parado",
 "rt.explore_busy":"Explorador: pare primeiro a caminhada, a reprodução do percurso ou a construção ao vivo do Claude",
+"rt.bridge_busy":"O Claude está a construir ao vivo no modelo: aguarde até terminar",
 "explore.pause":"Pausar",
 "explore.resume":"Retomar",
 "explore.next":"Procurar outra coisa",

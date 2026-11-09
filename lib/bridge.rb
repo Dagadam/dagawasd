@@ -156,8 +156,21 @@ module DagaWASD
       @bridge_srv = nil; @bridge_port = nil; @bridge_token = nil
     end
 
+    # Mai dentro sé stesso: il codice ricevuto che apre un UI.messagebox tiene
+    # SketchUp in un dialogo modale, ma i timer scattano lo stesso, e un
+    # secondo /eval sarebbe partito dentro il primo (la sua operazione avrebbe
+    # chiuso quella aperta). Le richieste aspettano in coda la fine.
     def self.bridge_poll
-      return unless @bridge_srv
+      return unless @bridge_srv && !@bridge_polling
+      begin
+        @bridge_polling = true
+        bridge_poll_once
+      ensure
+        @bridge_polling = false
+      end
+    end
+
+    def self.bridge_poll_once
       4.times do                                   # poche richieste per tick: SketchUp resta reattivo
         c = @bridge_srv.accept_nonblock(exception: false)
         break if c == :wait_readable || c.nil?

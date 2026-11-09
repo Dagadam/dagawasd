@@ -16,9 +16,41 @@ module DagaWASD
       !!(defined?(DagaMCP::Bridge) && DagaMCP::Bridge.respond_to?(:busy?) && DagaMCP::Bridge.busy?)
     end
 
+    # Mentre un ponte costruisce dal vivo la sua operazione resta aperta fra
+    # un passo e l'altro, e SketchUp risponde all'utente. Un'altra operazione
+    # aperta lì in mezzo (scene, rinomina, una sfera spostata…) chiuderebbe
+    # la sua: il resto della costruzione finirebbe fuori, e un errore a metà
+    # non annullerebbe più tutto. Chi modifica il modello chiede prima qui:
+    # true se deve rinunciare (e l'ha già detto all'utente).
+    def self.bridge_refuse(box = true)
+      return false unless bridge_building?
+      if box
+        UI.messagebox(t('rt.bridge_busy'))
+      else
+        Sketchup.status_text = t('rt.bridge_busy')
+      end
+      true
+    end
+
+    # Un'operazione che si chiude comunque: confermata, o annullata per
+    # intero se il blocco solleva (l'eccezione prosegue). Ritorna il valore
+    # del blocco.
+    def self.with_op(model, op, transparent = false)
+      model.start_operation(op, true, false, transparent)
+      begin
+        res = yield model
+      rescue StandardError
+        model.abort_operation
+        raise
+      end
+      model.commit_operation
+      res
+    end
+
     def self.start
       return if @active
-      return if bridge_building?  # un ponte sta costruendo: la fisica non deve entrare nella sua operazione
+      # un ponte sta costruendo: la fisica non deve entrare nella sua operazione
+      return if bridge_refuse(false)
       explore_stop if @ex         # esploratore autonomo (lib/explore.rb): la camera torna a te
       stop_settle
       load_cfg
@@ -97,6 +129,8 @@ module DagaWASD
       @spawn_point = [@eye_x, @eye_y, @eye_z - @cur_h_m * M_TO_IN]
 
       unless install_hook
+        key_unhide(Sketchup.active_model, @keys_hidden)   # le sfere tornano come prima
+        @keys_hidden = false
         UI.messagebox("DagaWASD — #{t('rt.err_hook')}:\n#{@w32_error}", MB_OK)
         return
       end
