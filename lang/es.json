@@ -484,6 +484,7 @@
 "rt.explore_pause":"Explorador en pausa — clic derecho › Reanudar",
 "rt.explore_off":"Explorador detenido",
 "rt.explore_busy":"Explorador: detén primero la caminata, la reproducción del recorrido o la construcción en directo de Claude",
+"rt.explore_no_floor":"Explorador: no hay suelo bajo la cámara, vuela hasta encontrar dónde aterrizar",
 "rt.bridge_busy":"Claude está construyendo en directo en el modelo: espera a que termine",
 "explore.pause":"Pausar",
 "explore.resume":"Reanudar",

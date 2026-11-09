@@ -484,6 +484,7 @@
 "rt.explore_pause":"Uurija on pausil — paremklõps › Jätka",
 "rt.explore_off":"Uurija peatatud",
 "rt.explore_busy":"Uurija: peata enne kõndimine, teekonna esitamine või Claude'i otse ehitamine",
+"rt.explore_no_floor":"Uurija: kaamera all pole põrandat, see lendab, kuni leiab maandumiskoha",
 "rt.bridge_busy":"Claude ehitab mudelis otse: oota, kuni see lõpetab",
 "explore.pause":"Paus",
 "explore.resume":"Jätka",

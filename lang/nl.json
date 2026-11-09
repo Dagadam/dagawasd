@@ -484,6 +484,7 @@
 "rt.explore_pause":"Verkenner gepauzeerd — rechtsklik › Hervatten",
 "rt.explore_off":"Verkenner gestopt",
 "rt.explore_busy":"Verkenner: stop eerst het lopen, het afspelen van de route of het live bouwen van Claude",
+"rt.explore_no_floor":"Verkenner: er is geen vloer onder de camera, hij vliegt tot hij een landingsplek vindt",
 "rt.bridge_busy":"Claude bouwt live in het model: wacht tot het klaar is",
 "explore.pause":"Pauzeren",
 "explore.resume":"Hervatten",

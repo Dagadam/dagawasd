@@ -484,6 +484,7 @@
 "rt.explore_pause":"Pētnieks pauzē — labais klikšķis › Turpināt",
 "rt.explore_off":"Pētnieks apturēts",
 "rt.explore_busy":"Pētnieks: vispirms apturiet iešanu, maršruta atskaņošanu vai Claude tiešraides būvēšanu",
+"rt.explore_no_floor":"Pētnieks: zem kameras nav grīdas, tas lido, līdz atrod, kur nolaisties",
 "rt.bridge_busy":"Claude pašlaik tiešraidē būvē modelī: pagaidiet, līdz tas pabeidz",
 "explore.pause":"Pauze",
 "explore.resume":"Turpināt",

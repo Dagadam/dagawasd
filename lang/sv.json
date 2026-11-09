@@ -484,6 +484,7 @@
 "rt.explore_pause":"Utforskare pausad — högerklick › Fortsätt",
 "rt.explore_off":"Utforskare stoppad",
 "rt.explore_busy":"Utforskare: stoppa först promenaden, uppspelningen av rutten eller Claudes livebygge",
+"rt.explore_no_floor":"Utforskare: det finns inget golv under kameran, den flyger tills den hittar en plats att landa",
 "rt.bridge_busy":"Claude bygger live i modellen: vänta tills det är klart",
 "explore.pause":"Pausa",
 "explore.resume":"Fortsätt",

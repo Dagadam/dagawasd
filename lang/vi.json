@@ -484,6 +484,7 @@
 "rt.explore_pause":"Khám phá đã tạm dừng — nhấp chuột phải › Tiếp tục",
 "rt.explore_off":"Đã dừng khám phá",
 "rt.explore_busy":"Khám phá: hãy dừng việc đi bộ, việc phát đường đi hoặc việc Claude dựng trực tiếp trước",
+"rt.explore_no_floor":"Khám phá: không có sàn bên dưới camera, sẽ bay cho đến khi tìm được chỗ hạ cánh",
 "rt.bridge_busy":"Claude đang dựng trực tiếp trong mô hình: hãy đợi đến khi xong",
 "explore.pause":"Tạm dừng",
 "explore.resume":"Tiếp tục",

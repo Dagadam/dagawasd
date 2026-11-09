@@ -484,6 +484,7 @@
 "rt.explore_pause":"Odkrywca wstrzymany — prawy przycisk › Wznów",
 "rt.explore_off":"Odkrywca zatrzymany",
 "rt.explore_busy":"Odkrywca: najpierw zatrzymaj chodzenie, odtwarzanie trasy lub budowanie na żywo przez Claude",
+"rt.explore_no_floor":"Odkrywca: pod kamerą nie ma podłogi, leci, dopóki nie znajdzie miejsca do lądowania",
 "rt.bridge_busy":"Claude buduje na żywo w modelu: poczekaj, aż skończy",
 "explore.pause":"Wstrzymaj",
 "explore.resume":"Wznów",

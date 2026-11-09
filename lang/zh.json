@@ -484,6 +484,7 @@
 "rt.explore_pause":"探索者已暂停 — 右键单击 › 继续",
 "rt.explore_off":"探索者已停止",
 "rt.explore_busy":"探索者：请先停止行走、路径播放或 Claude 的实时建造",
+"rt.explore_no_floor":"探索者：相机下方没有地面，将一直飞行，直到找到可以降落的地方",
 "rt.bridge_busy":"Claude 正在模型中实时建造：请等它完成",
 "explore.pause":"暂停",
 "explore.resume":"继续",

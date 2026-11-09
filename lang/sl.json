@@ -484,6 +484,7 @@
 "rt.explore_pause":"Raziskovalec na premoru — desni klik › Nadaljuj",
 "rt.explore_off":"Raziskovalec ustavljen",
 "rt.explore_busy":"Raziskovalec: najprej ustavite hojo, predvajanje poti ali Claudovo gradnjo v živo",
+"rt.explore_no_floor":"Raziskovalec: pod kamero ni tal, leti, dokler ne najde, kje pristati",
 "rt.bridge_busy":"Claude ravno gradi v živo v modelu: počakajte, da konča",
 "explore.pause":"Premor",
 "explore.resume":"Nadaljuj",

@@ -484,6 +484,7 @@
 "rt.explore_pause":"Penjelajah dijeda — klik kanan › Lanjutkan",
 "rt.explore_off":"Penjelajah berhenti",
 "rt.explore_busy":"Penjelajah: hentikan dulu berjalan, pemutaran jalur, atau pembangunan langsung oleh Claude",
+"rt.explore_no_floor":"Penjelajah: tidak ada lantai di bawah kamera, ia terbang sampai menemukan tempat mendarat",
 "rt.bridge_busy":"Claude sedang membangun langsung di model: tunggu sampai selesai",
 "explore.pause":"Jeda",
 "explore.resume":"Lanjutkan",

@@ -55,6 +55,20 @@ Il numero sta in un posto solo, `VERSION` in `dagawasd.rb`;
   cartella).
 - Test: il conteggio dei fotogrammi per giro dell'esportazione video non
   fallisce più quando `sleep` di Windows sfora di qualche millisecondo.
+- Esploratore: chi corre si ferma alla sua distanza di sosta. Prima la
+  frenata cominciava sempre un metro e mezzo prima, qualunque fosse la
+  velocità: il Soldato, che dovrebbe guardare da 3,5 m, scivolava fino a
+  0,9 m, il Corridore finiva addosso agli oggetti e in volo passava oltre
+  di una ventina di metri. Ora la velocità d'arrivo tiene conto dello spazio
+  per frenare (anche lungo un percorso che aggira un muro); i profili lenti
+  non cambiano.
+- Esploratore: lo Spensierato cambia idea facilmente, ma non più a ogni
+  analisi. Il capriccio di ogni candidato dura qualche secondo invece di
+  essere ripescato ogni mezzo secondo: prima l'obiettivo cambiava in media
+  ogni 2 s e non arrivava quasi mai a niente oltre i 3 m.
+- Esploratore: un profilo sempre a piedi (Soldato) partito con il vuoto
+  sotto la camera volava per sempre, senza atterrare. Ora lo dice nella riga
+  di stato, vola come in automatico e atterra appena può.
 
 ## [1.2.1] — 2026-11-02
 

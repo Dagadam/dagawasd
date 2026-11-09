@@ -1211,7 +1211,98 @@ modi = []
 run(ex[:view], 10.0) { |e| modi << e[:mode] }
 ok(vola == :fly && modi.uniq == [:walk] && (ex[:z] - ex[:floor] - ex[:eye_h]).abs < 0.05 * M,
    "Soldato da una camera alta: sempre a piedi, occhi a #{((ex[:z] - ex[:floor]) / M).round(2)} m (Equilibrato: #{vola})")
+# senza niente sotto la camera (fuori dal modello, oltre il muro della stanza B) vola come in auto,
+# lo dice, e atterra appena arrivato: prima volava per sempre (atterrava solo auto)
+fresh(world, [10, -1.5, 4.5], [3, 0, 0.5], 'record' => false, 'profile' => 'soldier')
+avviso = $status
+partito = ex[:mode]
+run(ex[:view], 40.0)
+ok(partito == :fly && avviso == F.t('rt.explore_no_floor') && ex[:mode] == :walk && (ex[:z] - ex[:floor] - ex[:eye_h]).abs < 0.05 * M,
+   "Soldato senza pavimento sotto: avvisa (#{avviso[0, 40]}…), vola e atterra (#{ex[:mode]})")
 F.explore_stop
+
+# ── Coerenza dei profili: ognuno arriva dove dice ───────────────────
+# Un cubo a 20 m su un pavimento libero: si punta lui (explore_aim) e si
+# fanno i passi veri (explore_walk/explore_fly e lo sguardo), senza analisi
+# che cambino obiettivo. Fermi, si deve stare alla distanza di sosta: prima
+# chi correva (Corridore, Soldato) frenava solo nell'ultimo metro e mezzo e
+# scivolava fin quasi addosso al cubo (Soldato: 0,9 m invece di 3,5).
+# (Metodi, non lambda: non toccano le variabili del resto del file.)
+def coerenza_arriva(w, inst, pt, opts)
+  fresh(w, [0, 0, 1.7], [pt[0], pt[1], 1.7], { 'record' => false, 'orbit' => 0.0, 'zoom' => false }.merge(opts))
+  e = ex
+  F.explore_aim(e, { id: 'cubo', kind: nil, pt: pt.map { |v| v * M }, score: 1.0, area: 0.0, cell: nil, label: 'Cubo',
+                     obj: inst, opath: [inst], open: false }, $now)
+  tgt = e[:target]
+  t0 = $now
+  vmax = 0.0
+  (150 * 30).times do
+    $now += 1.0 / 30
+    e[:mode] == :walk ? F.explore_walk(e, $now, 1.0 / 30) : F.explore_fly(e, $now, 1.0 / 30)
+    F.explore_gaze(e, 1.0 / 30)
+    v = Math.sqrt(e[:vx]**2 + e[:vy]**2 + e[:vz].to_f**2)
+    vmax = [vmax, v].max
+    break if tgt[:arrived] && v < 0.01
+  end
+  d = if e[:mode] == :walk then Math.hypot(tgt[:pt][0] - e[:x], tgt[:pt][1] - e[:y])
+      else F.explore_d3([e[:x], e[:y], e[:z]], tgt[:pt])
+      end
+  res = { arrived: !tgt[:arrived].nil?, stop: d / M, standoff: tgt[:standoff] / M, vmax: vmax, secs: $now - t0 }
+  F.explore_stop
+  res
+end
+
+def coerenza_ok?(r); r[:arrived] && r[:stop] >= 0.85 * r[:standoff] && r[:stop] <= r[:standoff] + 0.05; end
+
+piano = Scena::World.new
+piano.box([-10, -15, -0.1], [90, 15, 0], Scena::Mat.new('Pavimento', [190, 186, 178]))
+cubo = Scena::Inst.new('Cubo')
+piano.box([19.75, -0.25, 0], [20.25, 0.25, 0.5], Scena::Mat.new('Rosso', [200, 40, 40]), cubo)
+vuoto = Scena::World.new                         # in volo: solo il cubo, sospeso
+cubo_v = Scena::Inst.new('Cubo')
+vuoto.box([59.75, -0.25, 1.45], [60.25, 0.25, 1.95], Scena::Mat.new('Rosso', [200, 40, 40]), cubo_v)
+fermi = F::EX_PROFILES.keys.map { |pr| [pr, coerenza_arriva(piano, cubo, [20, 0, 0.25], 'profile' => pr)] }
+# e gli estremi dei cursori: il più veloce col più vicino e col più lontano, il più lento
+fermi << ['4 m/s, 0,4 m', coerenza_arriva(piano, cubo, [20, 0, 0.25], 'speed' => 4.0, 'standoff' => 0.4)]
+fermi << ['4 m/s, 8 m', coerenza_arriva(piano, cubo, [20, 0, 0.25], 'speed' => 4.0, 'standoff' => 8.0)]
+fermi << ['0,2 m/s', coerenza_arriva(piano, cubo, [20, 0, 0.25], 'speed' => 0.2)]
+ok(fermi.all? { |_, r| coerenza_ok?(r) }, 'a piedi ognuno si ferma alla sua distanza di sosta (−15% al più): ' +
+   fermi.map { |pr, r| "#{pr} #{r[:stop].round(2)}/#{r[:standoff].round(1)} m" }.join(', '))
+sold = fermi.assoc('soldier')[1]
+ok(sold[:vmax] > 3.3 && sold[:secs] < 12.0,
+   "e chi corre corre lo stesso: Soldato a #{sold[:vmax].round(1)} m/s, fermo in #{sold[:secs].round(1)} s")
+volo = %w[balanced runner].map { |pr| [pr, coerenza_arriva(vuoto, cubo_v, [60, 0, 1.7], 'profile' => pr, 'mode' => 'fly')] }
+ok(volo.all? { |_, r| coerenza_ok?(r) },
+   'in volo anche: ' + volo.map { |pr, r| "#{pr} #{r[:stop].round(2)}/#{r[:standoff].round(1)} m (fino a #{r[:vmax].round(1)} m/s)" }.join(', '))
+
+# Capriccio: lo Spensierato cambia idea facilmente, ma non a ogni analisi.
+# Cinque candidati uguali davanti, analisi ogni step_time senza muoversi
+# (continuità spenta: conta solo il capriccio). Prima il capriccio si
+# ripescava a ogni analisi e l'obiettivo cambiava ogni 2 s circa: a 1,1 m/s
+# non si arrivava a niente che fosse oltre 3 m.
+def coerenza_capricci(w, prof)
+  fresh(w, [-6.5, 0.5, 1.7], [0, 0.5, 1.7], 'record' => false, 'profile' => prof, 'continuity' => 0.0)
+  e = ex
+  davanti = (-2..2).map do |k|
+    { id: "c#{k}", kind: nil, pt: [1.5 * M, (0.5 + 0.8 * k) * M, 1.0 * M], area: 0.0, cell: nil, label: "C#{k}",
+      obj: nil, opath: nil, open: false }
+  end
+  cambi = 0
+  prima = nil
+  (60.0 / e[:o]['step_time']).round.times do
+    $now += e[:o]['step_time']
+    F.explore_decide(e, { hits: 10, cells: [], cands: davanti.map { |c| c.merge(score: 0.5, pt: c[:pt].dup) } }, $now)
+    adesso = e[:target] && e[:target][:id]
+    cambi += 1 if prima && adesso != prima
+    prima = adesso
+  end
+  F.explore_stop
+  60.0 / (cambi + 1)
+end
+sp = coerenza_capricci(world, 'carefree')
+eq = coerenza_capricci(world, 'balanced')
+ok(sp.between?(4.0, 15.0) && eq >= 30.0,
+   "obiettivo tenuto in media #{sp.round(1)} s dallo Spensierato, che cambia idea ma non di continuo (Equilibrato #{eq.round(1)} s)")
 
 # Finestra di avvio: il pulsante la apre (fermo) o ferma; le scelte restano
 aperta = 0

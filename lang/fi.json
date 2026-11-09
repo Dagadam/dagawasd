@@ -484,6 +484,7 @@
 "rt.explore_pause":"Tutkija tauolla — oikea painike › Jatka",
 "rt.explore_off":"Tutkija pysäytetty",
 "rt.explore_busy":"Tutkija: pysäytä ensin kävely, reitin toisto tai Clauden suora rakentaminen",
+"rt.explore_no_floor":"Tutkija: kameran alla ei ole lattiaa, se lentää, kunnes löytää laskeutumispaikan",
 "rt.bridge_busy":"Claude rakentaa malliin suorana: odota, kunnes se on valmis",
 "explore.pause":"Tauko",
 "explore.resume":"Jatka",

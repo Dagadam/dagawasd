@@ -484,6 +484,7 @@
 "rt.explore_pause":"Explorator în pauză — clic dreapta › Reia",
 "rt.explore_off":"Explorator oprit",
 "rt.explore_busy":"Explorator: oprește mai întâi mersul, redarea traseului sau construcția în direct a lui Claude",
+"rt.explore_no_floor":"Explorator: sub cameră nu există podea, zboară până găsește unde să aterizeze",
 "rt.bridge_busy":"Claude construiește în direct în model: așteaptă să termine",
 "explore.pause":"Pauză",
 "explore.resume":"Reia",

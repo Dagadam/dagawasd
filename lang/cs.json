@@ -484,6 +484,7 @@
 "rt.explore_pause":"Průzkumník pozastaven — pravé tlačítko › Pokračovat",
 "rt.explore_off":"Průzkumník zastaven",
 "rt.explore_busy":"Průzkumník: nejprve zastavte chůzi, přehrávání trasy nebo živou stavbu od Clauda",
+"rt.explore_no_floor":"Průzkumník: pod kamerou není podlaha, letí, dokud nenajde, kde přistát",
 "rt.bridge_busy":"Claude právě živě staví v modelu: počkejte, až skončí",
 "explore.pause":"Pozastavit",
 "explore.resume":"Pokračovat",

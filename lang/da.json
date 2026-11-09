@@ -484,6 +484,7 @@
 "rt.explore_pause":"Udforsker på pause — højreklik › Fortsæt",
 "rt.explore_off":"Udforsker stoppet",
 "rt.explore_busy":"Udforsker: stop først gåturen, afspilningen af ruten eller Claudes live-byggeri",
+"rt.explore_no_floor":"Udforsker: der er intet gulv under kameraet, den flyver, indtil den finder et sted at lande",
 "rt.bridge_busy":"Claude bygger live i modellen: vent, til den er færdig",
 "explore.pause":"Pause",
 "explore.resume":"Fortsæt",

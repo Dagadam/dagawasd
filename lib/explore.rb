@@ -209,6 +209,8 @@ module DagaWASD
     # ── Corpo e sguardo ─────────────────────────────────────────────
     EX_GAZE_K     = 3.2      # 1/s: rapidità con cui lo sguardo insegue (come ORBIT_FOLLOW)
     EX_ACCEL      = 1.6      # m/s²
+    EX_BRAKE_K    = 0.8      # parte della decelerazione su cui si conta frenando (margine)
+    EX_BRAKE_LOW  = 0.4      # m/s: frenando verso la sosta mai più piano di così (se no non si arriva)
     EX_STEP_MAX   = 0.25     # m: gradini (scale sì, tavolini no)
     EX_STEER      = [0, 25, -25, 50, -50, 80, -80, 115, -115].freeze   # gradi di deviazione provati
     EX_STUCK_T    = 1.6      # s fra due controlli di avanzamento
@@ -219,6 +221,8 @@ module DagaWASD
     EX_STALL_T    = 10.0     # s: ogni tanto si controlla di essersi mossi davvero
     EX_STALL_D    = 0.75 * M_TO_IN   # meno di così in EX_STALL_T, senza sosta né zoom: bloccato
     EX_ESCAPE_T   = 5.0      # s di cammino nella via di fuga, senza guardare nient'altro
+    EX_WHIM_T     = 6.0      # s: il capriccio per un candidato dura tanto (± un quarto), poi si ripesca
+    EX_NOTICE_T   = 6.0      # s: un avviso resta nella riga di stato
     EX_ZOOM_K     = 2.2      # 1/s: rapidità dello zoom (sul logaritmo del campo visivo)
     EX_JUMP_DETOUR = 50.0 * DEG      # un giro più largo di così attorno all'ostacolo: meglio saltare
     EX_JUMP_RETRY  = 0.6     # s fra due tentativi (e dopo un atterraggio)
@@ -398,12 +402,18 @@ module DagaWASD
     end
 
     # A piedi se sotto gli occhi c'è un pavimento a portata, altrimenti in volo.
+    # Un profilo sempre a piedi (walk) scende sul pavimento che c'è sotto, a
+    # qualunque altezza; se sotto non c'è niente vola come in automatico,
+    # finché non atterra (explore_fly), e lo dice nella riga di stato.
     def self.explore_pick_mode(ex)
       res = ray(ex[:x], ex[:y], ex[:z], 0, 0, -1)
       want = ex[:o]['mode']
       ex[:floor] = res ? res[0].z : nil
       walk = want != 'fly' && res && (want == 'walk' || ex[:z] - res[0].z <= ex[:eye_h] + EX_LAND)
       ex[:mode] = walk ? :walk : :fly
+      return unless want == 'walk' && !walk
+      ex[:notice] = [t('rt.explore_no_floor'), explore_clock + EX_NOTICE_T]
+      explore_log(ex, nil, 'senza pavimento') if ex[:log]
     end
 
     # Ferma l'esploratore; salva il giro come percorso. Ritorna il nome del
@@ -1145,17 +1155,18 @@ module DagaWASD
       ex[:fronts] = res[:fronts] || []
       return if ex[:escape]                      # sulla via di fuga non si guarda altro
       o = ex[:o]
-      whim = o['whim']
       cands = res[:cands]
       walk = ex[:mode] == :walk
       ex[:fronts].each { |f| cands << explore_front_cand(ex, f) } if walk
       pilot_seen(ex, cands, now)                 # lib/expilot.rb: l'elenco delle cose viste, per l'IA
       cur = ex[:target]
+      whims = explore_whims(ex, now)
       cands.each do |c|
-        k = explore_bored_f(ex, c, now) * explore_walk_f(ex, c[:pt], now) * (1.0 - whim + 2.0 * whim * ex[:rng].rand)
+        same = cur && (c[:id] == cur[:id] || (cur[:front] && c[:front] && explore_front_same?(c, cur)))
+        k = explore_bored_f(ex, c, now) * explore_walk_f(ex, c[:pt], now) * explore_whim_f(ex, whims, same ? cur[:id] : c[:id], now)
         k *= pilot_like_f(ex, c)                 # i gusti dati dall'IA
         # l'obiettivo di adesso no: lo si sta già guardando, o aggirando
-        k *= explore_shift_f(ex, c, now) unless cur && (c[:id] == cur[:id] || (cur[:front] && c[:front] && explore_front_same?(c, cur)))
+        k *= explore_shift_f(ex, c, now) unless same
         if walk
           # a piedi, ciò che sta su un altro piano si guarda ma non si insegue
           k *= 1.0 - 0.5 * explore_ss(1.5, 4.0, (c[:pt][2] - ex[:z]).abs * IN_TO_M)
@@ -1212,6 +1223,26 @@ module DagaWASD
         ex[:target] = nil
         explore_look_around(ex, res, now) unless ex[:look]
       end
+    end
+
+    # ── Capriccio (whim nel profilo) ──
+    # Ogni candidato ha il suo fattore fra 1 − whim e 1 + whim, che resta
+    # EX_WHIM_T s (± un quarto, così non scadono tutti insieme). Ripescato a
+    # ogni analisi, con whim alto (Spensierato) l'obiettivo cambiava ogni due
+    # secondi circa e non si arrivava quasi mai da nessuna parte; così cambia
+    # idea quando cambia il capriccio, ogni qualche secondo.
+    # explore_whims: la tabella { id => [fattore, scadenza] }, senza quelli scaduti.
+    def self.explore_whims(ex, now)
+      tab = (ex[:whims] ||= {})
+      tab.delete_if { |_, w| now >= w[1] }
+      tab
+    end
+
+    def self.explore_whim_f(ex, tab, id, now)
+      whim = ex[:o]['whim']
+      return 1.0 if whim <= 0.0
+      w = (tab[id] ||= [1.0 - whim + 2.0 * whim * ex[:rng].rand, now + EX_WHIM_T * (0.75 + 0.5 * ex[:rng].rand)])
+      w[0].clamp(1.0 - whim, 1.0 + whim)         # whim cambiato nel frattempo: non oltre il nuovo
     end
 
     # Nuovo obiettivo. La distanza a cui fermarsi dipende da quanto è grande:
@@ -2401,8 +2432,31 @@ module DagaWASD
       # lo sguardo può stare sull'obiettivo mentre il percorso gira: di lato si va più piano
       e = explore_wrap(ang - ex[:yaw]).abs
       face = e < 45.0 * DEG ? 1.0 : (e < 100.0 * DEG ? 0.75 : 0.5)
-      slow = 0.35 + 0.65 * explore_ss(tgt[:standoff], tgt[:standoff] + 1.5 * M_TO_IN, dist)
-      [ang, ex[:speed] * face * slow]
+      # quanto resta da camminare è il percorso (dietro un muro è vicino ma lontano), più
+      # l'ultimo tratto dritto: il percorso finisce già a distanza di sosta dall'obiettivo
+      left = tgt[:dist] + Math.hypot(pts[-1][0] - tgt[:pt][0], pts[-1][1] - tgt[:pt][1])
+      [ang, face * explore_approach_speed(ex, tgt, left)]
+    end
+
+    # Velocità verso l'obiettivo, a piedi (m/s). Nell'ultimo metro e mezzo
+    # prima della sosta si rallenta (a un terzo); verso una cosa da guardare,
+    # poi, non più svelti di quanto permetta di fermarsi lì frenando
+    # (explore_brake): col solo rallentamento, oltre 1,3 m/s circa
+    # (Corridore, Soldato) si arrivava a 2–3 m/s e si scivolava fin quasi
+    # addosso all'obiettivo. Spazio aperto e zone mai viste no: sono punti di
+    # passaggio (che si spostano man mano che ci si avvicina), da dove si
+    # guarda avanti, non qualcosa da cui stare a distanza.
+    def self.explore_approach_speed(ex, tgt, dist)
+      v = ex[:speed] * (0.35 + 0.65 * explore_ss(tgt[:standoff], tgt[:standoff] + 1.5 * M_TO_IN, dist))
+      tgt[:open] ? v : [v, explore_brake(dist, tgt[:standoff], EX_ACCEL)].min
+    end
+
+    # La velocità più alta (m/s) da cui, a dist (pollici) dal punto, ci si
+    # ferma prima della distanza di sosta decelerando ad acc (m/s²), con
+    # margine; mai sotto EX_BRAKE_LOW.
+    def self.explore_brake(dist, standoff, acc)
+      room = [(dist - standoff) * IN_TO_M, 0.0].max
+      [Math.sqrt(2.0 * acc * EX_BRAKE_K * room), EX_BRAKE_LOW].max
     end
 
     # Dove guardare camminando sul percorso: avanti, se l'obiettivo è
@@ -2572,8 +2626,7 @@ module DagaWASD
                      elsif e > 110.0 * DEG then 0.0
                      else (110.0 * DEG - e) / (65.0 * DEG)
                      end
-              slow = 0.35 + 0.65 * explore_ss(tgt[:standoff], tgt[:standoff] + 1.5 * M_TO_IN, dist)
-              want = ex[:speed] * face * slow
+              want = face * explore_approach_speed(ex, tgt, dist)
             end
           end
         end
@@ -2836,7 +2889,8 @@ module DagaWASD
           face = dot > 0.7 ? 1.0 : (dot < 0.0 ? 0.0 : dot / 0.7)
           far = (dist * IN_TO_M / 10.0).clamp(0.5, 4.0)       # lontano si vola più svelti
           slow = 0.3 + 0.7 * explore_ss(tgt[:standoff], tgt[:standoff] + 3.0 * M_TO_IN, dist)
-          want = ex[:speed] * EX_FLY_MUL * far * face * slow
+          # ma non più di quanto lascia fermarsi alla sosta (a 12 m/s si passava oltre di 20 m)
+          want = face * [ex[:speed] * EX_FLY_MUL * far * slow, explore_brake(dist, tgt[:standoff], EX_ACCEL * 2.0)].min
         end
       end
       # senza obiettivo si sale a guardare dall'alto (vedi explore_look_around)
@@ -2844,7 +2898,7 @@ module DagaWASD
         uz = 1.0
         want = [1.2, (rise - ex[:z]) * IN_TO_M].min
       end
-      acc = EX_ACCEL * 2.0
+      acc = EX_ACCEL * 2.0                       # come in explore_brake qui sopra
       ex[:vx] = approach(ex[:vx], ux * want, acc, dt)
       ex[:vy] = approach(ex[:vy], uy * want, acc, dt)
       ex[:vz] = approach(ex[:vz], uz * want, acc, dt)
@@ -2862,17 +2916,19 @@ module DagaWASD
         end
       end
       # mai sotto l'altezza degli occhi sul terreno; vicino a terra si atterra,
-      # ma solo arrivati (non sul tetto che si sorvola per andare oltre)
+      # ma solo arrivati (non sul tetto che si sorvola per andare oltre).
+      # Anche un profilo sempre a piedi partito senza pavimento sotto (explore_pick_mode)
       g = ray(ex[:x], ex[:y], ex[:z], 0, 0, -1)
       return unless g
       gap = ex[:z] - g[0].z
       ex[:z] = g[0].z + ex[:eye_h] if gap < ex[:eye_h]
-      return unless ex[:o]['mode'] == 'auto' && gap <= ex[:eye_h] + 0.3 * M_TO_IN
+      return unless ex[:o]['mode'] != 'fly' && gap <= ex[:eye_h] + 0.3 * M_TO_IN
       return if (t = ex[:target]) && !t[:arrived]
       return if ex[:no_land] && now < ex[:no_land]   # appena decollato da dove era bloccato
       ex[:mode] = :walk
       ex[:floor] = g[0].z
       ex[:vz] = 0.0
+      ex[:notice] = nil
     end
 
     # ══════════════════════════════════════════════════════════════
@@ -3067,6 +3123,7 @@ module DagaWASD
 
     def self.explore_status_line(ex)
       return t('rt.explore_pause') if ex[:paused]
+      return ex[:notice][0] if ex[:notice] && explore_clock < ex[:notice][1]
       tgt = ex[:target]
       return t('rt.explore_look') if tgt.nil? || ex[:look]
       format(t('rt.explore_hud'), what: tgt[:label], dist: format('%.1f', explore_dist_eye(ex, tgt[:pt]) * IN_TO_M),

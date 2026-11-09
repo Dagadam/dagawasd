@@ -484,6 +484,7 @@
 "rt.explore_pause":"Tyrinėtojas pristabdytas — dešinysis spustelėjimas › Tęsti",
 "rt.explore_off":"Tyrinėtojas sustabdytas",
 "rt.explore_busy":"Tyrinėtojas: pirmiausia sustabdykite ėjimą, maršruto atkūrimą arba tiesioginį Claude statymą",
+"rt.explore_no_floor":"Tyrinėtojas: po kamera nėra grindų, jis skrenda, kol randa, kur nusileisti",
 "rt.bridge_busy":"Claude šiuo metu tiesiogiai stato modelyje: palaukite, kol baigs",
 "explore.pause":"Pristabdyti",
 "explore.resume":"Tęsti",

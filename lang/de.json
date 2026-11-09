@@ -484,6 +484,7 @@
 "rt.explore_pause":"Erkunder pausiert — Rechtsklick › Fortsetzen",
 "rt.explore_off":"Erkunder beendet",
 "rt.explore_busy":"Erkunder: beende zuerst das Gehen, die Pfadwiedergabe oder Claudes Live-Bau",
+"rt.explore_no_floor":"Erkunder: unter der Kamera ist kein Boden, er fliegt, bis er einen Landeplatz findet",
 "rt.bridge_busy":"Claude baut gerade live im Modell: warte, bis der Bau fertig ist",
 "explore.pause":"Pausieren",
 "explore.resume":"Fortsetzen",

@@ -484,6 +484,7 @@
 "rt.explore_pause":"Esploratore in pausa — tasto destro › Riprendi",
 "rt.explore_off":"Esploratore fermato",
 "rt.explore_busy":"Esploratore: ferma prima la camminata, la riproduzione del percorso o la costruzione dal vivo di Claude",
+"rt.explore_no_floor":"Esploratore: sotto la camera non c'è pavimento, vola finché non trova dove atterrare",
 "rt.bridge_busy":"Claude sta costruendo dal vivo nel modello: aspetta che finisca",
 "explore.pause":"Pausa",
 "explore.resume":"Riprendi",

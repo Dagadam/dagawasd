@@ -484,6 +484,7 @@
 "rt.explore_pause":"エクスプローラー一時停止中 — 右クリック › 再開",
 "rt.explore_off":"エクスプローラーを停止しました",
 "rt.explore_busy":"エクスプローラー：先にウォーク、パスの再生、または Claude のライブ構築を止めてください",
+"rt.explore_no_floor":"エクスプローラー：カメラの下に床がありません。着地できる場所が見つかるまで飛びます",
 "rt.bridge_busy":"Claude がモデル内でライブ構築中です：終わるまでお待ちください",
 "explore.pause":"一時停止",
 "explore.resume":"再開",

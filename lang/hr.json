@@ -484,6 +484,7 @@
 "rt.explore_pause":"Istraživač pauziran — desni klik › Nastavi",
 "rt.explore_off":"Istraživač zaustavljen",
 "rt.explore_busy":"Istraživač: najprije zaustavite hodanje, reprodukciju putanje ili Claudeovu gradnju uživo",
+"rt.explore_no_floor":"Istraživač: ispod kamere nema poda, leti dok ne pronađe gdje sletjeti",
 "rt.bridge_busy":"Claude upravo gradi uživo u modelu: pričekajte da završi",
 "explore.pause":"Pauza",
 "explore.resume":"Nastavi",
