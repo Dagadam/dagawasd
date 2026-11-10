@@ -349,6 +349,8 @@ Scrivi a [DagaWASD@icloud.com](mailto:DagaWASD@icloud.com). Bug e idee è meglio
 [issue](https://github.com/Dagadam/dagawasd/issues), dove anche altri possono vederli e seguirli;
 i problemi di sicurezza passano dalla [politica di sicurezza](.github/SECURITY.md).
 
+Se DagaWASD ti è utile, puoi sostenerne lo sviluppo su [Ko-fi](https://ko-fi.com/dagadam).
+
 ## Licenza
 
 [MIT](LICENSE) © 2026 Dagadam. Puoi usare, modificare e ridistribuire il codice

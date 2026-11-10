@@ -340,6 +340,8 @@ Pište na [DagaWASD@icloud.com](mailto:DagaWASD@icloud.com). Chyby a nápady je 
 [issue](https://github.com/Dagadam/dagawasd/issues), kde je uvidí a mohou sledovat i ostatní;
 bezpečnostní problémy hlaste podle [bezpečnostních zásad](.github/SECURITY.md).
 
+Pokud je vám DagaWASD užitečný, můžete podpořit jeho vývoj na [Ko-fi](https://ko-fi.com/dagadam).
+
 ## Licence
 
 [MIT](LICENSE) © 2026 Dagadam. Kód můžete volně používat, upravovat a

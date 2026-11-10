@@ -156,6 +156,8 @@ ruby tools/pilota_ia.rb --motore api                     # API を使う（キ�
 
 [DagaWASD@icloud.com](mailto:DagaWASD@icloud.com) までどうぞ。不具合やアイデアは、ほかの人も見て追えるように [issue](https://github.com/Dagadam/dagawasd/issues) にしてください。セキュリティの問題は[セキュリティポリシー](.github/SECURITY.md)に従ってください。
 
+DagaWASD が役に立ったら、[Ko-fi](https://ko-fi.com/dagadam) で開発を支援できます。
+
 ## ライセンス
 
 [MIT](LICENSE) © 2026 Dagadam。各コピーに著作権表示とライセンス文を残す限り、商用を含めて自由に使用、改変、再配布できます。

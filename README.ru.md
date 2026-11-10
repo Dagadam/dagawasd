@@ -356,6 +356,8 @@ ruby tools/pilota_ia.rb --motore api                     # API, с ключом
 [issue](https://github.com/Dagadam/dagawasd/issues), где их увидят и смогут отслеживать другие;
 о проблемах безопасности — по [политике безопасности](.github/SECURITY.md).
 
+Если DagaWASD вам полезен, вы можете поддержать его разработку на [Ko-fi](https://ko-fi.com/dagadam).
+
 ## Лицензия
 
 [MIT](LICENSE) © 2026 Dagadam. Вы можете свободно использовать, изменять и

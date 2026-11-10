@@ -377,6 +377,8 @@ Le code, ses commentaires et le journal des modifications sont en italien.
 une [issue](https://github.com/Dagadam/dagawasd/issues), que d'autres peuvent voir et suivre ;
 les problèmes de sécurité passent par la [politique de sécurité](.github/SECURITY.md).
 
+Si DagaWASD t'est utile, tu peux soutenir son développement sur [Ko-fi](https://ko-fi.com/dagadam).
+
 ## Licence
 
 [MIT](LICENSE) © 2026 Dagadam. Vous pouvez utiliser, modifier et
