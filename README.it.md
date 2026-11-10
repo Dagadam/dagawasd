@@ -343,6 +343,12 @@ foto e nella pagina stessa, così viaggiano con la cartella.
   - `tools\prova_fps.rb` cammina e corre in modalità FPS e misura
     l'oscillazione della testa.
 
+## Contatti
+
+Scrivi a [DagaWASD@icloud.com](mailto:DagaWASD@icloud.com). Bug e idee è meglio aprirli come
+[issue](https://github.com/Dagadam/dagawasd/issues), dove anche altri possono vederli e seguirli;
+i problemi di sicurezza passano dalla [politica di sicurezza](.github/SECURITY.md).
+
 ## Licenza
 
 [MIT](LICENSE) © 2026 Dagadam. Puoi usare, modificare e ridistribuire il codice

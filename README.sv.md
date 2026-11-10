@@ -350,6 +350,12 @@ Koden, kommentarerna och ändringsloggen är på italienska.
   - `tools\prova_fps.rb` går och springer i FPS-läge och mäter huvudets
     gungning.
 
+## Kontakt
+
+Skriv till [DagaWASD@icloud.com](mailto:DagaWASD@icloud.com). Buggar och idéer är bättre som
+[issue](https://github.com/Dagadam/dagawasd/issues), där andra kan se och följa dem;
+säkerhetsproblem rapporteras enligt [säkerhetspolicyn](.github/SECURITY.md).
+
 ## Licens
 
 [MIT](LICENSE) © 2026 Dagadam. Du får använda, ändra och sprida koden

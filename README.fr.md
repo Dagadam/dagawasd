@@ -371,6 +371,12 @@ Le code, ses commentaires et le journal des modifications sont en italien.
   - `tools\prova_fps.rb` marche et court en mode FPS et mesure le balancement
     de la tête.
 
+## Contact
+
+Écris à [DagaWASD@icloud.com](mailto:DagaWASD@icloud.com). Pour les bugs et les idées, mieux vaut
+une [issue](https://github.com/Dagadam/dagawasd/issues), que d'autres peuvent voir et suivre ;
+les problèmes de sécurité passent par la [politique de sécurité](.github/SECURITY.md).
+
 ## Licence
 
 [MIT](LICENSE) © 2026 Dagadam. Vous pouvez utiliser, modifier et

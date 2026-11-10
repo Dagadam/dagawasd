@@ -18,6 +18,7 @@ page first and check whether the problem is still there.
 Report them privately through GitHub:
 [**Report a vulnerability**](https://github.com/Dagadam/dagawasd/security/advisories/new)
 (also reachable from the *Security* tab of this repository).
+If you cannot use it, write to [DagaWASD@icloud.com](mailto:DagaWASD@icloud.com) instead.
 
 Please include:
 

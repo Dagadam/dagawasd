@@ -334,6 +334,12 @@ Kód, jeho komentáře a seznam změn jsou v italštině.
     velkou);
   - `tools\prova_fps.rb` chodí a běhá v režimu FPS a měří houpání hlavy.
 
+## Kontakt
+
+Pište na [DagaWASD@icloud.com](mailto:DagaWASD@icloud.com). Chyby a nápady je lepší hlásit jako
+[issue](https://github.com/Dagadam/dagawasd/issues), kde je uvidí a mohou sledovat i ostatní;
+bezpečnostní problémy hlaste podle [bezpečnostních zásad](.github/SECURITY.md).
+
 ## Licence
 
 [MIT](LICENSE) © 2026 Dagadam. Kód můžete volně používat, upravovat a

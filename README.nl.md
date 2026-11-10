@@ -362,6 +362,12 @@ De code, het commentaar en het wijzigingslogboek zijn in het Italiaans.
   - `tools\prova_fps.rb` loopt en rent in FPS-modus en meet het deinen van
     het hoofd.
 
+## Contact
+
+Schrijf naar [DagaWASD@icloud.com](mailto:DagaWASD@icloud.com). Bugs en ideeën liever als
+[issue](https://github.com/Dagadam/dagawasd/issues), waar anderen ze kunnen zien en volgen;
+beveiligingsproblemen via het [beveiligingsbeleid](.github/SECURITY.md).
+
 ## Licentie
 
 [MIT](LICENSE) © 2026 Dagadam. Je mag de code vrij gebruiken, wijzigen en

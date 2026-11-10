@@ -346,6 +346,12 @@ Kod, jego komentarze i dziennik zmian są po włosku.
   - `tools\prova_fps.rb` chodzi i biega w trybie FPS i mierzy kołysanie
     głowy.
 
+## Kontakt
+
+Napisz na [DagaWASD@icloud.com](mailto:DagaWASD@icloud.com). Błędy i pomysły lepiej zgłaszać jako
+[issue](https://github.com/Dagadam/dagawasd/issues), gdzie inni mogą je zobaczyć i śledzić;
+problemy z bezpieczeństwem zgodnie z [polityką bezpieczeństwa](.github/SECURITY.md).
+
 ## Licencja
 
 [MIT](LICENSE) © 2026 Dagadam. Możesz swobodnie używać, zmieniać i

@@ -152,6 +152,10 @@ ruby tools/pilota_ia.rb --motore api                     # API を使う（キ�
   - `tools\schermate.rb` はページ用の画像を `pubblicazione/schermate/` に作ります（1920×1080。少なくともその大きさの画面が必要）。
   - `tools\prova_fps.rb` は FPS モードで歩いたり走ったりして、頭の揺れを測ります。
 
+## 連絡先
+
+[DagaWASD@icloud.com](mailto:DagaWASD@icloud.com) までどうぞ。不具合やアイデアは、ほかの人も見て追えるように [issue](https://github.com/Dagadam/dagawasd/issues) にしてください。セキュリティの問題は[セキュリティポリシー](.github/SECURITY.md)に従ってください。
+
 ## ライセンス
 
 [MIT](LICENSE) © 2026 Dagadam。各コピーに著作権表示とライセンス文を残す限り、商用を含めて自由に使用、改変、再配布できます。

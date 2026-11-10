@@ -152,6 +152,10 @@ ruby tools/pilota_ia.rb --motore api                     # API 사용(키 필요
   - `tools\schermate.rb`는 페이지용 이미지를 `pubblicazione/schermate/`에 만듭니다(1920×1080, 최소 그 크기의 화면 필요).
   - `tools\prova_fps.rb`는 FPS 모드에서 걷고 뛰며 머리 흔들림을 측정합니다.
 
+## 연락처
+
+[DagaWASD@icloud.com](mailto:DagaWASD@icloud.com) 로 연락하세요. 버그와 아이디어는 다른 사람도 보고 따라갈 수 있도록 [이슈](https://github.com/Dagadam/dagawasd/issues)로 올려 주세요. 보안 문제는 [보안 정책](.github/SECURITY.md)을 따라 주세요.
+
 ## 라이선스
 
 [MIT](LICENSE) © 2026 Dagadam. 모든 사본에 저작권 표시와 라이선스 문구를 유지하는 한, 상업적 용도를 포함해 코드를 자유롭게 사용, 수정, 재배포할 수 있습니다.

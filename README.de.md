@@ -369,6 +369,12 @@ Der Code, seine Kommentare und das Änderungsprotokoll sind auf Italienisch.
   - `tools\prova_fps.rb` geht und rennt im FPS-Modus und misst das Wippen
     des Kopfes.
 
+## Kontakt
+
+Schreib an [DagaWASD@icloud.com](mailto:DagaWASD@icloud.com). Fehler und Ideen besser als
+[Issue](https://github.com/Dagadam/dagawasd/issues) melden, wo andere sie sehen und verfolgen können;
+Sicherheitsprobleme bitte über die [Sicherheitsrichtlinie](.github/SECURITY.md).
+
 ## Lizenz
 
 [MIT](LICENSE) © 2026 Dagadam. Du darfst den Code frei verwenden, ändern und

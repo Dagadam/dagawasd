@@ -350,6 +350,12 @@ ruby tools/pilota_ia.rb --motore api                     # API, с ключом
   - `tools\prova_fps.rb` ходит и бегает в режиме FPS и измеряет
     покачивание головы.
 
+## Контакты
+
+Пишите на [DagaWASD@icloud.com](mailto:DagaWASD@icloud.com). Об ошибках и идеях лучше сообщать в
+[issue](https://github.com/Dagadam/dagawasd/issues), где их увидят и смогут отслеживать другие;
+о проблемах безопасности — по [политике безопасности](.github/SECURITY.md).
+
 ## Лицензия
 
 [MIT](LICENSE) © 2026 Dagadam. Вы можете свободно использовать, изменять и

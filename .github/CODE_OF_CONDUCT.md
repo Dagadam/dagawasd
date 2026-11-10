@@ -60,7 +60,7 @@ representative at an online or offline event.
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
 reported to the project maintainer, [@Dagadam](https://github.com/Dagadam), by
-opening an issue that asks for a private contact (without details), or to GitHub
+email at [DagaWASD@icloud.com](mailto:DagaWASD@icloud.com), or to GitHub
 with the *Report content* option available on every comment, issue and pull
 request. All complaints will be reviewed and investigated promptly and fairly.
 
