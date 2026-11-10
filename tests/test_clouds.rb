@@ -67,8 +67,16 @@ cfg['precip_kind'] = 'none'
 cfg.merge!('cloud_size' => 900, 'cloud_height' => 1500, 'cloud_wind' => 10, 'cloud_wind_dir' => 270, 'cloud_shade' => true, 'cloud_fps' => 15)
 F.cloud_seed
 cl = F.instance_variable_get(:@clouds)
-atteso = (0.45 * F::CLOUD_TILE**2 / ((900 * M)**2 * 0.55)).round
-ok(cl.size == atteso, "campo: #{cl.size} nuvole per il 45 % (attese #{atteso})")
+nf = 0.45 * F::CLOUD_TILE**2 / ((900 * M)**2 * 0.55)
+ok(cl.size == nf.ceil, "campo: #{cl.size} nuvole per il 45 % (attese #{nf.ceil})")
+ok(cl.first[5] == 1.0 && cl.last[5] < 0.1 && cl.each_cons(2).all? { |a, b| a[5] >= b[5] }, 'le ultime nuvole sono più piccole: crescono quando la copertura sale')
+prima = cl.first(50).map { |c| c[0, 5] }
+cfg['cloud_cover'] = 46
+F.cloud_seed
+ok(F.instance_variable_get(:@clouds).first(50).map { |c| c[0, 5] } == prima && F.instance_variable_get(:@clouds).size > cl.size, 'copertura un poco più alta: le nuvole restano dove sono, se ne aggiungono')
+cfg['cloud_cover'] = 45
+F.cloud_seed
+cl = F.instance_variable_get(:@clouds)
 F.cloud_place(0.0, 0.0, 1.7 * M)
 list = F.instance_variable_get(:@cloud_list)
 ok(list.all? { |v, *| Math.asin(v[2]) >= F::CLOUD_MIN_ELEV - 1e-9 }, 'nessuna nuvola sotto i 2,5° sull\'orizzonte')

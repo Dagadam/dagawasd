@@ -16,7 +16,9 @@ pierwszoosobowym za pomocą WASD i myszy albo pada.
 - **Fizyka obiektów**: grupy i komponenty spadają, odbijają się i
   przewracają zgodnie z materiałem; można je kopać, chwytać i rzucać.
 - **Niebo i pogoda**: słońce, księżyc i gwiazdy według daty, godziny i
-  miejsca; deszcz, śnieg, chmury, burze, śnieg zalegający na ziemi.
+  miejsca; deszcz, śnieg, chmury, burze, śnieg zalegający na ziemi. Gotowe
+  sytuacje i zmienna pogoda, która sama się zmienia z czasem nieba. Pogoda
+  pojawia się też w eksportowanych filmach.
 - **Trasy**: nagrywaj kamerę podczas chodzenia, odtwarzaj ją, eksportuj jako
   sceny lub film AVI. Dopracuj ją w modelu, przesuwając i obracając jej
   pozycje (kule ze strzałką długą jak zoom oraz ramka kadru), albo zbuduj

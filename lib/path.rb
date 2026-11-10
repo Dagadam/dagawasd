@@ -307,6 +307,8 @@ module DagaWASD
       @path_job[:keys_hidden] = key_hide(model)   # le sfere non devono finire nella vista
       @path_job[:back] = path_cam_save(view.camera) if kind == :play
       model.select_tool(PathTool.new)
+      # prima dell'animazione: SketchUp chiede il primo fotogramma già qui
+      vm_begin(@path_job) if kind == :frames  # lib/videometeo.rb: il meteo col tempo del video (e dipinto)
       view.animation = PathAnimation.new(@path_job)
       nil
     end
@@ -364,6 +366,7 @@ module DagaWASD
       key_unhide(Sketchup.active_model, job[:keys_hidden])
       path_mark(job, nil) unless job[:on].nil?
       if job[:kind] == :frames
+        vm_end(job) if job[:vm]                # il meteo riprende il suo orologio
         path_frames_done(job, why)
       else
         # arrivata in fondo si torna alla vista di partenza (se no resterebbe
@@ -467,16 +470,17 @@ module DagaWASD
       end
       t = k * job[:speed] / job[:fps].to_f
       path_set_camera(view, path_frame_at(job[:frames], [t, job[:dur]].min))
+      vm_step(job, view, k / job[:fps].to_f, k.zero? ? 0.0 : 1.0 / job[:fps]) if job[:vm]   # meteo all'istante del video
       path_mark(job, t)
       if (avi = job[:avi])
-        ok = view.write_image(filename: job[:jpg], width: job[:w], height: job[:h], antialias: true, compression: 0.9)
+        ok = path_shot(view, job, job[:jpg], :jpg)
         raise IOError, job[:jpg] unless ok
         jpeg = File.binread(job[:jpg])
         avi.add(jpeg)
         job[:bytes] = job[:bytes].to_i + jpeg.bytesize + 8
       else
         png = File.join(job[:dir], format('frame_%05d.png', k + 1))
-        ok = view.write_image(filename: png, width: job[:w], height: job[:h], antialias: true)
+        ok = path_shot(view, job, png, :png)
         raise IOError, job[:dir] unless ok
         job[:bytes] = job[:bytes].to_i + File.size(png)
       end
@@ -487,6 +491,19 @@ module DagaWASD
       end
       Sketchup.status_text = format(t('rt.path_frames'), n: k + 1, total: job[:total])
       true
+    end
+
+    # Un fotogramma in file (fmt :jpg o :png): col meteo dipinto se l'opzione
+    # è accesa (lib/videometeo.rb), se no com'è nella vista senza le Overlay.
+    def self.path_shot(view, job, file, fmt)
+      return vm_shot(view, job, file, fmt) if job[:vm] && job[:vm][:paint]
+      path_plain_shot(view, job, file, fmt)
+    end
+
+    def self.path_plain_shot(view, job, file, fmt)
+      opts = { filename: file, width: job[:w], height: job[:h], antialias: true }
+      opts[:compression] = 0.9 if fmt == :jpg
+      view.write_image(opts)
     end
 
     def self.path_frames_done(job, why)

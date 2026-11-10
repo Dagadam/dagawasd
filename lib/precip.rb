@@ -75,13 +75,28 @@ module DagaWASD
     def self.precip_seed(ex, ey, ez)
       @precip_rnd ||= Random.new
       kind = precip_kind
-      @precip = Array.new(precip_count) do |i|
-        snow = kind == 'snow' || (kind == 'mix' && i.odd?)
-        f = @precip_rnd.rand
-        vz = snow ? -(0.7 + 0.5 * f) * M_TO_IN : -(8.0 + 2.0 * f) * M_TO_IN
-        precip_spawn([0.0, 0.0, 0.0, snow, @precip_rnd.rand * 2 * Math::PI, f, vz], ex, ey, ez, true)
-      end
+      @precip = Array.new(precip_count) { |i| precip_particle(i, kind, ex, ey, ez) }
       @precip_splash = []
+      @precip_set = [kind, @precip.size, cf('precip_radius')]
+    end
+
+    # La particella i-esima, in un punto a caso della scatola
+    def self.precip_particle(i, kind, ex, ey, ez)
+      snow = kind == 'snow' || (kind == 'mix' && i.odd?)
+      f = @precip_rnd.rand
+      vz = snow ? -(0.7 + 0.5 * f) * M_TO_IN : -(8.0 + 2.0 * f) * M_TO_IN
+      precip_spawn([0.0, 0.0, 0.0, snow, @precip_rnd.rand * 2 * Math::PI, f, vz], ex, ey, ez, true)
+    end
+
+    # Più fitta o più rada (stesso tipo, stesso raggio): quelle che ci sono
+    # restano, se ne tolgono o aggiungono in fondo. Il meteo variabile la
+    # cambia un poco alla volta: rifarle tutte la farebbe ripartire.
+    def self.precip_resize(n, ex, ey, ez)
+      @precip_rnd ||= Random.new
+      kind = precip_kind
+      if n < @precip.size then @precip.slice!(n..)
+      else (@precip.size...n).each { |i| @precip << precip_particle(i, kind, ex, ey, ez) }
+      end
       @precip_set = [kind, @precip.size, cf('precip_radius')]
     end
 
@@ -135,8 +150,9 @@ module DagaWASD
 
     # ── Mappa dei tetti ───────────────────────────────────────────
     # Celle attorno alla camera, dalla più vicina: si misurano quelle che
-    # mancano finché resta tempo in questo fotogramma.
-    def self.precip_measure(model, eye)
+    # mancano finché resta tempo in questo fotogramma (budget s; nil = tutte,
+    # nei fotogrammi del video).
+    def self.precip_measure(model, eye, budget = PRECIP_RAY_SEC)
       return unless @precip_tops
       n = (precip_radius / PRECIP_CELL).ceil + 1
       if @precip_ring_n != n
@@ -159,7 +175,7 @@ module DagaWASD
         h = hit ? hit[0].z.to_f : 0.0
         @precip_tops[k] = h
         @precip_roof_max = h if h > (@precip_roof_max || 0.0)
-        break if Process.clock_gettime(Process::CLOCK_MONOTONIC) - t0 > PRECIP_RAY_SEC
+        break if budget && Process.clock_gettime(Process::CLOCK_MONOTONIC) - t0 > budget
       end
     end
 
@@ -178,7 +194,12 @@ module DagaWASD
       @precip_tops = cf('precip_roofs') ? (@precip_tops || {}) : nil
       @precip_wind = precip_wind_v(model.shadow_info['NorthAngle'].to_f)
       eye = model.active_view.camera.eye
-      precip_seed(eye.x.to_f, eye.y.to_f, eye.z.to_f) if @precip_set != [precip_kind, precip_count, cf('precip_radius')]
+      want = [precip_kind, precip_count, cf('precip_radius')]
+      if @precip && @precip_set && @precip_set[0] == want[0] && @precip_set[2] == want[2]
+        precip_resize(want[1], eye.x.to_f, eye.y.to_f, eye.z.to_f) if @precip_set[1] != want[1]
+      elsif @precip_set != want
+        precip_seed(eye.x.to_f, eye.y.to_f, eye.z.to_f)
+      end
       precip_apply_fog(model) unless @precip_paused
       model.active_view.invalidate
       rate = cf('precip_fps').to_i.clamp(10, 60)
@@ -228,6 +249,7 @@ module DagaWASD
     def self.precip_frame
       model = @precip_model
       return unless model && !@precip_paused
+      return if @vm_export                      # nel video cade col tempo del video (lib/videometeo.rb)
       return precip_sync unless Sketchup.active_model.equal?(model)
       now = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       dt = @precip_tick ? (now - @precip_tick).clamp(0.0, 0.1) : 0.0

@@ -29,9 +29,13 @@ lightning and no brightening of the sky.
 - **Lightning.** Thunderstorms light up the sky and the scene for about half
   a second, at random moments, 1 to 30 times a minute. They are **off by
   default**. They are turned on by *Weather › Rain & snow › Thunderstorm*,
-  or by the «Summer thunderstorm» ready-made scene. To stop them, untick
-  *Thunderstorm* (or turn on *No flashes*); *Lightning* sets how many per
-  minute.
+  by the «Summer thunderstorm» ready-made scene, and by *Weather › Date &
+  time › Changing weather* (also in the «Mixed bag» ready-made scene), where
+  a thunderstorm comes by itself every 36 hours of sky time (with a
+  three-minute day, about every four and a half minutes). To stop them,
+  untick *Thunderstorm* and *Changing weather*, or turn on *No flashes*,
+  which stops them in every case; *Lightning* sets how many per minute.
+  The same applies to lightning in exported videos.
 
 ## Motion sickness
 
@@ -47,7 +51,9 @@ lightning and no brightening of the sky.
 - **Things moving on their own**: unticking *Weather › Date & time › Time
   passes* stops the sun, moon and stars; clouds still drift with the wind,
   so turn off *Weather › Clouds* (and *Time-lapse clouds*) for a still sky.
-  Rain and snow are off unless you turn them on.
+  Rain and snow are off unless you turn them on, either directly or with
+  *Weather › Date & time › Changing weather*, which brings clouds, rain,
+  storms and snow as sky time passes.
 - **Panel animations**: *System › Appearance › Animations* (Advanced).
 - **Stop at any time**: **Esc** always leaves walking mode, and stops the
   explorer and path replay.

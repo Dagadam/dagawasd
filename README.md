@@ -16,7 +16,9 @@ WASD and the mouse, or with a gamepad.
 - **Object physics**: groups and components fall, bounce and tip over
   according to their material; you can kick, grab and throw them.
 - **Sky and weather**: sun, moon and stars for the date, time and location;
-  rain, snow, clouds, thunderstorms, snow settling on the ground.
+  rain, snow, clouds, thunderstorms, snow settling on the ground. Ready-made
+  scenes, and changing weather that comes and goes as sky time passes. The
+  weather also appears in exported videos.
 - **Camera paths**: record the camera while you walk, replay it, export it as
   scenes or as an AVI video. Fine-tune it in the model by moving and rotating
   its positions (spheres with an arrow as long as the zoom, and the camera

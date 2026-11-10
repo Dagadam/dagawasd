@@ -736,6 +736,7 @@ const SPEC = [
       {k:'path_video_format', type:'choice', opts:['avi','png']},
       {k:'path_video_size', type:'choice', opts:['view','hd','fhd','uhd']},
       {k:'path_video_fps',  u:'Hz', min:10, max:60, step:1, int:true, lv:2},
+      {k:'path_video_weather', type:'bool'},
     ]},
   ]},
 ]},
@@ -836,6 +837,7 @@ const SPEC = [
     { id:'flow', fields:[
       {k:'sky_flow', type:'bool', dep:['sky_enabled', '!sky_now']},
       {k:'sky_day_minutes', u:'min', min:0.5, max:120, step:0.5, dep:['sky_flow', '!sky_now']},
+      {k:'weather_vary', type:'bool', dep:'sky_enabled'},
     ]},
     { id:'skyshow', fields:[
       {k:'sky_shadows', type:'bool', dep:'sky_enabled'},
@@ -1914,7 +1916,7 @@ function pathCmd(cmd, i, j){
 /* ═══ Situazioni pronte ═══
    Ruby imposta i valori (alba e tramonto calcolati per data e luogo),
    salva e rimanda le impostazioni al pannello. */
-const WEATHER_PRESETS = ['clear', 'dawn', 'sunset', 'starry', 'snownight', 'storm', 'timelapse'];
+const WEATHER_PRESETS = ['clear', 'dawn', 'sunset', 'starry', 'snownight', 'storm', 'timelapse', 'mixed'];
 function presetsHTML(){
   return `<div class="note">${esc(T('presets.note'))}</div><div class="wpgrid">`
     + WEATHER_PRESETS.map(id => `<button class="wp" data-wp="${id}" onclick="sketchup.weather_preset('${id}')">`

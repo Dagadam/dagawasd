@@ -343,9 +343,9 @@ w.addEventListener('load', () => {
   ok(!off('sky_now') && !off('sky_hour') && !off('sky_day_minutes'), 'cielo acceso: righe normali');
   d.getElementById('sky_now').click();
   ok(off('sky_hour') && off('sky_flow') && off('sky_day_minutes') && !off('sky_shadows'), 'ora attuale: data, ora e scorrere attenuati');
-  // Situazioni pronte: sette pulsanti con nome e descrizione tradotti, il clic chiama Ruby
+  // Situazioni pronte: otto pulsanti con nome e descrizione tradotti, il clic chiama Ruby
   const wps = [...d.querySelectorAll('#pane_weather_presets .wp')];
-  ok(wps.length === 7 && wps.every(b => b.querySelector('b').textContent && !b.querySelector('b').textContent.startsWith('wp.')
+  ok(wps.length === 8 && wps.every(b => b.querySelector('b').textContent && !b.querySelector('b').textContent.startsWith('wp.')
      && b.querySelector('span').textContent), `situazioni: ${wps.length} pulsanti con nome e descrizione`);
   ok(wps.some(b => b.querySelector('b').textContent === 'Notte di neve'), 'nomi nella lingua del pannello (Notte di neve)');
   wps.find(b => b.dataset.wp === 'storm').click();

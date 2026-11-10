@@ -57,8 +57,9 @@ echo  == Nuvole ==
 "%RUBY%" -E UTF-8 "%ROOT%\tests\test_clouds.rb" || set "FAIL=1"
 
 echo.
-echo  == Temporale, neve al suolo, situazioni ==
+echo  == Temporale, neve al suolo, situazioni, meteo nel video ==
 "%RUBY%" -E UTF-8 "%ROOT%\tests\test_meteo_extra.rb" || set "FAIL=1"
+"%RUBY%" -E UTF-8 "%ROOT%\tests\test_videometeo.rb" || set "FAIL=1"
 
 echo.
 echo  == Gamepad ==

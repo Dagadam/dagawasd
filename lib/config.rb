@@ -180,6 +180,7 @@ module DagaWASD
       'path_video_fps'      => 30,     # immagini al secondo di video
       'path_video_size'     => 'fhd',  # view (come la vista), hd, fhd, uhd
       'path_video_format'   => 'avi',  # avi (video Motion JPEG, lib/avi.rb) o png (immagini)
+      'path_video_weather'  => true,   # sole, luna, nuvole, pioggia e lampi dipinti nei fotogrammi (lib/videometeo.rb)
       # ── Esploratore autonomo (lib/explore.rb, lib/exprofiles.rb) ──
       'explore_profile'     => 'balanced',   # profilo in uso
       'explore_profiles'    => {},           # i tuoi profili e le modifiche a quelli già pronti
@@ -254,6 +255,7 @@ module DagaWASD
       'sky_month'           => 6,
       'sky_flow'            => true,   # il tempo scorre
       'sky_day_minutes'     => 4.0,    # minuti reali per un giorno intero
+      'weather_vary'        => false,  # nuvole, pioggia, temporali e neve che passano col tempo del cielo
       'sky_sun'             => true,
       'sky_moon'            => true,
       'sky_stars'           => true,

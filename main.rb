@@ -25,7 +25,7 @@ require 'set'
 #   pathkeys   posizioni dei percorsi         keyedit    pannello della sfera
 #   explore    esploratore autonomo           exprofiles profili dell'esploratore
 #   expilot    l'IA guida l'esploratore       gallery    foto e galleria
-#   attesa     finestra durante il video
+#   attesa     finestra durante il video      videometeo meteo nei fotogrammi del video
 #   gamepad    controller XInput              ui         menu e barra
 # ══════════════════════════════════════════════════════════════════
 
@@ -44,7 +44,7 @@ if Sketchup.platform != :platform_win
 elsif !defined?(DagaWASD::FPSWalk::PLUGIN_DIR)
   %w[
     config i18n settings input camera raycast player materials geometry support
-    bodies collisions held physics actions lifecycle tick tool panel bridge sky precip clouds snowcover avi path pathkeys keyedit
+    bodies collisions held physics actions lifecycle tick tool panel bridge sky precip clouds snowcover avi videometeo path pathkeys keyedit
     explore exprofiles expilot gallery attesa gamepad ui
   ].each do |f|
     path = File.join(__dir__.dup.force_encoding('UTF-8'), 'lib', f)   # percorsi con lettere accentate

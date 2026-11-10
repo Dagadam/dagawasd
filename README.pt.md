@@ -16,7 +16,9 @@ com WASD e o rato, ou com um comando de jogos.
 - **Física dos objetos**: grupos e componentes caem, ressaltam e tombam
   conforme o material; pode chutá-los, agarrá-los e atirá-los.
 - **Céu e tempo**: sol, lua e estrelas segundo a data, a hora e o local;
-  chuva, neve, nuvens, trovoadas, neve que se acumula no chão.
+  chuva, neve, nuvens, trovoadas, neve que se acumula no chão. Situações
+  prontas e tempo variável que muda sozinho com o tempo do céu. O tempo
+  aparece também nos vídeos exportados.
 - **Percursos**: grave a câmara enquanto caminha, reproduza-a, exporte-a
   como cenas ou como vídeo AVI. Afine-a no modelo movendo e rodando as suas
   posições (esferas com uma seta tão longa quanto o zoom, e a moldura do

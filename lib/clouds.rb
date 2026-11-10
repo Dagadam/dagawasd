@@ -30,6 +30,7 @@ module DagaWASD
     # ══════════════════════════════════════════════════════════════
     CLOUD_TILE      = 24_000.0 * M_TO_IN
     CLOUD_MAX       = 900
+    CLOUD_GROW      = 24.0                  # nuvole che crescono insieme quando la copertura sale
     CLOUD_TEX       = 64                    # pixel per nuvola nell'atlante
     CLOUD_SHAPES    = 4
     CLOUD_LEVELS    = [[0.0, 1.0], [0.3, 0.8], [0.55, 0.55], [0.8, 0.3]].freeze   # [foschia, opacità]
@@ -70,17 +71,24 @@ module DagaWASD
     end
 
     # ── Campo di nuvole ───────────────────────────────────────────
-    # Nuvola = [x, y nel quadrato, larghezza, forma, opacità] (pollici)
+    # Nuvola = [x, y nel quadrato, larghezza, forma, opacità, crescita 0–1]
+    # (pollici). Stesso seme: con più copertura le prime restano dove sono e
+    # se ne aggiungono altre in fondo, che crescono (le ultime CLOUD_GROW
+    # sono via via più piccole). Così il meteo variabile le fa nascere e
+    # sparire piano, senza che il cielo cambi di colpo.
     def self.cloud_seed
       rnd = Random.new(4242)
       size = cf('cloud_size').to_f.clamp(200.0, 3000.0) * M_TO_IN
-      n = (cloud_cover * CLOUD_TILE**2 / (size * size * 0.55)).round.clamp(0, CLOUD_MAX)
-      @clouds = Array.new(n) do
-        [rnd.rand * CLOUD_TILE, rnd.rand * CLOUD_TILE, size * (0.6 + 0.8 * rnd.rand), rnd.rand(CLOUD_SHAPES), 0.75 + 0.25 * rnd.rand]
+      nf = (cloud_cover * CLOUD_TILE**2 / (size * size * 0.55)).clamp(0.0, CLOUD_MAX.to_f)
+      @clouds = Array.new(nf.ceil) do |i|
+        [rnd.rand * CLOUD_TILE, rnd.rand * CLOUD_TILE, size * (0.6 + 0.8 * rnd.rand), rnd.rand(CLOUD_SHAPES), 0.75 + 0.25 * rnd.rand,
+         ((nf - i) / CLOUD_GROW).clamp(0.0, 1.0)]
       end
       @cloud_off ||= [0.0, 0.0]
-      @cloud_set = [cf('cloud_size'), (cloud_cover * 100).round]
+      @cloud_set = cloud_set_key
     end
+
+    def self.cloud_set_key; [cf('cloud_size'), (cloud_cover * 1000).round]; end
 
     def self.cloud_wind_v(north_deg)
       sp = cf('cloud_wind').to_f.clamp(0.0, 80.0) * M_TO_IN
@@ -95,7 +103,9 @@ module DagaWASD
       t = CLOUD_TILE; half = t / 2.0
       ox, oy = @cloud_off
       list = []
-      @clouds.each do |x0, y0, w, shape, op|
+      @clouds.each do |x0, y0, w, shape, op, grow|
+        next if grow && grow <= 0.0
+        w *= grow if grow
         dx = (x0 + ox - ex + half) % t - half
         dy = (y0 + oy - ey + half) % t - half
         dz = h - ez
@@ -225,7 +235,7 @@ module DagaWASD
       model = Sketchup.active_model
       return cloud_stop unless cloud_on? && model
       cloud_attach(model)
-      cloud_seed if @cloud_set != [cf('cloud_size'), (cloud_cover * 100).round]
+      cloud_seed if @cloud_set != cloud_set_key
       @cloud_wind = cloud_wind_v(model.shadow_info['NorthAngle'].to_f)
       @cloud_key = nil                          # colori da rifare (pioggia, ora…)
       cloud_frame
@@ -273,6 +283,7 @@ module DagaWASD
     def self.cloud_frame
       model = @cloud_model
       return unless model
+      return if @vm_export                      # nel video vanno col tempo del video (lib/videometeo.rb)
       return cloud_sync unless Sketchup.active_model.equal?(model)
       now = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       dt = @cloud_tick ? (now - @cloud_tick).clamp(0.0, 0.5) : 0.0

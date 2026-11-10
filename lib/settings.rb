@@ -251,7 +251,9 @@ module DagaWASD
       log_error(__method__, fps_err)
     end
 
-    def self.cf(k); @cfg[k]; end
+    # Il meteo variabile (lib/sky.rb) sovrascrive nuvole e precipitazioni
+    # finché è acceso, senza toccare le impostazioni salvate.
+    def self.cf(k); @wv && @wv.key?(k) ? @wv[k] : @cfg[k]; end
 
   end
 end

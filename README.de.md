@@ -17,6 +17,8 @@ Modell, mit WASD und Maus oder mit einem Gamepad.
   je nach Material; man kann sie treten, greifen und werfen.
 - **Himmel und Wetter**: Sonne, Mond und Sterne nach Datum, Uhrzeit und Ort;
   Regen, Schnee, Wolken, Gewitter, Schnee, der am Boden liegen bleibt.
+  Fertige Wetterlagen und wechselhaftes Wetter, das sich mit der Himmelszeit
+  von selbst ändert. Das Wetter erscheint auch in exportierten Videos.
 - **Pfade**: Zeichne die Kamera beim Gehen auf, spiele sie ab, exportiere sie
   als Szenen oder als AVI-Video. Verfeinere sie im Modell, indem du ihre
   Positionen verschiebst und drehst (Kugeln mit einem Pfeil so lang wie der

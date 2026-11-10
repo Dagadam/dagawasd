@@ -39,3 +39,15 @@ nel CHANGELOG, se conta per chi usa DagaWASD).
 
 - Un Ctrl+Z dell'utente durante una pausa della costruzione dal vivo non è
   coperto dalla guardia `bridge_building?`.
+
+## Video: meteo nel video (lib/videometeo.rb)
+
+- **Neve al suolo nei fotogrammi.** Il resto del meteo c'è. La neve al suolo
+  sono triangoli sulle superfici, e la griglia di profondità di `vm_depth`
+  non basta a coprirli bene. Proposta: geometria temporanea in un gruppo,
+  che non getta ombre e ha i bordi nascosti, rifatta quando la camera si
+  sposta di `SNOW_REBUILD`; l'opacità passa dall'alfa del materiale; il
+  gruppo si toglie a fine export (e prima di un salvataggio).
+- **La neve al suolo nell'orologio del video** parte dal livello che c'è
+  quando comincia l'esportazione, non da zero: due esportazioni uguali
+  possono differire lì.

@@ -16,7 +16,9 @@ WASD och musen, eller med en handkontroll.
 - **Objektfysik**: grupper och komponenter faller, studsar och välter
   efter sitt material; du kan sparka, greppa och kasta dem.
 - **Himmel och väder**: sol, måne och stjärnor efter datum, tid och plats;
-  regn, snö, moln, åska, snö som blir liggande på marken.
+  regn, snö, moln, åska, snö som blir liggande på marken. Färdiga
+  situationer och växlande väder som ändras av sig självt med himlens tid.
+  Vädret syns även i exporterade videor.
 - **Rutter**: spela in kameran medan du går, spela upp den, exportera den
   som scener eller som AVI-video. Finjustera den i modellen genom att flytta
   och vrida dess positioner (klot med en pil lika lång som zoomen, och

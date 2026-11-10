@@ -10,7 +10,7 @@ const { JSDOM } = require('jsdom');
 const html = fs.readFileSync(path.join(ROOT, 'attesa.html'), 'utf8');
 const LANG = path.join(ROOT, 'lang');
 const langs = {};
-for(const f of fs.readdirSync(LANG)){
+for(const f of fs.readdirSync(LANG).sort()){   // in ordine: la cartella non lo garantisce (su FAT/exFAT è quello di creazione)
   if(!f.endsWith('.json') || f === 'index.json') continue;
   const d = JSON.parse(fs.readFileSync(path.join(LANG, f), 'utf8'));
   langs[f.slice(0, -5)] = Object.fromEntries(Object.entries(d).filter(([k]) => /^(att|fun)\./.test(k)));

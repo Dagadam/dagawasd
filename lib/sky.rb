@@ -313,6 +313,7 @@ module DagaWASD
         end
       end
       @sky_model = @sky_ov = @sky = @sky_orig = @sky_sig = @sky_utc = @sky_tick = @sky_place_set = @sun_tex = @sun_tex_key = nil
+      @wv = @wv_anchor = nil                    # senza l'orologio del cielo il meteo variabile si ferma
       @sky_paused = false
       sky_push_status(true)
     end
@@ -387,6 +388,7 @@ module DagaWASD
     def self.sky_frame(force = false)
       model = @sky_model
       return unless model && !@sky_paused
+      return if @vm_export                      # nel video il cielo va col tempo del video (lib/videometeo.rb)
       return sky_sync unless Sketchup.active_model.equal?(model)   # un altro modello in primo piano
       sky_sync_place(model)
       lat, lon, tz, north = sky_place(model)
@@ -399,6 +401,7 @@ module DagaWASD
         elsif cf('sky_flow') then @sky_utc + el * 86_400.0 / (cf('sky_day_minutes').to_f.clamp(0.5, 120.0) * 60.0)
         else @sky_utc
         end
+      weather_vary_step(model, @sky_utc, tz)
       return if !force && @sky && @sky[:utc] == @sky_utc && @sky[:place] == [lat, lon, tz, north]
       @sky = sky_state(@sky_utc, lat, lon, north).merge(tz: tz, lat: lat, lon: lon, place: [lat, lon, tz, north])
       @sky[:stars] = sky_star_dirs(@sky[:matrix]) if cf('sky_stars')
@@ -733,7 +736,7 @@ module DagaWASD
     # acceso, data e ora del pannello, tempo fermo.
     WEATHER_BASE = { 'sky_enabled' => true, 'sky_now' => false, 'sky_flow' => false, 'sky_colors' => true,
                      'sky_shadows' => true, 'sky_sun' => true, 'sky_moon' => true, 'sky_stars' => true,
-                     'precip_kind' => 'none', 'storm' => false, 'cloud_enabled' => true }.freeze
+                     'precip_kind' => 'none', 'storm' => false, 'cloud_enabled' => true, 'weather_vary' => false }.freeze
     WEATHER_PRESETS = {
       'clear'     => [[:hour, 11.5], { 'cloud_cover' => 20, 'cloud_wind' => 6 }],
       'dawn'      => [[:rise, 2.0, 6.5], { 'cloud_cover' => 35, 'cloud_wind' => 5 }],
@@ -744,7 +747,10 @@ module DagaWASD
       'storm'     => [[:hour, 16.5], { 'precip_kind' => 'rain', 'precip_intensity' => 90, 'precip_wind' => 9,
                                        'precip_fog' => true, 'storm' => true, 'cloud_cover' => 100, 'cloud_wind' => 14 }],
       'timelapse' => [[:rise, -8.0, 5.0], { 'sky_flow' => true, 'sky_day_minutes' => 1.5, 'cloud_cover' => 45,
-                                            'cloud_timelapse' => true }]
+                                            'cloud_timelapse' => true }],
+      'mixed'     => [[:rise, -8.0, 5.0], { 'sky_flow' => true, 'sky_day_minutes' => 3.0, 'cloud_timelapse' => true,
+                                            'weather_vary' => true, 'snow_cover' => true, 'cloud_wind' => 10,
+                                            'precip_wind' => 4, 'precip_fog' => true }]
     }.freeze
 
     # Ora locale (h) in cui, nel giorno del pannello, il sole sale (:rise) o
@@ -787,6 +793,80 @@ module DagaWASD
       push_panel_state
       @dialog.execute_script("flashStatus(#{js_json(t("wp.#{id}"))})")
     rescue => fps_err; log_error(__method__, fps_err); nil; end
+
+# ── Meteo variabile (Meteo › Data e ora › Meteo variabile) ────
+# Col tempo del cielo passano dei fronti di WEATHER_FRONT_H ore di cielo,
+# sempre nello stesso giro a partire dall'ora del pannello: sereno,
+# nuvole, pioggia, temporale, coperto, sereno, nuvole, neve, coperto
+# (36 ore: con un giorno di tre minuti, quattro minuti e mezzo). Nel primo
+# WEATHER_BLEND di ogni fronte nuvole e precipitazioni passano piano da
+# quelle di prima alle sue: le nuvole nuove crescono (cloud_seed), la
+# pioggia si infittisce o si dirada senza ripartire (precip_resize), e
+# cielo, luce e nebbia seguono da soli. Le impostazioni restano com'erano:
+# finché è acceso, cf legge copertura, tipo e intensità delle
+# precipitazioni e temporale da @wv. Va col tempo del cielo, anche nel
+# video (lib/videometeo.rb); a tempo fermo resta quello che c'è.
+WEATHER_FRONT_H = 4.0
+WEATHER_BLEND   = 0.4
+# [copertura %, precipitazioni, intensità %, temporale]
+WEATHER_FRONTS = [
+  [15, 'none', 0, false],     # sereno
+  [65, 'none', 0, false],     # nuvole
+  [90, 'rain', 55, false],    # pioggia
+  [100, 'rain', 95, true],    # temporale
+  [85, 'none', 0, false],     # coperto
+  [15, 'none', 0, false],     # sereno
+  [60, 'none', 0, false],     # nuvole
+  [90, 'snow', 65, false],    # neve
+  [80, 'none', 0, false]      # coperto, poi si ricomincia
+].freeze
+
+# Il meteo all'istante utc, col giro partito ad anchor:
+# [copertura % (un decimale), precipitazioni, intensità %, temporale]
+def self.weather_vary_at(utc, anchor)
+  h = (utc - anchor) / 3600.0 / WEATHER_FRONT_H
+  k = h.floor
+  n = WEATHER_FRONTS.size
+  cur = WEATHER_FRONTS[k % n]
+  prev = WEATHER_FRONTS[(k - 1) % n]
+  x = k.zero? ? 1.0 : ((h - k) / WEATHER_BLEND).clamp(0.0, 1.0)   # si parte dal sereno, non dal coperto di prima
+  b = x * x * (3 - 2 * x)
+  cover = prev[0] + (cur[0] - prev[0]) * b
+  kind = cur[1] == 'none' ? prev[1] : cur[1]                         # la pioggia che finisce resta pioggia
+  inten = prev[2] * (1.0 - b) + cur[2] * b
+  kind = 'none' if inten < 1.0
+  storm = (b > 0.5 ? cur[3] : prev[3]) && kind != 'none'
+  [cover.round(1), kind, kind == 'none' ? 0 : inten.round, storm]
+end
+
+# A ogni passo del cielo (sky_frame, e vm_step nel video): se il meteo
+# cambia, nuvole e precipitazioni si rimettono in pari.
+def self.weather_vary_step(model, utc, tz)
+  return if @wv_busy
+  want = nil
+  if @cfg['weather_vary'] && utc
+    anchor = cf('sky_now') ? (@wv_anchor ||= utc) : sky_utc_from_cfg(tz)
+    c, kind, i, storm = weather_vary_at(utc, anchor)
+    want = { 'cloud_enabled' => true, 'cloud_cover' => c, 'precip_kind' => kind,
+             'precip_intensity' => i, 'storm' => storm }
+  end
+  return if want == @wv
+  old = @wv || {}
+  @wv_busy = true
+  before = %w[cloud_enabled precip_kind precip_intensity].map { |k| cf(k) }
+  @wv = want
+  after = %w[cloud_enabled precip_kind precip_intensity].map { |k| cf(k) }
+  if before[0] != after[0] || want.nil? then cloud_sync
+  elsif @clouds && old['cloud_cover'] != want['cloud_cover'] then cloud_seed
+  end
+  precip_sync if before[1, 2] != after[1, 2] || want.nil?
+  snow_sync if before[1] != after[1] || want.nil?
+  model.active_view.invalidate if model
+rescue => fps_err
+  log_error(__method__, fps_err)
+ensure
+  @wv_busy = false
+end
 
     # Cielo, pioggia e nuvole insieme (modello nuovo o aperto)
     def self.weather_sync

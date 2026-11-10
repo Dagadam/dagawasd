@@ -17,6 +17,8 @@ WASD y el ratón, o con un mando.
   su material; se pueden patear, agarrar y lanzar.
 - **Cielo y clima**: sol, luna y estrellas según la fecha, la hora y el
   lugar; lluvia, nieve, nubes, tormentas, nieve que cuaja en el suelo.
+  Situaciones listas y tiempo variable que cambia solo con el tiempo del
+  cielo. El tiempo también aparece en los vídeos exportados.
 - **Recorridos**: graba la cámara mientras caminas, reprodúcela, expórtala
   como escenas o como vídeo AVI. Retócala en el modelo moviendo y girando sus
   posiciones (esferas con una flecha tan larga como el zoom, y el marco del

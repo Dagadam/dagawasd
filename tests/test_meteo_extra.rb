@@ -220,6 +220,50 @@ saved = JSON.parse(File.read(File.join(tmp, 'settings.json')))
 ok(saved['cloud_enabled'] == false && saved['sky_enabled'] == true, 'la situazione viene salvata nelle impostazioni')
 F.weather_preset('inesistente')
 ok(cfg['cloud_enabled'] == false, 'una situazione sconosciuta non cambia nulla')
+F.weather_preset('mixed')
+ok(cfg['weather_vary'] && cfg['sky_flow'] && cfg['sky_day_minutes'] == 3.0 && cfg['cloud_timelapse'] && cfg['snow_cover'],
+   'Miscellanea: meteo variabile, tempo che scorre (un giorno in tre minuti), nuvole in time-lapse, neve al suolo')
+F.weather_preset('clear')
+ok(cfg['weather_vary'] == false, 'le altre situazioni spengono il meteo variabile')
+
+# ── Meteo variabile ─────────────────────────────────────────────
+h = 3600.0 * F::WEATHER_FRONT_H
+a0 = 1_000_000.0
+at = ->(fr) { F.weather_vary_at(a0 + fr * h, a0) }
+ok(at.(0.0) == [15.0, 'none', 0, false], "si parte dal sereno (#{at.(0.0).inspect})")
+ok(at.(1.5)[0] == 65.0 && at.(1.5)[1] == 'none', 'secondo fronte: nuvole')
+ok(at.(2.5) == [90.0, 'rain', 55, false], "terzo: pioggia (#{at.(2.5).inspect})")
+ok(at.(3.5) == [100.0, 'rain', 95, true], 'quarto: temporale')
+ok(at.(7.5)[1] == 'snow' && at.(7.5)[2] == 65, 'ottavo: neve')
+ok(at.(9.5) == at.(0.5) && at.(-9.0 + 2.5) == at.(2.5), 'il giro si ripete ogni 36 ore di cielo')
+mid = at.(2.0 + F::WEATHER_BLEND / 2)
+ok(mid[0] > 65 && mid[0] < 90 && mid[1] == 'rain' && mid[2] > 0 && mid[2] < 55, "a metà passaggio: valori in mezzo (#{mid.inspect})")
+ok(at.(4.0 + F::WEATHER_BLEND * 0.1)[1] == 'rain' && !at.(4.0 + F::WEATHER_BLEND * 0.8)[3], 'dopo il temporale la pioggia cala piano, i lampi finiscono')
+seq = (0..900).map { |i| at.(i / 100.0) }
+ok(seq.each_cons(2).all? { |p, q| (p[0] - q[0]).abs <= 3.0 && (p[2] - q[2]).abs <= 4 }, 'nessun salto: copertura e intensità cambiano piano (un centesimo di fronte, 2,4 minuti di cielo)')
+ok(seq.each_cons(2).none? { |p, q| p[1] != 'none' && q[1] != 'none' && p[1] != q[1] }, 'mai da pioggia a neve senza smettere')
+# cf legge il meteo variabile senza toccare le impostazioni
+cfg.merge!('cloud_cover' => 30, 'precip_kind' => 'none')
+F.instance_variable_set(:@wv, { 'cloud_cover' => 77.5, 'precip_kind' => 'rain' })
+ok(F.cf('cloud_cover') == 77.5 && F.cf('precip_kind') == 'rain' && cfg['cloud_cover'] == 30 && F.cf('cloud_height') == cfg['cloud_height'],
+   'cf: valori del meteo variabile, le impostazioni restano')
+F.instance_variable_set(:@wv, nil)
+ok(F.cf('cloud_cover') == 30, 'spento: tornano le impostazioni')
+# la pioggia si infittisce senza ripartire
+cfg.merge!('precip_kind' => 'rain', 'precip_intensity' => 40, 'precip_max' => 1000, 'precip_radius' => 12)
+F.instance_variable_set(:@precip_rnd, Random.new(1))
+F.precip_seed(0.0, 0.0, 66.0)
+p0 = F.instance_variable_get(:@precip).map(&:dup)
+cfg['precip_intensity'] = 60
+F.precip_resize(F.precip_count, 0.0, 0.0, 66.0)
+p1 = F.instance_variable_get(:@precip)
+ok(p1.size == 600 && p1.first(400) == p0, 'più fitta: le gocce di prima restano, se ne aggiungono')
+cfg['precip_intensity'] = 20
+F.precip_resize(F.precip_count, 0.0, 0.0, 66.0)
+ok(F.instance_variable_get(:@precip).size == 200 && F.instance_variable_get(:@precip_set) == ['rain', 200, 12], 'più rada: se ne tolgono')
+F.instance_variable_set(:@precip, nil)
+F.instance_variable_set(:@precip_set, nil)
+cfg.merge!('precip_kind' => 'none', 'precip_intensity' => 60)
 F.sky_stop; F.precip_stop; F.cloud_stop; F.snow_stop
 
 puts "\n#{$fail.zero? ? 'TUTTI I TEST PASSATI' : "#{$fail} TEST FALLITI"}"

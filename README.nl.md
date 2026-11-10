@@ -17,6 +17,8 @@ met WASD en de muis, of met een gamepad.
   volgens hun materiaal; je kunt ze schoppen, pakken en gooien.
 - **Lucht en weer**: zon, maan en sterren volgens datum, tijd en plaats;
   regen, sneeuw, wolken, onweer, sneeuw die op de grond blijft liggen.
+  Kant-en-klare situaties, en wisselvallig weer dat vanzelf verandert met de
+  hemeltijd. Het weer komt ook in geëxporteerde video's.
 - **Routes**: neem de camera op terwijl je loopt, speel hem af, exporteer
   hem als scènes of als AVI-video. Stel hem in het model bij door de
   posities te verplaatsen en te draaien (bollen met een pijl zo lang als de

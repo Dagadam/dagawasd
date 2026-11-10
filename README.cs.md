@@ -16,7 +16,9 @@ osoby pomocí WASD a myši, nebo s herním ovladačem.
 - **Fyzika objektů**: skupiny a komponenty padají, odrážejí se a převracejí
   podle svého materiálu; lze je kopnout, uchopit a hodit.
 - **Obloha a počasí**: slunce, měsíc a hvězdy podle data, času a místa;
-  déšť, sníh, mraky, bouřky, sníh, který zůstává ležet na zemi.
+  déšť, sníh, mraky, bouřky, sníh, který zůstává ležet na zemi. Hotové
+  situace a proměnlivé počasí, které se samo mění s časem oblohy. Počasí je
+  vidět i v exportovaných videích.
 - **Trasy**: nahrávejte kameru při chůzi, přehrajte ji, exportujte jako
   scény nebo video AVI. Dolaďte ji v modelu posouváním a otáčením jejích
   pozic (koule se šipkou dlouhou jako zoom a rámeček záběru), nebo ji

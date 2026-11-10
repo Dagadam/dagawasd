@@ -17,7 +17,9 @@ personne avec WASD et la souris, ou avec une manette.
   basculent selon leur matériau ; on peut les frapper du pied, les saisir et
   les lancer.
 - **Ciel et météo** : soleil, lune et étoiles selon la date, l'heure et le
-  lieu ; pluie, neige, nuages, orages, neige qui tient au sol.
+  lieu ; pluie, neige, nuages, orages, neige qui tient au sol. Situations
+  prêtes à l'emploi, et une météo changeante qui évolue d'elle-même avec le
+  temps du ciel. La météo apparaît aussi dans les vidéos exportées.
 - **Parcours** : enregistrez la caméra pendant que vous marchez, rejouez-la,
   exportez-la en scènes ou en vidéo AVI. Retouchez-la dans le modèle en
   déplaçant et en tournant ses positions (des sphères avec une flèche aussi

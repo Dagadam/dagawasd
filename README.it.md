@@ -16,7 +16,9 @@ WASD e mouse, o con un gamepad.
 - **Fisica degli oggetti**: gruppi e componenti cadono, rimbalzano e si
   ribaltano secondo il materiale; si possono calciare, afferrare e lanciare.
 - **Cielo e meteo**: sole, luna e stelle secondo data, ora e luogo; pioggia,
-  neve, nuvole, temporali, neve al suolo.
+  neve, nuvole, temporali, neve al suolo. Situazioni pronte, e un meteo
+  variabile che cambia da solo col tempo del cielo. Il meteo compare anche
+  nei video esportati.
 - **Percorsi**: registra la camera mentre cammini, riproducila, esportala in
   scene o in video AVI. Ritoccala nel modello spostando e ruotando le sue
   posizioni (sfere con una freccia lunga quanto lo zoom e il riquadro

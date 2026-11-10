@@ -224,6 +224,7 @@ module DagaWASD
     def self.snow_frame
       model = @snow_model
       return unless model
+      return if @vm_export                      # nel video si posa col tempo del video (lib/videometeo.rb)
       return snow_sync unless Sketchup.active_model.equal?(model)
       now = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       dt = @snow_tick ? (now - @snow_tick).clamp(0.0, 0.5) : 0.0

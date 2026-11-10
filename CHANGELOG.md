@@ -29,8 +29,30 @@ Il numero sta in un posto solo, `VERSION` in `dagawasd.rb`;
   SketchUp non tocca mai quel file e lo rimette nella pagina ogni volta che
   la apre.
 - `.github/ACCESSIBILITY.md`: la dichiarazione di accessibilità.
+- Percorsi › Video: **Meteo nel video** (acceso di serie). Sole, luna,
+  stelle, nuvole, pioggia, neve e fulmini finiscono anche nei fotogrammi
+  esportati, AVI o PNG, coperti dal modello come nella vista. Solo la neve
+  al suolo non c'è ancora. Costa circa un 10% di tempo in più per
+  fotogramma.
+- Meteo › Data e ora: **Meteo variabile**. Col tempo del cielo passano
+  sereno, nuvole, pioggia, temporale, coperto, di nuovo sereno, nuvole,
+  neve e coperto: un fronte ogni 4 ore di cielo, sempre nello stesso giro
+  a partire dall'ora del pannello. Da un fronte all'altro nuvole e
+  precipitazioni cambiano piano: le nuvole nuove crescono, la pioggia si
+  infittisce o si dirada senza ripartire, i lampi arrivano col temporale.
+  Le impostazioni di nuvole e precipitazioni restano quelle scelte e
+  tornano quando lo si spegne. Va anche nel video, col tempo del video.
+- Meteo › Situazioni: **Miscellanea**, il meteo variabile in time-lapse.
+  Parte prima dell'alba, un giorno passa in tre minuti, con neve al suolo
+  e nebbia nella pioggia: il giro completo dura quattro minuti e mezzo.
 
 ### Corretto
+- Video dei percorsi: cielo, nuvole, pioggia e neve al suolo vanno col tempo
+  del video, non più con quello che passa mentre SketchUp scrive i
+  fotogrammi. Prima, a qualche secondo per fotogramma e col tempo che
+  scorre, luce e ombre saltavano di ore (anche di giorni) da un fotogramma
+  all'altro. Il cielo parte dall'ora del pannello, e due esportazioni uguali
+  danno lo stesso video.
 - Ponte per Claude: mentre Claude costruisce dal vivo, i comandi che
   cambierebbero il modello (scene, video, rinomina, elimina, posizioni dei
   percorsi, pannello della sfera, modalità FPS) non partono più e dicono di
