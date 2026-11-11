@@ -77,6 +77,33 @@ d = F.vm_ray(pr, W / 2.0, 0.0)
 ok(near(Math.atan2(d[2], d[1]) / F::DEG, 30.0, 1e-9), 'raggio del pixel in alto a 30°')
 ok(F.vm_proj(pr, [0, -5, 0])[2] < 0, 'dietro la camera: profondità negativa')
 
+puts '── Orlo del suolo'
+hz = F.vm_horizon(pr)
+ok(hz && near(hz[1], H / 2.0, 1e-3) && near(hz[3], H / 2.0, 1e-3) && near(hz[4], 0.0) && near(hz[5], 1.0),
+   "sguardo orizzontale: orizzonte a metà altezza, suolo in basso (#{hz&.map { |x| x.round(3) }.inspect})")
+rolled = { eye: [0.0, 0.0, 2 * M], dir: [0.0, 1.0, 0.0], xa: [0.0, 0.0, 1.0], ya: [-1.0, 0.0, 0.0], f: pr[:f], cx: W / 2.0, cy: H / 2.0 }
+hr = F.vm_horizon(rolled)
+ok(hr && near(hr[0], W / 2.0, 1e-3) && near(hr[2], W / 2.0, 1e-3) && near(hr[4], -1.0),
+   'camera girata di 90° (in alto a destra): orizzonte verticale, suolo a sinistra')
+ok(F.vm_horizon(pr.merge(dir: [0.0, 0.001, -1.0])).nil?, 'sguardo dritto in basso: nessun orizzonte')
+# Immagine finta: suolo pieno sotto la riga 225, la riga 225 semitrasparente e scura, cielo trasparente sopra
+EW = 40; EH = 450; stride = EW * 4
+img = String.new(encoding: Encoding::BINARY)
+EH.times do |y|
+  px = if y > 225 then [200, 150, 100, 255]
+       elsif y == 225 then [40, 30, 20, 96]
+       elsif y == 100 then [10, 10, 10, 50]                     # lontano dall'orizzonte: non si tocca
+       else [0, 0, 0, 0]
+       end
+  img << (px.pack('C4') * EW)
+end
+ch = F.vm_ground_edge(img, stride, EW, EH, [0.0, 225.5, EW.to_f, 225.5, 0.0, 1.0])
+ok(ch.size == EW && ch.all? { |o, s| o / stride == 225 && s.unpack('C4') == [200, 150, 100, 96] },
+   "orlo: i #{ch.size} pixel della riga prendono il colore del suolo e tengono l'opacità")
+ok(ch.none? { |o, _| o / stride == 100 }, 'un pixel semitrasparente lontano dall\'orizzonte resta com\'è')
+img2 = img.dup; img2[225 * stride, stride] = [0, 0, 0, 0].pack('C4') * EW
+ok(F.vm_ground_edge(img2, stride, EW, EH, [0.0, 225.5, EW.to_f, 225.5, 0.0, 1.0]).empty?, 'orlo già pulito: niente da riscrivere')
+
 puts '── Affine (texture → schermo)'
 m = F.vm_affine([0, 0], [64, 0], [0, 32], [10, 20], [74, 30], [5, 52])
 a = F.vm_aff(m, 64, 32)
@@ -165,6 +192,26 @@ if RUBY_PLATFORM =~ /mingw|mswin/
     ok(File.binread(File.join(tmp, 'g.jpg'), 2) == "\xFF\xD8".b, 'GDI+ salva JPEG')
     G.delete_graphics(g)
     G.dispose_image(bmp)
+    # Un PNG con la riga d'orlo scura e semitrasparente, sul cielo azzurro
+    row = ->(px) { px.pack('C4') * 8 }
+    src = G.bitmap_from(8, 4, row.([0, 0, 0, 0]) + row.([0, 0, 0, 0]) + row.([20, 20, 20, 100]) + row.([200, 200, 200, 255]))
+    edge_png = File.join(tmp, 'orlo.png')
+    G.save(src, edge_png, :png)
+    G.dispose_image(src)
+    paint = lambda do |fix|
+      b = G.bitmap(8, 4); gg = G.graphics(b)
+      G.clear(gg, 0xFFC0C0C0)
+      err = fix ? G.draw_file(gg, edge_png, 8, 4) { |buf, st| F.vm_ground_edge(buf, st, 8, 4, [0.0, 2.5, 8.0, 2.5, 0.0, 1.0]) } : G.draw_file(gg, edge_png, 8, 4)
+      G.delete_graphics(gg)
+      px = nil
+      G.pixels(b, 8, 4) { |buf, st| px = buf.byteslice(2 * st + 4 * 4, 4).unpack('C4'); [] }
+      G.dispose_image(b)
+      [err, px]
+    end
+    e0, dark = paint.(false)
+    e1, clean = paint.(true)
+    ok(e0.nil? && e1.nil? && dark[0] < 150 && clean[0] > 185,
+       "GDI+: senza correzione l'orlo esce scuro (#{dark[0]}), con la correzione no (#{clean[0]})")
   rescue StandardError, LoadError => e
     ok(false, "GDI+: #{e.class}: #{e.message}")
   end

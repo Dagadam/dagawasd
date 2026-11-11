@@ -47,6 +47,10 @@ Il numero sta in un posto solo, `VERSION` in `dagawasd.rb`;
   e nebbia nella pioggia: il giro completo dura quattro minuti e mezzo.
 
 ### Corretto
+- Video dei percorsi col meteo: niente più riga scura sottile sopra
+  l'orizzonte del mare. Il bordo lontano del suolo di SketchUp esce
+  semitrasparente e scurito, e sul cielo dipinto si vedeva; ora quei pixel
+  prendono il colore del suolo accanto.
 - Attesa del video: il personaggio diceva che il meteo animato non entra nel
   video anche quando c'è. Ora dice che nuvole, pioggia e lampi ci entrano, o
   che restano fuori se «Meteo nel video» è spento.

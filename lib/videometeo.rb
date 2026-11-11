@@ -192,7 +192,12 @@ module DagaWASD
       VmGdi.clear(g, 0xFF000000)
       VmGdi.draw_pixels(g, vm[:ia], *vm_sky_pixels(pr, w, h, ro, horizon), w, h)
       vm_paint(vm, back.ops, pr, nil)
-      VmGdi.draw_file(g, vm[:png], w, h)
+      hz = ro['DrawGround'] ? vm_horizon(pr) : nil
+      err = VmGdi.draw_file(g, vm[:png], w, h, &(hz && ->(buf, stride) { vm_ground_edge(buf, stride, w, h, hz) }))
+      if err && !vm[:edge_err]                     # solo l'orlo resta scuro: si dice una volta
+        vm[:edge_err] = true
+        log_error(__method__, err)
+      end
       dg = front.ops.any? { |o| o[0] == :d3 } ? vm_depth(pr, w, h) : nil
       vm_paint(vm, front.ops, pr, dg)
       VmGdi.save(vm[:canvas], file, fmt)
@@ -275,6 +280,69 @@ module DagaWASD
         end
       end
       [out, bw, bh]
+    end
+
+    # ── Orlo del suolo ────────────────────────────────────────────
+    # Il piano del suolo di SketchUp (DrawGround) arriva fino all'orizzonte
+    # e non ha profilo. Nell'immagine trasparente la sua ultima riga è
+    # semitrasparente ma col colore già mescolato al nero: sul cielo dipinto
+    # diventava una riga scura. Lungo l'orizzonte quei pixel prendono il
+    # colore del vicino pieno, verso il suolo prima, e tengono la loro opacità.
+    VM_EDGE_BAND = 3                  # pixel dall'orizzonte, da ogni parte
+    VM_EDGE_NEAR = [-2, -1, 0, 1, 2].product([-2, -1, 0, 1, 2]) - [[0, 0]]
+
+    # La retta dell'orizzonte sullo schermo: [x0, y0, x1, y1, nx, ny], con
+    # (nx, ny) la normale verso il suolo; nil con lo sguardo quasi verticale
+    # (l'orizzonte è fuori dall'immagine).
+    def self.vm_horizon(pr)
+      d = pr[:dir]; e = pr[:eye]
+      hl = Math.hypot(d[0], d[1])
+      return nil if hl < 0.02
+      fx = d[0] / hl; fy = d[1] / hl; far = 1e9
+      at = ->(a) { c = Math.cos(a); s = Math.sin(a); vm_proj(pr, [e[0] + far * (fx * c - fy * s), e[1] + far * (fy * c + fx * s), e[2]]) }
+      a = at.(-0.5); b = at.(0.5)
+      lx = b[0] - a[0]; ly = b[1] - a[1]; len = Math.hypot(lx, ly)
+      return nil if len < 1e-9
+      nx = -ly / len; ny = lx / len
+      g = vm_proj(pr, [e[0] + far * fx, e[1] + far * fy, e[2] - far * 0.01])   # un po' sotto l'orizzonte
+      nx, ny = -nx, -ny if (g[0] - a[0]) * nx + (g[1] - a[1]) * ny < 0
+      [a[0], a[1], b[0], b[1], nx, ny]
+    end
+
+    # buf: pixel BGRA, righe di stride byte dall'alto. Ritorna i pixel da
+    # riscrivere, [[offset, BGRA]].
+    def self.vm_ground_edge(buf, stride, w, h, hz, band = VM_EDGE_BAND)
+      x0, y0, x1, y1, nx, ny = hz
+      dx = x1 - x0; dy = y1 - y0
+      near = VM_EDGE_NEAR.sort_by { |ox, oy| [[ox.abs, oy.abs].max, -(ox * nx + oy * ny).round(3), ox * ox + oy * oy] }
+      out = []; seen = {}
+      fix = lambda do |x, y|
+        return if x < 0 || y < 0 || x >= w || y >= h
+        o = y * stride + x * 4
+        a = buf.getbyte(o + 3)
+        return if a.zero? || a == 255 || seen[o]
+        seen[o] = true
+        near.each do |ox, oy|
+          sx = x + ox; sy = y + oy
+          next if sx < 0 || sy < 0 || sx >= w || sy >= h
+          so = sy * stride + sx * 4
+          next unless buf.getbyte(so + 3) == 255
+          out << [o, buf.byteslice(so, 3) + a.chr]
+          break
+        end
+      end
+      if dx.abs >= dy.abs
+        w.times do |x|
+          yc = y0 + (x + 0.5 - x0) * dy / dx
+          ((yc - band).floor..(yc + band).floor).each { |y| fix.(x, y) }
+        end
+      else
+        h.times do |y|
+          xc = x0 + (y + 0.5 - y0) * dx / dy
+          ((xc - band).floor..(xc + band).floor).each { |x| fix.(x, y) }
+        end
+      end
+      out
     end
 
     # ── Profondità ────────────────────────────────────────────────
@@ -492,9 +560,12 @@ module DagaWASD
         'int GdipSetClipPath(void*, void*, int)',
         'int GdipResetClip(void*)',
         'int GdipDeletePath(void*)',
-        'int GdipSaveImageToFile(void*, void*, void*, void*)'
+        'int GdipSaveImageToFile(void*, void*, void*, void*)',
+        'int GdipBitmapLockBits(void*, void*, unsigned int, int, void*)',
+        'int GdipBitmapUnlockBits(void*, void*)'
       ].freeze
       ARGB32       = 0x26200A     # PixelFormat32bppARGB: byte B, G, R, A
+      LOCK_RW      = 3            # ImageLockModeRead | ImageLockModeWrite
       ANTIALIAS    = 4            # SmoothingModeAntiAlias
       BILINEAR     = 6            # InterpolationModeHighQualityBilinear
       NEAREST      = 5            # InterpolationModeNearestNeighbor
@@ -618,17 +689,44 @@ module DagaWASD
         end
       end
 
-      # Il PNG del modello, pixel per pixel (senza la scala dei DPI del file)
-      def draw_file(g, file, w, h)
+      # I pixel dell'immagine (BGRA, righe dall'alto) a chi li corregge:
+      # il blocco riceve (buf, stride) e ritorna [[offset, byte]] da riscrivere.
+      def pixels(img, w, h)
+        rect = [0, 0, w, h].pack('l4')
+        bd = Fiddle::Pointer.malloc(32, Fiddle::RUBY_FREE)     # BitmapData a 64 bit
+        ok!('pixel', api.GdipBitmapLockBits(img, rect, LOCK_RW, ARGB32, bd))
+        begin
+          stride = bd[8, 4].unpack1('l')
+          raise IOError, "GDI+ pixel: stride #{stride}" unless stride >= w * 4
+          scan0 = Fiddle::Pointer.new(bd[16, 8].unpack1('Q'))
+          yield(scan0[0, stride * h], stride).each { |o, s| scan0[o, s.bytesize] = s }
+        ensure
+          api.GdipBitmapUnlockBits(img, bd)
+        end
+      end
+
+      # Il PNG del modello, pixel per pixel (senza la scala dei DPI del file).
+      # Con un blocco, prima i pixel passano da pixels; se non si può, il
+      # PNG si disegna com'è e l'errore torna a chi chiama (nil se tutto bene).
+      def draw_file(g, file, w, h, &edit)
         ok!('carica', api.GdipLoadImageFromFile(wstr(file), out))
         img = got
+        err = nil
         begin
+          if edit
+            begin
+              pixels(img, w, h, &edit)
+            rescue IOError => e
+              err = e
+            end
+          end
           api.GdipSetInterpolationMode(g, NEAREST)
           ok!('modello', api.GdipDrawImageRectI(g, img, 0, 0, w, h))
         ensure
           api.GdipSetInterpolationMode(g, BILINEAR)
           api.GdipDisposeImage(img)                  # il file torna libero per il prossimo write_image
         end
+        err
       end
 
       # Il rettangolo (sx, sy, sw, sh) dell'immagine sul parallelogramma dei
