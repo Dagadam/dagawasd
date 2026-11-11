@@ -11,6 +11,12 @@ Il numero sta in un posto solo, `VERSION` in `dagawasd.rb`;
 ## [Non ancora uscito]
 
 ### Aggiunto
+- Percorsi da ritoccare: ogni sfera può avere un **giro proprio** (attributo
+  `giro` del dizionario delle posizioni, in gradi al secondo), che nel tratto
+  verso la sfera successiva prende il posto del limite di 45°/s per girare la
+  camera. Si imposta solo da script e serve dove la camera deve girare
+  davvero in fretta, per esempio scendendo di corsa una scala a chiocciola.
+  Le sfere senza giro proprio restano com'erano.
 - Camminata: **Schermo intero** (*Camera › Vista*, spento di serie). Finché
   si cammina la vista 3D copre tutto il monitor: la finestra di SketchUp
   perde bordo e titolo, e menu, barre, pannelli e barra di stato finiscono

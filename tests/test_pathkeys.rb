@@ -172,6 +172,9 @@ ok(((fr.size - 1) / F::PATH_HZ - 2.0).abs < 0.05, "girarsi di 90° sul posto: #{
 ok(fr.all? { |f| near.(f[0, 3], giro.first[0, 3]) }, 'sul posto la camera non si sposta')
 ang = fr.map { |f| Math.atan2(f[4], f[3]) * 180 / Math::PI }
 ok(ang.each_cons(2).all? { |a, b| b >= a - 1e-9 } && (ang[fr.size / 2] - 45).abs < 3, 'lo sguardo gira con continuità, a metà tempo a metà giro')
+svelto = [giro[0].dup.fill(0.0, 10, 2) + [360.0], giro[1]]
+ok((F.key_duration(svelto, 2.0) - 0.25).abs < 0.01, "giro proprio di 360°/s sulla sfera: 90° in #{F.key_duration(svelto, 2.0).round(2)} s")
+ok((F.key_duration(giro, 2.0) - 2.0).abs < 0.05, 'senza giro proprio resta 45°/s')
 
 elle = [key.(0, 0, 1.7), key.(6, 0, 1.7), key.(6, 6, 1.7, [0, 1, 0])]
 fr = F.key_frames(elle, 1.4)

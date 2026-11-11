@@ -187,14 +187,18 @@ module DagaWASD
     # Scala e specchiature dell'istanza non contano: assi riportati a versori.
     # Posizione dell'istanza: i 10 valori di un fotogramma, più la sosta (s)
     # e la velocità del tratto verso la prossima (m/s; 0 = quella del percorso),
-    # che il pannello della sfera (lib/keyedit.rb) può dare a ogni sfera.
+    # che il pannello della sfera (lib/keyedit.rb) può dare a ogni sfera; poi
+    # quanto può girare la camera in quel tratto (°/s, attributo 'giro'; 0 =
+    # KEY_TURN). Il giro si dà solo da script, dove la camera deve girare
+    # davvero in fretta (una scala a chiocciola scesa di corsa).
     def self.key_of(e)
       m = e.transformation.to_a
       w = m[15].to_f
       w = 1.0 if w.abs < 1e-12
       path_orthonormal!([m[12] / w, m[13] / w, m[14] / w, m[0], m[1], m[2], m[8], m[9], m[10],
                          (e.get_attribute(KEY_DICT, 'fov') || 60.0).to_f,
-                         e.get_attribute(KEY_DICT, 'sosta').to_f, e.get_attribute(KEY_DICT, 'v').to_f])
+                         e.get_attribute(KEY_DICT, 'sosta').to_f, e.get_attribute(KEY_DICT, 'v').to_f,
+                         e.get_attribute(KEY_DICT, 'giro').to_f])
     end
 
     def self.key_dist3(a, b, o = 0)
@@ -296,11 +300,12 @@ module DagaWASD
     end
 
     # Per tratto: lunghezze cumulate dei KEY_SUB pezzi e durata (s) =
-    # lunghezza alla velocità v (m/s), o il tempo per girarsi se è di più.
+    # lunghezza alla velocità v (m/s), o il tempo per girarsi se è di più
+    # (a KEY_TURN °/s, o al giro proprio della sfera da cui parte il tratto).
     def self.key_timing(sp, v_m)
-      w = KEY_TURN * Math::PI / 180
       ks = sp[:k]
       Array.new(ks.size - 1) do |i|
+        w = (ks[i][12].to_f > 0 ? ks[i][12].to_f : KEY_TURN) * Math::PI / 180
         v = (ks[i][11].to_f > 0 ? ks[i][11].to_f : v_m) * M_TO_IN   # velocità propria del tratto, se c'è
         cum = [0.0]
         prev = ks[i]
@@ -464,6 +469,7 @@ module DagaWASD
         e.set_attribute(KEY_DICT, 'fov', k[9].to_f.round(2))
         e.set_attribute(KEY_DICT, 'sosta', k[10].to_f.round(2)) if k[10].to_f > 0
         e.set_attribute(KEY_DICT, 'v', k[11].to_f.round(2)) if k[11].to_f > 0
+        e.set_attribute(KEY_DICT, 'giro', k[12].to_f.round(1)) if k[12].to_f > 0
         e
       end
       key_purge(model)
