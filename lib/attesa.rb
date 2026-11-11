@@ -74,7 +74,7 @@ module DagaWASD
                'danger' => cf('ui_danger') }
       look.merge!('bg' => cf('ui_bg'), 'text' => cf('ui_text')) if cf('ui_custom_colors')
       payload = {
-        'strings' => @lang.select { |k, _| k.start_with?('att.', 'fun.') },
+        'strings' => @lang.select { |k, _| k.start_with?('att.', 'fun.') || k == 'f.path_video_weather' },
         'lang'    => @lang_code,
         'rtl'     => @lang_rtl,
         'look'    => look,
@@ -167,8 +167,18 @@ module DagaWASD
         'total'   => job[:total],
         'vid'     => (job[:total].to_f / job[:fps]).round(1),
         'w'       => job[:w], 'h' => job[:h],
-        'format'  => job[:avi] ? 'avi' : 'png'
+        'format'  => job[:avi] ? 'avi' : 'png',
+        'weather' => attesa_weather(job)
       )
+    end
+
+    # Nuvole o pioggia in corso (vm_begin è già passato): 'video' se le
+    # dipinge nei fotogrammi, 'out' se «Meteo nel video» è spento, false
+    # se non ce n'è o se il dipinto non è partito (errore nel registro).
+    def self.attesa_weather(job)
+      return false unless @cloud_model || @precip_model
+      return 'video' if job[:vm] && job[:vm][:paint]
+      cf('path_video_weather') ? false : 'out'
     end
 
     # Facce: quelle del modello più quelle di ogni definizione una volta
@@ -187,8 +197,7 @@ module DagaWASD
         'faces'   => faces,
         'mats'    => model.materials.size,
         'comps'   => comps,
-        'scenes'  => model.pages.size,
-        'weather' => cf('precip_kind').to_s != 'none' || cf('cloud_enabled') == true }
+        'scenes'  => model.pages.size }
     rescue => fps_err
       log_error(__method__, fps_err)
       {}

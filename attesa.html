@@ -319,7 +319,8 @@ const JOKES = [
   { k:'fun.mats',     w:s => s.mats >= 8,              v:s => ({ mats: nf(s.mats) }) },
   { k:'fun.nomats',   w:s => s.mats === 0 },
   { k:'fun.comps',    w:s => s.comps >= 10,            v:s => ({ comps: nf(s.comps) }) },
-  { k:'fun.weather',  w:s => s.weather === true },
+  { k:'fun.weather',  w:s => s.weather === 'video' },
+  { k:'fun.weather_off', w:s => s.weather === 'out', v:() => ({ opt: T('f.path_video_weather') }) },
   { k:'fun.model',    w:s => !!s.model,                v:s => ({ model: s.model }) },
   { k:'fun.click',    w:() => true }
 ];

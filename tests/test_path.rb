@@ -405,8 +405,9 @@ ok(dlg.scripts.empty?, 'prima di ready la pagina non riceve nulla')
 dlg.call('ready')
 ini = dlg.last('init')
 st = ini && ini['stats']
-ok(ini && ini['strings'].keys.all? { |k| k.start_with?('att.', 'fun.') } && ini['strings']['att.stop'] == F.t('att.stop') && ini['lang'] == 'it',
-   'init: solo i testi att./fun., nella lingua scelta')
+ok(ini && ini['strings'].keys.all? { |k| k.start_with?('att.', 'fun.') || k == 'f.path_video_weather' } &&
+   ini['strings']['f.path_video_weather'] == F.t('f.path_video_weather') && ini['strings']['att.stop'] == F.t('att.stop') && ini['lang'] == 'it',
+   'init: solo i testi att./fun. e il nome di «Meteo nel video», nella lingua scelta')
 ok(st && (st['m'] - 2.0).abs < 0.1 && st['total'] == 21 && st['w'] == 1280 && st['fps'] == 10 && st['format'] == 'png',
    "statistiche: #{st && st['m']} m percorsi, 21 fotogrammi, 1280×720 a 10 al secondo")
 ok(st['faces'] == 10 && st['comps'] == 1 && st['mats'] == 2 && st['model'] == 'Faro',
@@ -477,6 +478,17 @@ end
 st = F.attesa_stats(frames: ramp, name: 'rampa', dur: 10.0, speed: 1.0, fps: 30, total: 300, w: 1920, h: 1080)
 ok((st['up'] - 6.0).abs < 0.3 && st['down'] < 0.3 && (st['turn'] - 720).abs < 5 && (st['kmh'] - 30.6 / 10 * 3.6).abs < 0.3,
    "rampa: #{st['up']} m in salita, #{st['down']} in discesa, sguardo girato di #{st['turn']}°, #{st['kmh']} km/h")
+# La battuta sul meteo: nuvole in corso, dipinte nel video o lasciate fuori
+vw = F.cf('path_video_weather')
+F.instance_variable_set(:@cloud_model, Sketchup.active_model)
+w_video = F.attesa_weather(vm: { paint: {} })
+F.instance_variable_get(:@cfg)['path_video_weather'] = false
+w_out = F.attesa_weather(vm: { paint: false })
+F.instance_variable_get(:@cfg)['path_video_weather'] = vw
+w_fail = F.attesa_weather(vm: { paint: false })
+F.instance_variable_set(:@cloud_model, nil)
+ok(st['weather'] == false && w_video == 'video' && w_out == 'out' && w_fail == false && F.attesa_weather(vm: { paint: {} }) == false,
+   "meteo: senza #{st['weather'].inspect}, dipinto #{w_video.inspect}, opzione spenta #{w_out.inspect}, dipinto non partito #{w_fail.inspect}")
 F.send(:remove_const, :PATH_BATCH); F.const_set(:PATH_BATCH, batch)
 
 # ── Rinomina ed elimina dal pannello ─────────────────────────────────

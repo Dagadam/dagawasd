@@ -13,7 +13,7 @@ const langs = {};
 for(const f of fs.readdirSync(LANG).sort()){   // in ordine: la cartella non lo garantisce (su FAT/exFAT è quello di creazione)
   if(!f.endsWith('.json') || f === 'index.json') continue;
   const d = JSON.parse(fs.readFileSync(path.join(LANG, f), 'utf8'));
-  langs[f.slice(0, -5)] = Object.fromEntries(Object.entries(d).filter(([k]) => /^(att|fun)\./.test(k)));
+  langs[f.slice(0, -5)] = Object.fromEntries(Object.entries(d).filter(([k]) => /^(att|fun)\./.test(k) || k === 'f.path_video_weather'));
 }
 const rtl = JSON.parse(fs.readFileSync(path.join(LANG, 'index.json'), 'utf8')).languages.filter(l => l.rtl).map(l => l.code);
 const calls = [];
@@ -34,7 +34,7 @@ const $ = id => w.document.getElementById(id);
 
 // Statistiche come le manda attesa_stats: valori che accendono molte battute
 const STATS = { name:'Giro', model:'Faro', m:340.4, up:7.2, down:1.1, turn:1100, rec:130.5, kmh:4.2, speed:1.5,
-  fps:60, total:7800, vid:130, w:3840, h:2160, format:'avi', faces:21345, mats:12, comps:14, scenes:3, weather:true };
+  fps:60, total:7800, vid:130, w:3840, h:2160, format:'avi', faces:21345, mats:12, comps:14, scenes:3, weather:'video' };
 
 w.addEventListener('load', async () => {
   try {
@@ -75,7 +75,7 @@ w.addEventListener('load', async () => {
       w.eval(`L = ${JSON.stringify(L)}; LANG = ${JSON.stringify(code)};`);
       for(const k of jokes){
         const out = w.eval(`(() => { const j = JOKES.find(x => x.k === ${JSON.stringify(k)}); return fill(T(j.k), j.v ? j.v(${JSON.stringify(STATS)}, ${JSON.stringify(q)}) : {}); })()`);
-        if(out.includes('%{') || out === k) bad.push(`${code} ${k}`);
+        if(out.includes('%{') || out === k || out.includes('f.path_video_weather')) bad.push(`${code} ${k}`);
       }
       for(const k of ['fun.start', 'fun.p25', 'fun.p50', 'fun.p75', 'fun.p90', 'fun.done', 'fun.done_png', 'fun.stopped',
                       'fun.stopped_png', 'fun.none', 'fun.full', 'fun.error']){
@@ -88,6 +88,9 @@ w.addEventListener('load', async () => {
     ok(cond.length === 0, 'nessuna condizione va in errore');
     const empty = w.eval(`JOKES.filter(j => { try { return j.w({}, { ok: false }); } catch(e){ return true; } }).map(j => j.k)`);
     ok(empty.join() === 'fun.click', `senza statistiche resta solo la battuta sempre valida (${empty.join(', ')})`);
+    const meteo = v => w.eval(`JOKES.filter(j => j.k.startsWith('fun.weather') && j.w(${JSON.stringify(Object.assign({}, STATS, { weather: v }))}, {})).map(j => j.k).join()`);
+    ok(meteo('video') === 'fun.weather' && meteo('out') === 'fun.weather_off' && meteo(false) === '',
+       `meteo: nel video «${meteo('video')}», fuori «${meteo('out')}», senza meteo nessuna`);
 
     // ── Avvio in italiano ────────────────────────────────────────────
     const look = { theme: 'dark', accent: '#00c9a7', highlight: '#ffd166', danger: '#c04747' };
