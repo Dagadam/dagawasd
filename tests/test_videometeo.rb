@@ -104,6 +104,28 @@ ok(ch.none? { |o, _| o / stride == 100 }, 'un pixel semitrasparente lontano dall
 img2 = img.dup; img2[225 * stride, stride] = [0, 0, 0, 0].pack('C4') * EW
 ok(F.vm_ground_edge(img2, stride, EW, EH, [0.0, 225.5, EW.to_f, 225.5, 0.0, 1.0]).empty?, 'orlo già pulito: niente da riscrivere')
 
+puts '── Orli sul cielo'
+# 6×5 con 2 byte di riempimento a riga: una nuvola piena (2×2, grigio
+# nebbia) con il contorno semitrasparente e scuro, un pixel isolato senza
+# vicini pieni, e un pixel che l'orlo del suolo ha già corretto
+CW = 6; CH = 5; cst = CW * 4 + 2
+cimg = String.new("\0" * (cst * CH), encoding: Encoding::BINARY)
+put = ->(x, y, px) { cimg[y * cst + x * 4, 4] = px.pack('C4') }
+put.(2, 2, [198, 191, 191, 255]); put.(3, 2, [198, 191, 191, 255])
+put.(2, 3, [198, 191, 191, 255]); put.(3, 3, [198, 191, 191, 255])
+put.(1, 2, [99, 96, 96, 64]); put.(4, 3, [50, 48, 48, 16]); put.(2, 1, [149, 144, 144, 128])
+put.(1, 3, [10, 10, 10, 200])                               # già corretto dall'orlo del suolo
+cimg[0 * cst + CW * 4, 2] = "\x80\x80".b                    # riempimento: non è un pixel
+done = { 3 * cst + 1 * 4 => true }
+cc = F.vm_edge_clean(cimg, cst, CW, CH, done).to_h
+ok(cc.size == 3 && [[1, 2, 64], [4, 3, 16], [2, 1, 128]].all? { |x, y, a| cc[y * cst + x * 4]&.unpack('C4') == [198, 191, 191, a] },
+   "contorno: i #{cc.size} pixel semitrasparenti prendono il colore della nuvola e tengono l'opacità")
+ok(!cc.key?(3 * cst + 1 * 4), 'un pixel già corretto dall\'orlo del suolo non si tocca di nuovo')
+cimg2 = String.new("\0" * (cst * CH), encoding: Encoding::BINARY)
+cimg2[2 * cst + 2 * 4, 4] = [20, 20, 20, 90].pack('C4')
+ok(F.vm_edge_clean(cimg2, cst, CW, CH).empty?, 'un filo isolato senza vicini pieni resta com\'è')
+ok(F.vm_edge_clean(String.new("\0" * (cst * CH), encoding: Encoding::BINARY), cst, CW, CH).empty?, 'cielo vuoto: niente da riscrivere')
+
 puts '── Affine (texture → schermo)'
 m = F.vm_affine([0, 0], [64, 0], [0, 32], [10, 20], [74, 30], [5, 52])
 a = F.vm_aff(m, 64, 32)

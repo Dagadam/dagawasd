@@ -193,7 +193,10 @@ module DagaWASD
       VmGdi.draw_pixels(g, vm[:ia], *vm_sky_pixels(pr, w, h, ro, horizon), w, h)
       vm_paint(vm, back.ops, pr, nil)
       hz = ro['DrawGround'] ? vm_horizon(pr) : nil
-      err = VmGdi.draw_file(g, vm[:png], w, h, &(hz && ->(buf, stride) { vm_ground_edge(buf, stride, w, h, hz) }))
+      err = VmGdi.draw_file(g, vm[:png], w, h) do |buf, stride|
+        fixed = hz ? vm_ground_edge(buf, stride, w, h, hz) : []
+        fixed.concat(vm_edge_clean(buf, stride, w, h, fixed.to_h { |o, _| [o, true] }))
+      end
       if err && !vm[:edge_err]                     # solo l'orlo resta scuro: si dice una volta
         vm[:edge_err] = true
         log_error(__method__, err)
@@ -340,6 +343,43 @@ module DagaWASD
         h.times do |y|
           xc = x0 + (y + 0.5 - y0) * dx / dy
           ((xc - band).floor..(xc + band).floor).each { |x| fix.(x, y) }
+        end
+      end
+      out
+    end
+
+    # ── Orli sul cielo ────────────────────────────────────────────
+    # Lo stesso difetto dell'orlo del suolo c'è su ogni profilo che sta sul
+    # cielo: i pixel semitrasparenti escono col colore mescolato al nero.
+    # Oltre la nebbia un oggetto ha il colore del cielo, ma il suo contorno
+    # restava un tratteggio grigio che cambiava a ogni fotogramma (le
+    # nuvole della scenografia sul mare, Strombolicchio da lontano). Ogni
+    # pixel semitrasparente prende il colore del vicino pieno più prossimo
+    # (entro 2 pixel) e tiene la sua opacità; senza vicini pieni (un filo
+    # isolato) resta com'è. skip: gli offset già corretti dall'orlo del suolo.
+    VM_EDGE_ANY  = VM_EDGE_NEAR.sort_by { |ox, oy| [[ox.abs, oy.abs].max, ox * ox + oy * oy] }.freeze
+    # Allineata ai pixel (\G): gruppi di 4 byte con opacità 0 o 255, poi uno con opacità intermedia
+    VM_SEMI_RE   = /\G(?:[\s\S]{3}[\x00\xFF])*[\s\S]{3}[\x01-\xFE]/n
+
+    def self.vm_edge_clean(buf, stride, w, h, skip = {})
+      out = []
+      rw = w * 4
+      h.times do |y|
+        base = y * stride
+        row = buf.byteslice(base, rw)
+        row.scan(VM_SEMI_RE) do
+          x = (Regexp.last_match.end(0) - 4) / 4
+          o = base + x * 4
+          next if skip[o]
+          a = buf.getbyte(o + 3)
+          VM_EDGE_ANY.each do |ox, oy|
+            sx = x + ox; sy = y + oy
+            next if sx < 0 || sy < 0 || sx >= w || sy >= h
+            so = sy * stride + sx * 4
+            next unless buf.getbyte(so + 3) == 255
+            out << [o, buf.byteslice(so, 3) + a.chr]
+            break
+          end
         end
       end
       out

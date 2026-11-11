@@ -57,6 +57,12 @@ Il numero sta in un posto solo, `VERSION` in `dagawasd.rb`;
 - Pannello: **Avvia** riduce a icona il pannello delle impostazioni, così si
   cammina subito senza il pannello davanti alla vista (anche a schermo
   intero). *Impostazioni* dal menu lo riporta su.
+- Video dei percorsi col meteo: niente più contorni grigi tratteggiati
+  attorno a ciò che sta sul cielo. Oltre la nebbia un oggetto prende il
+  colore del cielo, ma il suo bordo usciva scuro e cambiava a ogni
+  fotogramma: nuvole e isole lontane sul mare comparivano come sagome
+  tratteggiate che sfarfallavano. Ora i pixel di bordo prendono il colore
+  dell'oggetto, come già quelli dell'orizzonte.
 - Video dei percorsi col meteo: niente più riga scura sottile sopra
   l'orizzonte del mare. Il bordo lontano del suolo di SketchUp esce
   semitrasparente e scurito, e sul cielo dipinto si vedeva; ora quei pixel
