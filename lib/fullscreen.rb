@@ -24,11 +24,14 @@ module DagaWASD
 
     # Finestra da dare: x, y, larghezza, altezza perché la vista copra il
     # monitor. Rettangoli [sinistra, alto, destra, basso] in pixel di schermo.
-    def self.fs_target(mon, win, view)
+    # status: quello che sta sotto la vista (barra di stato, con la casella
+    # delle misure) resta in fondo al monitor, e la vista finisce sopra.
+    def self.fs_target(mon, win, view, status = false)
+      below = status ? 0 : win[3] - view[3]
       [mon[0] - (view[0] - win[0]),
        mon[1] - (view[1] - win[1]),
        (mon[2] - mon[0]) + (win[2] - win[0]) - (view[2] - view[0]),
-       (mon[3] - mon[1]) + (win[3] - win[1]) - (view[3] - view[1])]
+       (mon[3] - mon[1]) + (view[1] - win[1]) + below]
     end
 
     def self.fs_win32
@@ -92,7 +95,7 @@ module DagaWASD
       style = @w32.GetWindowLongW(h, GWL_STYLE) & 0xFFFF_FFFF
       ex = @w32.GetWindowLongW(h, GWL_EXSTYLE) & 0xFFFF_FFFF
       mon = fs_monitor(h) or return
-      @fs = { hwnd: h, place: place, style: style, ex: ex, mon: mon, tries: 0 }
+      @fs = { hwnd: h, place: place, style: style, ex: ex, mon: mon, tries: 0, status: cf('fullscreen_status') == true }
       fs_quit_observer
       @w32.SendMessageW(h, 0x0112, 0xF120, nil) if (style & 0x01000000) != 0   # WM_SYSCOMMAND SC_RESTORE
       @w32.SetWindowLongW(h, GWL_STYLE, fs_signed(style & ~FS_DROP))
@@ -104,16 +107,18 @@ module DagaWASD
     end
 
     # Una correzione: la vista misurata ora, la finestra dove deve andare;
-    # finché non coincide col monitor, un'altra fra FS_STEP secondi (timer
-    # di un colpo solo: quelli ripetuti a volte si fermano da soli).
+    # finché non è già lì, un'altra fra FS_STEP secondi (timer di un colpo
+    # solo: quelli ripetuti a volte si fermano da soli).
     def self.fs_fit(fs)
       return unless @fs.equal?(fs)                         # uscito, o rientrato con un altro
       h = fs[:hwnd]
       view = fs_view_rect(h)
       fs[:view] = view
       fs[:tries] += 1
-      return if view.nil? || view == fs[:mon]
-      x, y, w, hh = fs_target(fs[:mon], fs_rect(h), view)
+      return if view.nil?
+      win = fs_rect(h)
+      x, y, w, hh = fs_target(fs[:mon], win, view, fs[:status])
+      return if win == [x, y, x + w, y + hh]
       @w32.SetWindowPos(h, nil, x, y, w, hh, 0x0234)       # NOZORDER | NOACTIVATE | FRAMECHANGED | NOOWNERZORDER
       UI.start_timer(FS_STEP, false) { fs_fit(fs) } if fs[:tries] < FS_TRIES
     rescue => fps_err

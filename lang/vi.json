@@ -224,6 +224,8 @@
 "h.fov":"0 = giữ nguyên trường nhìn của mô hình",
 "f.fullscreen":"Toàn màn hình",
 "h.fullscreen":"Khi đi bộ, khung nhìn 3D phủ kín cả màn hình: menu, thanh công cụ và bảng điều khiển ra ngoài màn hình. Esc đưa chúng trở lại.",
+"f.fullscreen_status":"Hiện thanh trạng thái",
+"h.fullscreen_status":"Ở chế độ toàn màn hình, thanh trạng thái của SketchUp vẫn ở dưới cùng, cùng thông báo của DagaWASD và ô số đo.",
 "f.cam_roll":"Nghiêng khi đi ngang",
 "h.cam_roll":"Máy ảnh nghiêng nhẹ khi di chuyển sang ngang",
 "f.crosshair":"Hiện tâm ngắm",

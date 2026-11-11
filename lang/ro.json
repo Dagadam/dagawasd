@@ -224,6 +224,8 @@
 "h.fov":"0 = lasă neschimbat câmpul vizual al modelului",
 "f.fullscreen":"Ecran complet",
 "h.fullscreen":"În timpul mersului, vederea 3D umple tot monitorul: meniurile, barele de instrumente și panourile ies din ecran. Esc le readuce.",
+"f.fullscreen_status":"Bară de stare vizibilă",
+"h.fullscreen_status":"Pe ecran complet, bara de stare a SketchUp rămâne jos, cu mesajele DagaWASD și caseta de măsuri.",
 "f.cam_roll":"Înclinare la pasul lateral",
 "h.cam_roll":"Camera se înclină ușor la deplasarea laterală",
 "f.crosshair":"Arată reticulul",

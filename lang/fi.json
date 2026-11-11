@@ -224,6 +224,8 @@
 "h.fov":"0 = jätä mallin näkökenttä ennalleen",
 "f.fullscreen":"Koko näyttö",
 "h.fullscreen":"Kävellessä 3D-näkymä täyttää koko näytön: valikot, työkalurivit ja paneelit siirtyvät näytön ulkopuolelle. Esc palauttaa ne.",
+"f.fullscreen_status":"Tilarivi näkyvissä",
+"h.fullscreen_status":"Koko näytössä SketchUpin tilarivi jää alareunaan, mukana DagaWASDin viestit ja mittaruutu.",
 "f.cam_roll":"Kallistus sivuaskeleella",
 "h.cam_roll":"Kamera kallistuu hieman sivuttaisliikkeessä",
 "f.crosshair":"Näytä tähtäin",

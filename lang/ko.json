@@ -224,6 +224,8 @@
 "h.fov":"0 = 모델의 시야각을 그대로 둠",
 "f.fullscreen":"전체 화면",
 "h.fullscreen":"걷는 동안 3D 뷰가 모니터 전체를 채웁니다. 메뉴, 도구 모음, 패널은 화면 밖으로 나갑니다. Esc를 누르면 돌아옵니다.",
+"f.fullscreen_status":"상태 표시줄 표시",
+"h.fullscreen_status":"전체 화면에서도 SketchUp 상태 표시줄이 아래에 남아 DagaWASD 메시지와 측정 상자를 보여 줍니다.",
 "f.cam_roll":"옆걸음 기울기",
 "h.cam_roll":"옆으로 움직일 때 카메라가 살짝 기웁니다",
 "f.crosshair":"조준점 표시",

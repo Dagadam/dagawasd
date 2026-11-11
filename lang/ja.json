@@ -224,6 +224,8 @@
 "h.fov":"0 = モデルの視野角をそのままにする",
 "f.fullscreen":"全画面",
 "h.fullscreen":"歩いている間、3D ビューがモニター全体を覆います。メニュー、ツールバー、パネルは画面の外に出ます。Esc で元に戻ります。",
+"f.fullscreen_status":"ステータスバーを表示",
+"h.fullscreen_status":"全画面でも SketchUp のステータスバーを下に残し、DagaWASD のメッセージと寸法ボックスを表示します。",
 "f.cam_roll":"横移動時の傾き",
 "h.cam_roll":"横に動くとカメラがわずかに傾きます",
 "f.crosshair":"照準を表示",

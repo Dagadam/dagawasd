@@ -224,6 +224,8 @@
 "h.fov":"0 = modelin görüş alanını olduğu gibi bırak",
 "f.fullscreen":"Tam ekran",
 "h.fullscreen":"Yürürken 3B görünüm tüm monitörü kaplar: menüler, araç çubukları ve paneller ekranın dışına çıkar. Esc onları geri getirir.",
+"f.fullscreen_status":"Durum çubuğu görünsün",
+"h.fullscreen_status":"Tam ekranda SketchUp’ın durum çubuğu altta kalır; DagaWASD mesajları ve ölçü kutusu görünür.",
 "f.cam_roll":"Yan adımda yatış",
 "h.cam_roll":"Yana hareket ederken kamera hafifçe yatar",
 "f.crosshair":"Nişangâhı göster",

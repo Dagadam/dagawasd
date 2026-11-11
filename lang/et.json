@@ -224,6 +224,8 @@
 "h.fov":"0 = jätta mudeli vaateväli muutmata",
 "f.fullscreen":"Täisekraan",
 "h.fullscreen":"Kõndimise ajal täidab 3D-vaade kogu monitori: menüüd, tööriistaribad ja paneelid liiguvad ekraanilt välja. Esc toob need tagasi.",
+"f.fullscreen_status":"Olekuriba nähtav",
+"h.fullscreen_status":"Täisekraanil jääb SketchUpi olekuriba alla, koos DagaWASD-i teadete ja mõõtude kastiga.",
 "f.cam_roll":"Kalle külgsammul",
 "h.cam_roll":"Kaamera kaldub külgsuunas liikudes veidi",
 "f.crosshair":"Näita sihikut",

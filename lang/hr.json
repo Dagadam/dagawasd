@@ -224,6 +224,8 @@
 "h.fov":"0 = ostavi vidno polje modela nepromijenjeno",
 "f.fullscreen":"Cijeli zaslon",
 "h.fullscreen":"Dok hodate, 3D prikaz ispunjava cijeli monitor: izbornici, alatne trake i ploče izlaze izvan zaslona. Esc ih vraća.",
+"f.fullscreen_status":"Vidljiva traka stanja",
+"h.fullscreen_status":"Na cijelom zaslonu traka stanja SketchUpa ostaje dolje, s porukama DagaWASD-a i okvirom za mjere.",
 "f.cam_roll":"Nagib pri bočnom koraku",
 "h.cam_roll":"Kamera se pri bočnom kretanju lagano nagne",
 "f.crosshair":"Prikaži nišan",

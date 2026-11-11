@@ -196,6 +196,10 @@ t = F.fs_target([0, 0, 1024, 768], [-8, -8, 1032, 728], [0, 113, 1024, 688])
 ok(t == [-8, -121, 1040, 929] && t[1] + (113 + 8) == 0 && t[1] + t[3] - (728 - 688) == 768, "finestra spostata e allargata perché la vista copra il monitor: #{t.inspect}")
 t2 = F.fs_target([1920, 0, 3840, 1080], [0, 0, 1300, 900], [10, 90, 1000, 860])   # secondo monitor, pannello a destra
 ok(t2 == [1910, -90, 2230, 1210] && t2[0] + 10 == 1920 && t2[1] + 90 == 0, "secondo monitor e pannello a destra: #{t2.inspect}")
+ok(F::DEFAULT['fullscreen_status'] == false, 'barra di stato fuori dallo schermo di serie')
+ts = F.fs_target([0, 0, 1024, 768], [0, -90, 1024, 800], [0, 0, 1024, 768], true)   # già a schermo intero, ora con la barra
+ok(ts == [0, -90, 1024, 858] && ts[1] + ts[3] == 768, "barra di stato visibile: la finestra finisce in fondo al monitor (#{ts.inspect})")
+ok(F.fs_target([0, 0, 1024, 768], [0, -90, 1024, 800], [0, 0, 1024, 768]) == [0, -90, 1024, 890], 'senza la barra: la vista già sul monitor, la finestra resta')
 ok(F.fs_signed(0x97cf0000) == 0x97cf0000 - 2**32 && F.fs_signed(0x16cf0000) == 0x16cf0000, 'stile della finestra come long con segno')
 ok(!F.fs_active? && F.fs_view_center.nil?, 'fuori dallo schermo intero il cursore usa la finestra come prima')
 F.fs_leave

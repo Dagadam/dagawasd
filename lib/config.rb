@@ -164,6 +164,7 @@ module DagaWASD
       'gamepad_rumble'      => true,   # vibrazione negli atterraggi pesanti
       'fov'                => 70.0,
       'fullscreen'          => false,  # camminando la vista copre il monitor (lib/fullscreen.rb)
+      'fullscreen_status'   => false,  # ...ma la barra di stato di SketchUp resta in fondo
       'crosshair'           => true,
       'charge_bar'          => true,   # barra di carica lancio/calcio sotto il mirino
       'wheel_zoom'          => true,   # rotella = zoom (FOV), tasto centrale = reset

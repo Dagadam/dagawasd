@@ -224,6 +224,8 @@
 "h.fov":"0 = atstāt modeļa redzes lauku nemainītu",
 "f.fullscreen":"Pilnekrāns",
 "h.fullscreen":"Ejot 3D skats aizpilda visu monitoru: izvēlnes, rīkjoslas un paneļi pārvietojas ārpus ekrāna. Esc tos atgriež.",
+"f.fullscreen_status":"Redzama statusa josla",
+"h.fullscreen_status":"Pilnekrānā SketchUp statusa josla paliek apakšā, ar DagaWASD ziņojumiem un mēru lodziņu.",
 "f.cam_roll":"Sasvēršanās sānsolī",
 "h.cam_roll":"Kamera nedaudz sasveras, pārvietojoties sāniski",
 "f.crosshair":"Rādīt tēmēkli",

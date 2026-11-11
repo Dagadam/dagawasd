@@ -224,6 +224,8 @@
 "h.fov":"0 = palikti modelio matymo lauką nepakeistą",
 "f.fullscreen":"Visas ekranas",
 "h.fullscreen":"Einant 3D vaizdas užpildo visą monitorių: meniu, įrankių juostos ir skydeliai išeina už ekrano. Esc juos grąžina.",
+"f.fullscreen_status":"Matoma būsenos juosta",
+"h.fullscreen_status":"Visame ekrane SketchUp būsenos juosta lieka apačioje, su DagaWASD pranešimais ir matmenų laukeliu.",
 "f.cam_roll":"Pasvirimas žengiant į šoną",
 "h.cam_roll":"Judant į šoną kamera truputį pasvyra",
 "f.crosshair":"Rodyti taikiklį",

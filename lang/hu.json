@@ -224,6 +224,8 @@
 "h.fov":"0 = a modell látószöge változatlan marad",
 "f.fullscreen":"Teljes képernyő",
 "h.fullscreen":"Séta közben a 3D nézet kitölti az egész monitort: a menük, eszköztárak és panelek a képernyőn kívülre kerülnek. Az Esc visszahozza őket.",
+"f.fullscreen_status":"Látható állapotsor",
+"h.fullscreen_status":"Teljes képernyőn a SketchUp állapotsora alul marad, a DagaWASD üzeneteivel és a méretmezővel.",
 "f.cam_roll":"Dőlés oldallépéskor",
 "h.cam_roll":"A kamera oldalirányú mozgásnál enyhén bedől",
 "f.crosshair":"Célkereszt megjelenítése",

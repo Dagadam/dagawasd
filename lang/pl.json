@@ -224,6 +224,8 @@
 "h.fov":"0 = zostaw pole widzenia modelu bez zmian",
 "f.fullscreen":"Pełny ekran",
 "h.fullscreen":"Podczas chodzenia widok 3D wypełnia cały monitor: menu, paski narzędzi i panele wychodzą poza ekran. Esc je przywraca.",
+"f.fullscreen_status":"Widoczny pasek stanu",
+"h.fullscreen_status":"W pełnym ekranie pasek stanu SketchUp zostaje na dole, z komunikatami DagaWASD i polem wymiarów.",
 "f.cam_roll":"Przechył przy kroku w bok",
 "h.cam_roll":"Kamera lekko się przechyla przy ruchu na boki",
 "f.crosshair":"Pokaż celownik",

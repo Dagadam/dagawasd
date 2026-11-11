@@ -224,6 +224,8 @@
 "h.fov":"0 = lad modellens synsfelt være uændret",
 "f.fullscreen":"Fuld skærm",
 "h.fullscreen":"Når du går, fylder 3D-visningen hele skærmen: menuer, værktøjslinjer og paneler flyttes uden for skærmen. Esc bringer dem tilbage.",
+"f.fullscreen_status":"Synlig statuslinje",
+"h.fullscreen_status":"I fuld skærm bliver SketchUps statuslinje nederst, med beskederne fra DagaWASD og målefeltet.",
 "f.cam_roll":"Hældning ved sideskridt",
 "h.cam_roll":"Kameraet hælder let ved sidelæns bevægelse",
 "f.crosshair":"Vis sigtekorn",

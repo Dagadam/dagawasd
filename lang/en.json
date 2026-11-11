@@ -224,6 +224,8 @@
 "h.fov":"0 = leave the model's FOV untouched",
 "f.fullscreen":"Full screen",
 "h.fullscreen":"While walking, the 3D view fills the whole monitor: menus, toolbars and panels move off screen. Esc brings them back.",
+"f.fullscreen_status":"Status bar visible",
+"h.fullscreen_status":"In full screen, SketchUp’s status bar stays at the bottom, with DagaWASD’s messages and the Measurements box.",
 "f.cam_roll":"Strafe tilt",
 "h.cam_roll":"The camera banks slightly when moving sideways",
 "f.crosshair":"Show crosshair",

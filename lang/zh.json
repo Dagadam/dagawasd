@@ -224,6 +224,8 @@
 "h.fov":"0 = 保持模型原有视野不变",
 "f.fullscreen":"全屏",
 "h.fullscreen":"行走时，3D 视图铺满整个显示器：菜单、工具栏和面板移到屏幕之外。按 Esc 恢复。",
+"f.fullscreen_status":"显示状态栏",
+"h.fullscreen_status":"全屏时 SketchUp 的状态栏仍留在底部，显示 DagaWASD 的消息和数值输入框。",
 "f.cam_roll":"横移倾斜",
 "h.cam_roll":"横向移动时相机会轻微侧倾",
 "f.crosshair":"显示准星",

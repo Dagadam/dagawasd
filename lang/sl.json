@@ -224,6 +224,8 @@
 "h.fov":"0 = pusti vidno polje modela nespremenjeno",
 "f.fullscreen":"Celoten zaslon",
 "h.fullscreen":"Med hojo 3D-pogled zapolni ves monitor: meniji, orodne vrstice in plošče se umaknejo z zaslona. Esc jih vrne.",
+"f.fullscreen_status":"Vidna vrstica stanja",
+"h.fullscreen_status":"V celozaslonskem načinu vrstica stanja programa SketchUp ostane spodaj, s sporočili DagaWASD in poljem za mere.",
 "f.cam_roll":"Nagib pri koraku vstran",
 "h.cam_roll":"Kamera se pri stranskem gibanju rahlo nagne",
 "f.crosshair":"Pokaži merek",

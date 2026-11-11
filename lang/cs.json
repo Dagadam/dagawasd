@@ -224,6 +224,8 @@
 "h.fov":"0 = ponechat zorné pole modelu beze změny",
 "f.fullscreen":"Celá obrazovka",
 "h.fullscreen":"Při chůzi vyplní 3D pohled celý monitor: nabídky, panely nástrojů a panely se přesunou mimo obrazovku. Esc je vrátí.",
+"f.fullscreen_status":"Viditelný stavový řádek",
+"h.fullscreen_status":"Na celé obrazovce zůstane dole stavový řádek SketchUpu se zprávami DagaWASD a polem měření.",
 "f.cam_roll":"Náklon při úkroku",
 "h.cam_roll":"Kamera se při pohybu do strany lehce nakloní",
 "f.crosshair":"Zobrazit zaměřovač",

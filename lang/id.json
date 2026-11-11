@@ -224,6 +224,8 @@
 "h.fov":"0 = biarkan bidang pandang model apa adanya",
 "f.fullscreen":"Layar penuh",
 "h.fullscreen":"Saat berjalan, tampilan 3D memenuhi seluruh monitor: menu, bilah alat, dan panel keluar dari layar. Esc mengembalikannya.",
+"f.fullscreen_status":"Bilah status terlihat",
+"h.fullscreen_status":"Dalam layar penuh, bilah status SketchUp tetap di bawah, dengan pesan DagaWASD dan kotak ukuran.",
 "f.cam_roll":"Kemiringan saat menyamping",
 "h.cam_roll":"Kamera sedikit miring saat bergerak ke samping",
 "f.crosshair":"Tampilkan bidikan",

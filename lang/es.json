@@ -224,6 +224,8 @@
 "h.fov":"0 = dejar sin cambios el campo de visión del modelo",
 "f.fullscreen":"Pantalla completa",
 "h.fullscreen":"Al caminar, la vista 3D ocupa todo el monitor: menús, barras y paneles salen de la pantalla. Esc los devuelve.",
+"f.fullscreen_status":"Barra de estado visible",
+"h.fullscreen_status":"En pantalla completa, la barra de estado de SketchUp se queda abajo, con los mensajes de DagaWASD y el cuadro de medidas.",
 "f.cam_roll":"Inclinación lateral",
 "h.cam_roll":"La cámara se inclina ligeramente al moverse de lado",
 "f.crosshair":"Mostrar la mira",

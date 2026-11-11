@@ -224,6 +224,8 @@
 "h.fov":"0 = lämna modellens synfält orört",
 "f.fullscreen":"Helskärm",
 "h.fullscreen":"När du går fyller 3D-vyn hela skärmen: menyer, verktygsfält och paneler flyttas utanför skärmen. Esc tar tillbaka dem.",
+"f.fullscreen_status":"Statusfältet synligt",
+"h.fullscreen_status":"I helskärm stannar SketchUps statusfält längst ned, med meddelandena från DagaWASD och måttrutan.",
 "f.cam_roll":"Lutning vid sidsteg",
 "h.cam_roll":"Kameran lutar lätt vid rörelse i sidled",
 "f.crosshair":"Visa hårkors",
