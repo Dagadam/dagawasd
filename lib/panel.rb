@@ -128,15 +128,53 @@ module DagaWASD
       UI.messagebox("DagaWASD — #{fps_err.message}")
     end
 
+    # La finestra del pannello: fra quelle visibili di SketchUp, quella col
+    # titolo del dialogo (HtmlDialog non dà il suo handle).
+    def self.panel_hwnd
+      return nil unless @panel_title && ensure_win32
+      pid = @w32.GetCurrentProcessId & 0xFFFF_FFFF
+      want = @panel_title.encode('UTF-16LE')
+      own = "\0" * 4
+      txt = "\0" * 512
+      found = nil
+      cb = Fiddle::Closure::BlockCaller.new(Fiddle::TYPE_INT, [Fiddle::TYPE_VOIDP, Fiddle::TYPE_VOIDP]) do |h, _|
+        @w32.GetWindowThreadProcessId(h, own)
+        if own.unpack1('L') == pid && @w32.IsWindowVisible(h) != 0
+          n = @w32.GetWindowTextW(h, txt, 256)
+          found = h.to_i if txt.byteslice(0, n * 2) == want.b
+        end
+        found ? 0 : 1
+      end
+      @w32.EnumWindows(cb.to_i, nil)
+      found
+    rescue => fps_err; log_error(__method__, fps_err); nil; end
+
+    # «Avvia» dal pannello: il pannello va a icona, altrimenti resta sopra la
+    # vista (anche a schermo intero). Senza attivarsi: il primo piano è già
+    # passato alla finestra principale (focus_main_window).
+    def self.panel_minimize(h)
+      return unless h
+      @w32.ShowWindow(h, 7)                                # SW_SHOWMINNOACTIVE
+      @panel_min = h
+    rescue => fps_err; log_error(__method__, fps_err); nil; end
+
+    def self.panel_restore
+      h = @panel_min or return
+      @panel_min = nil
+      @w32.ShowWindow(h, 9) if @w32.IsIconic(h) != 0      # SW_RESTORE
+    rescue => fps_err; log_error(__method__, fps_err); nil; end
+
     def self.show_panel
       load_cfg
       load_lang
       if @dialog && @dialog.visible?
+        panel_restore                # ridotto a icona da «Avvia»
         dialog_on_screen(@dialog)    # "aperto" ma fuori dallo schermo: il menu non farebbe nulla
         @dialog.bring_to_front; return
       end
+      @panel_title = "DagaWASD — #{t('menu.settings').sub(/…\z/, '')}"
       @dialog = UI::HtmlDialog.new(
-        dialog_title:    "DagaWASD — #{t('menu.settings').sub(/…\z/, '')}",
+        dialog_title:    @panel_title,
         preferences_key: 'DagaWASDPanel',
         width:  620, height:  880,
         min_width: 520, min_height: 520,
@@ -183,8 +221,10 @@ module DagaWASD
         rescue => fps_err; log_error(__method__, fps_err); end
       end
       @dialog.add_action_callback('toggle') do |_ctx, _|
+        h = panel_hwnd                  # il pannello è in primo piano: chi ha cliccato è lì
         toggle
         @dialog.execute_script("setRunning(#{@active})")
+        panel_minimize(h) if @active
       end
       @dialog.add_action_callback('request_settings') do |_ctx, _|
         push_panel_state

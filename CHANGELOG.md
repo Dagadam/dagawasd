@@ -54,6 +54,9 @@ Il numero sta in un posto solo, `VERSION` in `dagawasd.rb`;
   e nebbia nella pioggia: il giro completo dura quattro minuti e mezzo.
 
 ### Corretto
+- Pannello: **Avvia** riduce a icona il pannello delle impostazioni, così si
+  cammina subito senza il pannello davanti alla vista (anche a schermo
+  intero). *Impostazioni* dal menu lo riporta su.
 - Video dei percorsi col meteo: niente più riga scura sottile sopra
   l'orizzonte del mare. Il bordo lontano del suolo di SketchUp esce
   semitrasparente e scurito, e sul cielo dipinto si vedeva; ora quei pixel
