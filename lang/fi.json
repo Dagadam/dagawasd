@@ -222,6 +222,8 @@
 "h.gamepad_rumble":"Ohjain tärisee kovissa alastuloissa",
 "f.fov":"Näkökenttä (FOV)",
 "h.fov":"0 = jätä mallin näkökenttä ennalleen",
+"f.fullscreen":"Koko näyttö",
+"h.fullscreen":"Kävellessä 3D-näkymä täyttää koko näytön: valikot, työkalurivit ja paneelit siirtyvät näytön ulkopuolelle. Esc palauttaa ne.",
 "f.cam_roll":"Kallistus sivuaskeleella",
 "h.cam_roll":"Kamera kallistuu hieman sivuttaisliikkeessä",
 "f.crosshair":"Näytä tähtäin",

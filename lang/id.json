@@ -222,6 +222,8 @@
 "h.gamepad_rumble":"Gamepad bergetar saat mendarat keras",
 "f.fov":"Bidang pandang (FOV)",
 "h.fov":"0 = biarkan bidang pandang model apa adanya",
+"f.fullscreen":"Layar penuh",
+"h.fullscreen":"Saat berjalan, tampilan 3D memenuhi seluruh monitor: menu, bilah alat, dan panel keluar dari layar. Esc mengembalikannya.",
 "f.cam_roll":"Kemiringan saat menyamping",
 "h.cam_roll":"Kamera sedikit miring saat bergerak ke samping",
 "f.crosshair":"Tampilkan bidikan",

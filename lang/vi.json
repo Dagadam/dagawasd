@@ -222,6 +222,8 @@
 "h.gamepad_rumble":"Tay cầm rung khi tiếp đất mạnh",
 "f.fov":"Trường nhìn (FOV)",
 "h.fov":"0 = giữ nguyên trường nhìn của mô hình",
+"f.fullscreen":"Toàn màn hình",
+"h.fullscreen":"Khi đi bộ, khung nhìn 3D phủ kín cả màn hình: menu, thanh công cụ và bảng điều khiển ra ngoài màn hình. Esc đưa chúng trở lại.",
 "f.cam_roll":"Nghiêng khi đi ngang",
 "h.cam_roll":"Máy ảnh nghiêng nhẹ khi di chuyển sang ngang",
 "f.crosshair":"Hiện tâm ngắm",

@@ -189,5 +189,17 @@ ok(F.load_cfg['move_speed'] == F::DEFAULT['move_speed'] && !File.exist?(F::SETTI
 F.send(:remove_const, :OLD_SETTINGS_FILE); F.const_set(:OLD_SETTINGS_FILE, old_const)
 F.instance_variable_set(:@settings_file, saved_sf)
 
+# ── Schermo intero (lib/fullscreen.rb) ─────────────────────────────
+ok(F::DEFAULT['fullscreen'] == false, 'schermo intero spento di serie')
+# Finestra ingrandita 1040×736 da (-8, -8); la vista sotto menu e barre (113 px) e sopra la barra di stato
+t = F.fs_target([0, 0, 1024, 768], [-8, -8, 1032, 728], [0, 113, 1024, 688])
+ok(t == [-8, -121, 1040, 929] && t[1] + (113 + 8) == 0 && t[1] + t[3] - (728 - 688) == 768, "finestra spostata e allargata perché la vista copra il monitor: #{t.inspect}")
+t2 = F.fs_target([1920, 0, 3840, 1080], [0, 0, 1300, 900], [10, 90, 1000, 860])   # secondo monitor, pannello a destra
+ok(t2 == [1910, -90, 2230, 1210] && t2[0] + 10 == 1920 && t2[1] + 90 == 0, "secondo monitor e pannello a destra: #{t2.inspect}")
+ok(F.fs_signed(0x97cf0000) == 0x97cf0000 - 2**32 && F.fs_signed(0x16cf0000) == 0x16cf0000, 'stile della finestra come long con segno')
+ok(!F.fs_active? && F.fs_view_center.nil?, 'fuori dallo schermo intero il cursore usa la finestra come prima')
+F.fs_leave
+ok(!F.fs_active?, 'uscire senza esserci entrati non fa nulla')
+
 puts "\n#{$fail.zero? ? 'TUTTI I TEST PASSATI' : "#{$fail} TEST FALLITI"}"
 exit($fail.zero? ? 0 : 1)

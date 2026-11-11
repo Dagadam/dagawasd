@@ -222,6 +222,8 @@
 "h.gamepad_rumble":"Plošček vibrira ob trdih pristankih",
 "f.fov":"Vidno polje (FOV)",
 "h.fov":"0 = pusti vidno polje modela nespremenjeno",
+"f.fullscreen":"Celoten zaslon",
+"h.fullscreen":"Med hojo 3D-pogled zapolni ves monitor: meniji, orodne vrstice in plošče se umaknejo z zaslona. Esc jih vrne.",
 "f.cam_roll":"Nagib pri koraku vstran",
 "h.cam_roll":"Kamera se pri stranskem gibanju rahlo nagne",
 "f.crosshair":"Pokaži merek",

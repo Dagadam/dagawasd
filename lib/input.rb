@@ -84,6 +84,8 @@ module DagaWASD
     rescue => fps_err; log_error(__method__, fps_err); end
 
     def self.viewport_center
+      # A schermo intero la finestra è più grande del monitor: il centro della vista
+      c = fs_view_center and return c
       hwnd = @main_hwnd || @w32.GetForegroundWindow
       rect = String.new("\x00" * 16, encoding: 'BINARY')
       @w32.GetClientRect(hwnd, rect)

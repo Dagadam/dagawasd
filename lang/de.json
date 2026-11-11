@@ -222,6 +222,8 @@
 "h.gamepad_rumble":"Das Gamepad vibriert bei harten Landungen",
 "f.fov":"Sichtfeld (FOV)",
 "h.fov":"0 = Sichtfeld des Modells unverändert lassen",
+"f.fullscreen":"Vollbild",
+"h.fullscreen":"Beim Gehen füllt die 3D-Ansicht den ganzen Monitor: Menüs, Symbolleisten und Fenster wandern aus dem Bildschirm. Esc holt sie zurück.",
 "f.cam_roll":"Neigung beim Seitwärtsgehen",
 "h.cam_roll":"Die Kamera legt sich bei Seitwärtsbewegung leicht in die Kurve",
 "f.crosshair":"Fadenkreuz anzeigen",

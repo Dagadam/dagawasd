@@ -222,6 +222,8 @@
 "h.gamepad_rumble":"La manette vibre lors des atterrissages brutaux",
 "f.fov":"Champ de vision (FOV)",
 "h.fov":"0 = laisser le champ de vision du modèle inchangé",
+"f.fullscreen":"Plein écran",
+"h.fullscreen":"Pendant la marche, la vue 3D occupe tout le moniteur : menus, barres d’outils et panneaux sortent de l’écran. Échap les remet.",
 "f.cam_roll":"Inclinaison en pas de côté",
 "h.cam_roll":"La caméra s'incline légèrement lors des déplacements latéraux",
 "f.crosshair":"Afficher le réticule",

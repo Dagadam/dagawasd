@@ -222,6 +222,8 @@
 "h.gamepad_rumble":"Kontrolleren vibrerer ved harde landinger",
 "f.fov":"Synsfelt (FOV)",
 "h.fov":"0 = la modellens synsfelt være uendret",
+"f.fullscreen":"Fullskjerm",
+"h.fullscreen":"Mens du går, fyller 3D-visningen hele skjermen: menyer, verktøylinjer og paneler flyttes ut av skjermen. Esc henter dem tilbake.",
 "f.cam_roll":"Helling ved sidesteg",
 "h.cam_roll":"Kameraet heller litt ved bevegelse sidelengs",
 "f.crosshair":"Vis siktekorn",

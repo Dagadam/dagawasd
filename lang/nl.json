@@ -222,6 +222,8 @@
 "h.gamepad_rumble":"De gamepad trilt bij harde landingen",
 "f.fov":"Gezichtsveld (FOV)",
 "h.fov":"0 = het gezichtsveld van het model ongemoeid laten",
+"f.fullscreen":"Volledig scherm",
+"h.fullscreen":"Tijdens het lopen vult de 3D-weergave de hele monitor: menu’s, werkbalken en panelen verdwijnen buiten het scherm. Esc zet ze terug.",
 "f.cam_roll":"Kanteling bij zijwaarts",
 "h.cam_roll":"De camera helt licht over bij zijwaartse beweging",
 "f.crosshair":"Richtkruis tonen",

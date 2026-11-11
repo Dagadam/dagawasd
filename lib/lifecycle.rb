@@ -138,6 +138,7 @@ module DagaWASD
       @keys.clear
       @main_hwnd    = find_main_window
       focus_main_window
+      fs_enter                          # lib/fullscreen.rb: se è acceso, la vista copre il monitor
       @was_focused  = true
       @alt_injected = false
       cx, cy = viewport_center
@@ -164,6 +165,7 @@ module DagaWASD
       UI.stop_timer(@timer_id) if @timer_id
       @timer_id = nil
       remove_hook
+      fs_leave                          # la finestra torna com'era
       show_cursor
       @keys.clear
       @main_hwnd = nil

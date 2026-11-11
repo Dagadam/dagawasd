@@ -222,6 +222,8 @@
 "h.gamepad_rumble":"Gamepad wibruje przy twardych lądowaniach",
 "f.fov":"Pole widzenia (FOV)",
 "h.fov":"0 = zostaw pole widzenia modelu bez zmian",
+"f.fullscreen":"Pełny ekran",
+"h.fullscreen":"Podczas chodzenia widok 3D wypełnia cały monitor: menu, paski narzędzi i panele wychodzą poza ekran. Esc je przywraca.",
 "f.cam_roll":"Przechył przy kroku w bok",
 "h.cam_roll":"Kamera lekko się przechyla przy ruchu na boki",
 "f.crosshair":"Pokaż celownik",

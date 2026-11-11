@@ -11,7 +11,8 @@ require 'set'
 #
 #   config     costanti, DEFAULT, stato       i18n       lingue
 #   settings   settings.json, tasti, log      input      Win32, hook tastiera
-#   camera     camera e zoom                  raycast    raggi
+#   fullscreen schermo intero                 camera     camera e zoom
+#   raycast    raggi
 #   player     pavimento, muri, gradini       materials  materiali, massa
 #   geometry   forma reale degli oggetti      support    appoggio, ribaltamento
 #   bodies     registrazione corpi, impulsi   collisions urti fra oggetti
@@ -43,7 +44,7 @@ if Sketchup.platform != :platform_win
 # nuovo menu, barra e timer.
 elsif !defined?(DagaWASD::FPSWalk::PLUGIN_DIR)
   %w[
-    config i18n settings input camera raycast player materials geometry support
+    config i18n settings input fullscreen camera raycast player materials geometry support
     bodies collisions held physics actions lifecycle tick tool panel bridge sky precip clouds snowcover avi videometeo path pathkeys keyedit
     explore exprofiles expilot gallery attesa gamepad ui
   ].each do |f|

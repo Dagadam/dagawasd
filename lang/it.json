@@ -222,6 +222,8 @@
 "h.gamepad_rumble":"Il gamepad vibra negli atterraggi pesanti",
 "f.fov":"Campo visivo (FOV)",
 "h.fov":"0 = lascia invariato il FOV del modello",
+"f.fullscreen":"Schermo intero",
+"h.fullscreen":"Camminando, la vista 3D copre tutto il monitor: menu, barre e pannelli escono dallo schermo. Esc li rimette.",
 "f.cam_roll":"Inclinazione in strafe",
 "h.cam_roll":"La camera si inclina leggermente muovendosi di lato",
 "f.crosshair":"Mostra il mirino",

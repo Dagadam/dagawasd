@@ -11,6 +11,11 @@ Il numero sta in un posto solo, `VERSION` in `dagawasd.rb`;
 ## [Non ancora uscito]
 
 ### Aggiunto
+- Camminata: **Schermo intero** (*Camera › Vista*, spento di serie). Finché
+  si cammina la vista 3D copre tutto il monitor: la finestra di SketchUp
+  perde bordo e titolo, e menu, barre, pannelli e barra di stato finiscono
+  fuori dallo schermo. All'uscita (Esc) la finestra torna com'era, anche
+  ingrandita; lo stesso se SketchUp si chiude mentre si cammina.
 - Pannello: nuova scheda **Accessibilità** con **Niente lampi**, per chi è
   sensibile alle luci lampeggianti: niente lampo bianco quando si scatta una
   foto (propria o dell'esploratore) e niente fulmini né cielo che si

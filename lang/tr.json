@@ -222,6 +222,8 @@
 "h.gamepad_rumble":"Sert inişlerde kumanda titrer",
 "f.fov":"Görüş alanı (FOV)",
 "h.fov":"0 = modelin görüş alanını olduğu gibi bırak",
+"f.fullscreen":"Tam ekran",
+"h.fullscreen":"Yürürken 3B görünüm tüm monitörü kaplar: menüler, araç çubukları ve paneller ekranın dışına çıkar. Esc onları geri getirir.",
 "f.cam_roll":"Yan adımda yatış",
 "h.cam_roll":"Yana hareket ederken kamera hafifçe yatar",
 "f.crosshair":"Nişangâhı göster",

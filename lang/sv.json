@@ -222,6 +222,8 @@
 "h.gamepad_rumble":"Handkontrollen vibrerar vid hårda landningar",
 "f.fov":"Synfält (FOV)",
 "h.fov":"0 = lämna modellens synfält orört",
+"f.fullscreen":"Helskärm",
+"h.fullscreen":"När du går fyller 3D-vyn hela skärmen: menyer, verktygsfält och paneler flyttas utanför skärmen. Esc tar tillbaka dem.",
 "f.cam_roll":"Lutning vid sidsteg",
 "h.cam_roll":"Kameran lutar lätt vid rörelse i sidled",
 "f.crosshair":"Visa hårkors",

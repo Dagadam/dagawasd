@@ -163,6 +163,7 @@ module DagaWASD
       'gamepad_curve'       => 1.8,    # leva destra: >1 = più precisa vicino al centro
       'gamepad_rumble'      => true,   # vibrazione negli atterraggi pesanti
       'fov'                => 70.0,
+      'fullscreen'          => false,  # camminando la vista copre il monitor (lib/fullscreen.rb)
       'crosshair'           => true,
       'charge_bar'          => true,   # barra di carica lancio/calcio sotto il mirino
       'wheel_zoom'          => true,   # rotella = zoom (FOV), tasto centrale = reset

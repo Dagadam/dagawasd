@@ -222,6 +222,8 @@
 "h.gamepad_rumble":"重落地时手柄振动",
 "f.fov":"视野 (FOV)",
 "h.fov":"0 = 保持模型原有视野不变",
+"f.fullscreen":"全屏",
+"h.fullscreen":"行走时，3D 视图铺满整个显示器：菜单、工具栏和面板移到屏幕之外。按 Esc 恢复。",
 "f.cam_roll":"横移倾斜",
 "h.cam_roll":"横向移动时相机会轻微侧倾",
 "f.crosshair":"显示准星",

@@ -222,6 +222,8 @@
 "h.gamepad_rumble":"The gamepad vibrates on hard landings",
 "f.fov":"Field of view (FOV)",
 "h.fov":"0 = leave the model's FOV untouched",
+"f.fullscreen":"Full screen",
+"h.fullscreen":"While walking, the 3D view fills the whole monitor: menus, toolbars and panels move off screen. Esc brings them back.",
 "f.cam_roll":"Strafe tilt",
 "h.cam_roll":"The camera banks slightly when moving sideways",
 "f.crosshair":"Show crosshair",
