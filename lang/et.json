@@ -684,6 +684,7 @@
 "ke.last":"See on viimane asukoht",
 "ke.from_view":"Võta vaatest",
 "ke.from_view.h":"Paneb kera sinna, kus kaamera praegu on, sama pilgu ja suumiga",
+"ke.play.h":"Esita teekond sellest asukohast lõpuni (peatamiseks Esc või klõps)",
 "ke.insert":"Lisa järele",
 "ke.delete":"Kustuta",
 "ke.min2":"Rajal peab olema vähemalt kaks asukohta.",

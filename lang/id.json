@@ -684,6 +684,7 @@
 "ke.last":"Ini posisi terakhir",
 "ke.from_view":"Ambil dari tampilan",
 "ke.from_view.h":"Menaruh bola di tempat kamera sekarang, dengan pandangan dan zoom yang sama",
+"ke.play.h":"Putar jalur dari posisi ini sampai akhir (Esc atau klik untuk berhenti)",
 "ke.insert":"Sisipkan sesudah",
 "ke.delete":"Hapus",
 "ke.min2":"Sebuah jalur memerlukan setidaknya dua posisi.",

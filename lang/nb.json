@@ -684,6 +684,7 @@
 "ke.last":"Dette er den siste posisjonen",
 "ke.from_view":"Ta fra visningen",
 "ke.from_view.h":"Setter kulen der kameraet er nå, med samme blikk og zoom",
+"ke.play.h":"Spill av banen fra denne posisjonen til slutten (Esc eller et klikk stopper)",
 "ke.insert":"Sett inn etter",
 "ke.delete":"Slett",
 "ke.min2":"En sti trenger minst to posisjoner.",

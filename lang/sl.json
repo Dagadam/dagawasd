@@ -684,6 +684,7 @@
 "ke.last":"To je zadnji položaj",
 "ke.from_view":"Vzemi iz pogleda",
 "ke.from_view.h":"Postavi kroglo tja, kjer je zdaj kamera, z enakim pogledom in povečavo",
+"ke.play.h":"Predvajaj pot od tega položaja do konca (Esc ali klik za ustavitev)",
 "ke.insert":"Vstavi za",
 "ke.delete":"Izbriši",
 "ke.min2":"Pot potrebuje vsaj dva položaja.",

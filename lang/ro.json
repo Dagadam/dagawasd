@@ -684,6 +684,7 @@
 "ke.last":"Aceasta este ultima poziție",
 "ke.from_view":"Preia din vedere",
 "ke.from_view.h":"Pune sfera unde este acum camera, cu aceeași privire și același zoom",
+"ke.play.h":"Redă traseul de la această poziție până la sfârșit (Esc sau un clic pentru oprire)",
 "ke.insert":"Inserează după",
 "ke.delete":"Șterge",
 "ke.min2":"Un traseu are nevoie de cel puțin două poziții.",

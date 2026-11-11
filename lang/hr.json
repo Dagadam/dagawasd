@@ -684,6 +684,7 @@
 "ke.last":"Ovo je posljednji položaj",
 "ke.from_view":"Uzmi iz pogleda",
 "ke.from_view.h":"Postavlja kuglu gdje je sada kamera, s istim pogledom i zumom",
+"ke.play.h":"Reproduciraj putanju od ovog položaja do kraja (Esc ili klik za zaustavljanje)",
 "ke.insert":"Umetni iza",
 "ke.delete":"Izbriši",
 "ke.min2":"Putanja treba barem dva položaja.",

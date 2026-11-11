@@ -684,6 +684,7 @@
 "ke.last":"This is the last position",
 "ke.from_view":"Take from view",
 "ke.from_view.h":"Puts the sphere where the camera is now, with the same gaze and zoom",
+"ke.play.h":"Play the path from this position to the end (Esc or a click to stop)",
 "ke.insert":"Insert after",
 "ke.delete":"Delete",
 "ke.min2":"A path needs at least two positions.",

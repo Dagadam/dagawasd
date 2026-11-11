@@ -684,6 +684,7 @@
 "ke.last":"To ostatnia pozycja",
 "ke.from_view":"Weź z widoku",
 "ke.from_view.h":"Ustawia kulę tam, gdzie jest teraz kamera, z tym samym spojrzeniem i zoomem",
+"ke.play.h":"Odtwórz ścieżkę od tej pozycji do końca (Esc lub kliknięcie zatrzymuje)",
 "ke.insert":"Wstaw po",
 "ke.delete":"Usuń",
 "ke.min2":"Ścieżka potrzebuje co najmniej dwóch pozycji.",

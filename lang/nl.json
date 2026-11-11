@@ -684,6 +684,7 @@
 "ke.last":"Dit is de laatste positie",
 "ke.from_view":"Uit de weergave nemen",
 "ke.from_view.h":"Zet de bol waar de camera nu is, met dezelfde blik en zoom",
+"ke.play.h":"Speel het pad af vanaf deze positie tot het einde (Esc of een klik stopt)",
 "ke.insert":"Erna invoegen",
 "ke.delete":"Verwijderen",
 "ke.min2":"Een pad heeft minstens twee posities nodig.",

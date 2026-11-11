@@ -481,9 +481,33 @@ module DagaWASD
         ke_apply(e, f + [k[10], k[11]], t('ke.op'))
       when 'insert' then ke_insert(e, list, i)
       when 'delete' then ke_delete(e, list, i)
+      when 'play'   then ke_play(e, name, list, i)
       end
     rescue => fps_err
       log_error(__method__, fps_err)
+    end
+
+    # ▶: il percorso riparte da questa sfera (dall'istante in cui la camera
+    # la raggiunge) fino alla fine; si ferma con Esc o un clic, come
+    # Riproduci. Con l'anteprima accesa la camera torna subito alla vista di
+    # prima: alla fine della riproduzione si torna lì, non dentro la sfera.
+    def self.ke_play(e, name, list, i)
+      model = e.model
+      view = model.active_view
+      if @ke[:preview] && (bk = @ke[:back])
+        ke_dolly_end(view)
+        done = ke_preview_cut(view)
+        eye, target, up, persp, fov, height = bk
+        cam = Sketchup::Camera.new(eye, target, up, persp, fov || 35)
+        cam.height = height if height
+        view.camera = cam
+        done&.call
+      end
+      keys = list.map { |x| key_of(x) }
+      from = key_schedule(keys, key_speed(path_data(name, model)))[i][:arrive]
+      err = path_start(:play, name, from: from)
+      UI.messagebox(err) if err
+      ke_push
     end
 
     # Dopo questa: a metà della curva verso la prossima, o due metri avanti se è l'ultima

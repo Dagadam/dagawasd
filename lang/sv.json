@@ -684,6 +684,7 @@
 "ke.last":"Det här är den sista positionen",
 "ke.from_view":"Ta från vyn",
 "ke.from_view.h":"Sätter klotet där kameran är nu, med samma blick och zoom",
+"ke.play.h":"Spela upp banan från den här positionen till slutet (Esc eller ett klick stoppar)",
 "ke.insert":"Infoga efter",
 "ke.delete":"Ta bort",
 "ke.min2":"En bana behöver minst två positioner.",

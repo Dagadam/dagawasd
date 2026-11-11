@@ -9,7 +9,7 @@
    sfera di un percorso, o Invio con la sfera selezionata). Ruby manda
    init (testi ke.*, lingua, aspetto) e show (i valori della sfera);
    la pagina rimanda set {f, v} a ogni campo confermato, nav ±1,
-   preview true/false e act (from_view, insert, delete).
+   preview true/false e act (play, from_view, insert, delete).
    Colori: tema e accento del pannello (Sistema › Aspetto).
 ═══════════════════════════════════════════════════════════════ */
 :root{
@@ -31,6 +31,8 @@ header{padding:12px 14px 8px;border-bottom:1px solid var(--line)}
 .btn:focus-visible{box-shadow:0 0 0 2px var(--acc);outline:0}
 .btn.go{background:var(--acc);color:var(--acc-ink)}
 .btn.dg{background:var(--dg);color:var(--dg-ink)}
+.btn.play{padding:6px 8px;line-height:1}
+.btn.play svg{display:block;width:12px;height:14px;fill:currentColor}
 .ante{display:flex;align-items:flex-start;gap:9px;margin-top:10px;cursor:pointer}
 .ante input{margin-top:3px;accent-color:var(--acc);width:16px;height:16px}
 .ante b{font-weight:600}
@@ -62,7 +64,7 @@ legend{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--
 .auto{display:flex;align-items:center;gap:7px;margin:2px 0 6px;color:var(--mut);font-size:12.5px;cursor:pointer}
 .auto input{accent-color:var(--acc)}
 .info{color:var(--mut);font-size:12.5px;margin:4px 0}
-footer{display:flex;gap:7px;flex-wrap:wrap;padding:10px 14px 12px;border-top:1px solid var(--line)}
+footer{display:flex;gap:5px;flex-wrap:wrap;padding:10px 14px 12px;border-top:1px solid var(--line)}
 footer .sp{flex:1 1 auto}
 body.occupato main,body.occupato footer,body.occupato .ante{opacity:.4;pointer-events:none}
 /* menu del destro nelle caselle: Taglia, Copia, Incolla nella lingua del pannello */
@@ -93,6 +95,7 @@ body.occupato main,body.occupato footer,body.occupato .ante{opacity:.4;pointer-e
   <button role="menuitem" id="c-paste" data-a="paste"><span id="t-paste"></span><kbd>Ctrl+V</kbd></button>
 </div>
 <footer>
+  <button class="btn go play" id="b-play" onclick="act('play')"><svg viewBox="0 0 12 14" aria-hidden="true"><path d="M1 .8v12.4L11.6 7z"/></svg></button>
   <button class="btn" id="b-view" onclick="act('from_view')"></button>
   <button class="btn" id="b-insert" onclick="act('insert')"></button>
   <span class="sp"></span>
@@ -317,6 +320,7 @@ function init(d){
   $('t-preview-h').textContent = T('ke.preview.h');
   $('b-prev').title = T('ke.prev'); $('b-next').title = T('ke.next');
   $('b-prev').textContent = d.rtl ? '▶' : '◀'; $('b-next').textContent = d.rtl ? '◀' : '▶';
+  $('b-play').title = T('ke.play.h'); $('b-play').setAttribute('aria-label', T('ke.play.h'));
   $('b-view').textContent = T('ke.from_view'); $('b-view').title = T('ke.from_view.h');
   $('b-insert').textContent = T('ke.insert');
   $('b-delete').textContent = T('ke.delete');
@@ -330,6 +334,7 @@ function show(v){
   $('titolo').textContent = fill(T('ke.head'), { path: v.path, i: v.i, n: v.n });
   $('b-prev').disabled = v.i <= 1;
   $('b-next').disabled = v.i >= v.n;
+  $('b-play').disabled = v.i >= v.n;                    // dall'ultima non c'è niente da riprodurre
   $('anteprima').checked = !!v.preview;
   GRUPPI.forEach(([, campi]) => campi.forEach(([k, , , , dec]) => {
     const inp = $('f-' + k);

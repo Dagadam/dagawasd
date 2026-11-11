@@ -684,6 +684,7 @@
 "ke.last":"Dette er den sidste position",
 "ke.from_view":"Tag fra visningen",
 "ke.from_view.h":"Sætter kuglen, hvor kameraet er nu, med samme blik og zoom",
+"ke.play.h":"Afspil stien fra denne position til slutningen (Esc eller et klik stopper)",
 "ke.insert":"Indsæt efter",
 "ke.delete":"Slet",
 "ke.min2":"En sti skal have mindst to positioner.",

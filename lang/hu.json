@@ -684,6 +684,7 @@
 "ke.last":"Ez az utolsó pozíció",
 "ke.from_view":"Átvétel a nézetből",
 "ke.from_view.h":"A gömböt oda teszi, ahol most a kamera van, ugyanazzal a tekintettel és zoommal",
+"ke.play.h":"Az útvonal lejátszása ettől a pozíciótól a végéig (Esc vagy egy kattintás leállítja)",
 "ke.insert":"Beszúrás utána",
 "ke.delete":"Törlés",
 "ke.min2":"Egy útvonalhoz legalább két pozíció kell.",

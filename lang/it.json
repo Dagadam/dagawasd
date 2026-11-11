@@ -684,6 +684,7 @@
 "ke.last":"È l'ultima posizione",
 "ke.from_view":"Prendi dalla vista",
 "ke.from_view.h":"Mette la sfera dov'è ora la camera, con lo stesso sguardo e lo stesso zoom",
+"ke.play.h":"Riproduci il percorso da questa posizione fino alla fine (Esc o un clic per fermare)",
 "ke.insert":"Inserisci dopo",
 "ke.delete":"Elimina",
 "ke.min2":"Un percorso ha bisogno di almeno due posizioni.",

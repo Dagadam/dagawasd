@@ -684,6 +684,7 @@
 "ke.last":"Šī ir pēdējā pozīcija",
 "ke.from_view":"Ņemt no skata",
 "ke.from_view.h":"Novieto lodi tur, kur tagad ir kamera, ar to pašu skatienu un tālummaiņu",
+"ke.play.h":"Atskaņot ceļu no šīs pozīcijas līdz beigām (Esc vai klikšķis aptur)",
 "ke.insert":"Ievietot aiz",
 "ke.delete":"Dzēst",
 "ke.min2":"Ceļam vajag vismaz divas pozīcijas.",

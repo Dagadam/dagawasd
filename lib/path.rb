@@ -293,6 +293,7 @@ module DagaWASD
     def self.path_busy?; !@path_job.nil?; end
 
     # kind :play o :frames. Ritorna un messaggio d'errore o nil.
+    # extra[:from]: la riproduzione parte da lì (s del percorso), non dall'inizio.
     def self.path_start(kind, name, extra = {}, tr = nil)
       return t('path.busy') if @path_job
       tr ||= path_track(name) or return path_track_err(name)
@@ -318,7 +319,7 @@ module DagaWASD
       if job[:kind] == :play
         now = Process.clock_gettime(Process::CLOCK_MONOTONIC)
         job[:t0] ||= now
-        t = (now - job[:t0]) * job[:speed]
+        t = job[:from].to_f + (now - job[:t0]) * job[:speed]
         path_set_camera(view, path_frame_at(job[:frames], [t, job[:dur]].min))
         path_mark(job, t)
         if job[:k] == 0
@@ -365,6 +366,7 @@ module DagaWASD
       Sketchup.active_model&.select_tool(nil) unless job[:tool_gone]
       key_unhide(Sketchup.active_model, job[:keys_hidden])
       path_mark(job, nil) unless job[:on].nil?
+      ke_push                                  # lib/keyedit.rb: il pannello della sfera torna libero
       if job[:kind] == :frames
         vm_end(job) if job[:vm]                # il meteo riprende il suo orologio
         path_frames_done(job, why)

@@ -684,6 +684,7 @@
 "ke.last":"Bu son konum",
 "ke.from_view":"Görünümden al",
 "ke.from_view.h":"Küreyi kameranın şu anki yerine, aynı bakış ve yakınlaştırmayla koyar",
+"ke.play.h":"Yolu bu konumdan sonuna kadar oynat (durdurmak için Esc veya bir tıklama)",
 "ke.insert":"Sonrasına ekle",
 "ke.delete":"Sil",
 "ke.min2":"Bir yol en az iki konum gerektirir.",

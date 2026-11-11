@@ -159,6 +159,12 @@ view.anim.nextFrame(view)
 F::PathTool.new.onCancel(0, view)
 ok(!F.path_busy? && view.anim.nil?, 'Esc ferma la riproduzione')
 ok((view.camera.eye.x / M - 1.0).abs < 0.05, 'fermata con Esc: la camera resta dov\'è arrivata')
+F.path_start(:play, 'Percorso 1', from: 1.0)
+job = F.instance_variable_get(:@path_job)
+job[:t0] = Process.clock_gettime(Process::CLOCK_MONOTONIC) - 0.25          # più 0,25 s a velocità 2 = 0,5 s
+ok(view.anim.nextFrame(view) == true && (view.camera.eye.x / M - 1.5).abs < 0.05,
+   "da 1 s del percorso: dopo 0,25 s la camera è a #{(view.camera.eye.x / M).round(2)} m")
+F::PathTool.new.onCancel(0, view)
 F.path_start(:play, 'Percorso 1')
 altra = Object.new
 view.animation = altra                                      # es. le scene di SketchUp

@@ -11,6 +11,11 @@ Il numero sta in un posto solo, `VERSION` in `dagawasd.rb`;
 ## [Non ancora uscito]
 
 ### Aggiunto
+- Pannello della sfera (*Posizione*): tasto **▶** a sinistra di *Prendi dalla
+  vista*. Riproduce il percorso partendo da quella sfera, dall'istante in
+  cui la camera la raggiunge, fino alla fine; si ferma con Esc o un clic,
+  come *Riproduci*. Con l'anteprima accesa la vista torna prima a quella di
+  partenza. Sull'ultima sfera il tasto è spento.
 - Percorsi da ritoccare: ogni sfera può avere un **giro proprio** (attributo
   `giro` del dizionario delle posizioni, in gradi al secondo), che nel tratto
   verso la sfera successiva prende il posto del limite di 45°/s per girare la

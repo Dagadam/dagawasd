@@ -684,6 +684,7 @@
 "ke.last":"Toto je poslední pozice",
 "ke.from_view":"Vzít z pohledu",
 "ke.from_view.h":"Umístí kouli tam, kde je teď kamera, se stejným pohledem a zoomem",
+"ke.play.h":"Přehraje trasu od této pozice do konce (Esc nebo kliknutí zastaví)",
 "ke.insert":"Vložit za",
 "ke.delete":"Smazat",
 "ke.min2":"Cesta potřebuje aspoň dvě pozice.",

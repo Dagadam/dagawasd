@@ -684,6 +684,7 @@
 "ke.last":"Es la última posición",
 "ke.from_view":"Tomar de la vista",
 "ke.from_view.h":"Pone la esfera donde está ahora la cámara, con la misma mirada y el mismo zoom",
+"ke.play.h":"Reproduce el recorrido desde esta posición hasta el final (Esc o un clic para detener)",
 "ke.insert":"Insertar después",
 "ke.delete":"Eliminar",
 "ke.min2":"Un recorrido necesita al menos dos posiciones.",

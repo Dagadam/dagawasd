@@ -684,6 +684,7 @@
 "ke.last":"C'est la dernière position",
 "ke.from_view":"Prendre la vue",
 "ke.from_view.h":"Place la sphère là où est la caméra, avec le même regard et le même zoom",
+"ke.play.h":"Lire le parcours depuis cette position jusqu'à la fin (Échap ou un clic pour arrêter)",
 "ke.insert":"Insérer après",
 "ke.delete":"Supprimer",
 "ke.min2":"Un parcours a besoin d’au moins deux positions.",

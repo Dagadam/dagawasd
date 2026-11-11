@@ -689,6 +689,15 @@ dlg.call('act', 'delete')
 ok(F.key_instances(pm)[nome].size == 2 && boxes.size == nb + 1 && boxes.last == F.t('ke.min2'), 'con due sole sfere non si elimina: lo dice')
 dlg.call('act', 'from_view')
 ok(near1.(F.key_of(ke[:inst])[0], view.camera.eye.x, 1e-3), '«Prendi dalla vista»: la sfera va dov\'è la camera')
+# ▶: la riproduzione parte da quando la camera raggiunge questa sfera
+sf = F.key_instances(pm)[nome]
+arrivo = F.key_schedule(sf.map { |x| F.key_of(x) }, F.key_speed(F.path_data(nome, pm)))[1][:arrive]
+dlg.call('act', 'play')
+job = F.instance_variable_get(:@path_job)
+ok(job && job[:kind] == :play && near1.(job[:from], arrivo) && arrivo > 0 && dlg.last('show')['busy'] == true,
+   "▶ dalla seconda sfera: parte da #{arrivo.round(2)} s, il pannello aspetta")
+F.path_abort
+ok(!F.path_busy? && dlg.last('show')['busy'] == false, 'fermata: il pannello torna libero')
 
 # «Incolla» del menu del pannello: la pagina chiede, Ruby legge gli appunti
 # di Windows (qui finti: i test non toccano quelli veri) e li rimanda

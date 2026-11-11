@@ -684,6 +684,7 @@
 "ke.last":"Tämä on viimeinen sijainti",
 "ke.from_view":"Ota näkymästä",
 "ke.from_view.h":"Siirtää pallon kameran nykyiseen kohtaan samalla katseella ja zoomauksella",
+"ke.play.h":"Toista reitti tästä sijainnista loppuun (Esc tai napsautus pysäyttää)",
 "ke.insert":"Lisää jälkeen",
 "ke.delete":"Poista",
 "ke.min2":"Polulla on oltava vähintään kaksi sijaintia.",

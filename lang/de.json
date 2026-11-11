@@ -684,6 +684,7 @@
 "ke.last":"Das ist die letzte Position",
 "ke.from_view":"Aus der Ansicht übernehmen",
 "ke.from_view.h":"Setzt die Kugel dorthin, wo die Kamera jetzt ist, mit demselben Blick und Zoom",
+"ke.play.h":"Pfad ab dieser Position bis zum Ende abspielen (Esc oder ein Klick hält an)",
 "ke.insert":"Danach einfügen",
 "ke.delete":"Löschen",
 "ke.min2":"Ein Pfad braucht mindestens zwei Positionen.",

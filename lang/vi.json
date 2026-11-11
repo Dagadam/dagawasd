@@ -684,6 +684,7 @@
 "ke.last":"Đây là vị trí cuối cùng",
 "ke.from_view":"Lấy từ khung nhìn",
 "ke.from_view.h":"Đặt quả cầu ở chỗ camera đang ở, cùng ánh nhìn và thu phóng",
+"ke.play.h":"Phát đường đi từ vị trí này đến cuối (Esc hoặc một cú nhấp để dừng)",
 "ke.insert":"Chèn sau",
 "ke.delete":"Xóa",
 "ke.min2":"Một đường đi cần ít nhất hai vị trí.",
