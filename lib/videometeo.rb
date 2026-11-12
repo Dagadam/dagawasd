@@ -18,9 +18,12 @@ module DagaWASD
     # Finita l'esportazione il meteo riprende da dov'era.
     #
     # Fotogramma (opzione accesa, solo Windows: GDI+ via Fiddle):
-    #   1. il modello con write_image, cielo di SketchUp spento (DrawHorizon)
-    #      e sfondo trasparente: suolo (il mare), nebbia, ombre restano suoi;
-    #   2. sotto, il cielo rifatto come lo disegna SketchUp (vm_sky_pixels);
+    #   1. il modello con write_image, cielo e suolo di SketchUp spenti
+    #      (DrawHorizon, DrawGround) e sfondo trasparente: nebbia e ombre sul
+    #      modello restano sue;
+    #   2. sotto, cielo e suolo (il mare) rifatti come li disegna SketchUp
+    #      (vm_sky_pixels). Il suolo suo, lontano, ha una trama fine che
+    #      cambia a ogni passo della camera: nel video il mare sfarfallava;
     #   3. sempre sotto il modello sole, luna, stelle, nuvole e la saetta del
     #      fulmine: stanno tutti oltre l'ingombro del modello (sky_dist);
     #   4. sopra, gocce, fiocchi, spruzzi e il lampo che schiarisce la vista;
@@ -35,6 +38,9 @@ module DagaWASD
     VM_SEED     = 20_261_110
     VM_SKY_FADE = 17.5 * DEG          # SketchUp: dal colore dell'orizzonte a quello del cielo (misurato)
     VM_SKY_W    = 160                 # pixel di larghezza del cielo, poi ingrandito (è una sfumatura)
+    VM_GROUND_W = 64                  # col suolo: colonne così, ma righe quante l'immagine (orizzonte netto)
+    VM_GROUND_K = 0.4                 # SketchUp: il suolo va verso il colore dell'orizzonte, fino a 0,4…
+    VM_GROUND_D = 255.0 * M_TO_IN     # …con la distanza, 1 − e^(−d/D) (misurato; non dipende dal modello)
     VM_GRID_W   = 64                  # colonne della mappa di profondità
     VM_NEAR     = 0.05 * M_TO_IN      # più vicino di così non si disegna (piano di taglio)
 
@@ -170,16 +176,20 @@ module DagaWASD
     def self.vm_shot(view, job, file, fmt)
       vm = job[:vm]
       w = job[:w]; h = job[:h]
-      ro = Sketchup.active_model.rendering_options
+      model = Sketchup.active_model
+      ro = model.rendering_options
       horizon = ro['DrawHorizon']
+      cam = view.camera
+      ground = vm_own_ground?(model, horizon, cam.eye.z.to_f)
       ro['DrawHorizon'] = false
+      ro['DrawGround'] = false if ground
       begin
-        ok = view.write_image(filename: vm[:png], width: w, height: h, antialias: true, transparent: true)
+        ok = vm_cut_below(model, ground) { view.write_image(filename: vm[:png], width: w, height: h, antialias: true, transparent: true) }
       ensure
         ro['DrawHorizon'] = horizon
+        ro['DrawGround'] = true if ground
       end
       return false unless ok
-      cam = view.camera
       pr = vm_projector(cam, w, h)
       back = VmView.new(cam, w, h, vm[:texs])
       front = VmView.new(cam, w, h, vm[:texs])
@@ -190,9 +200,9 @@ module DagaWASD
       end
       g = vm[:gr]
       VmGdi.clear(g, 0xFF000000)
-      VmGdi.draw_pixels(g, vm[:ia], *vm_sky_pixels(pr, w, h, ro, horizon), w, h)
+      VmGdi.draw_pixels(g, vm[:ia], *vm_sky_pixels(pr, w, h, ro, horizon, ground), w, h)
       vm_paint(vm, back.ops, pr, nil)
-      hz = ro['DrawGround'] ? vm_horizon(pr) : nil
+      hz = ro['DrawGround'] && !ground ? vm_horizon(pr) : nil
       err = VmGdi.draw_file(g, vm[:png], w, h) do |buf, stride|
         fixed = hz ? vm_ground_edge(buf, stride, w, h, hz) : []
         fixed.concat(vm_edge_clean(buf, stride, w, h, fixed.to_h { |o, _| [o, true] }))
@@ -251,38 +261,120 @@ module DagaWASD
       [d[0] + xa[0] * a + ya[0] * b, d[1] + xa[1] * a + ya[1] * b, d[2] + xa[2] * a + ya[2] * b]
     end
 
-    # ── Cielo di fondo ────────────────────────────────────────────
+    # ── Cielo e suolo di fondo ────────────────────────────────────
     # Come SketchUp con DrawHorizon (misurato): sotto l'orizzonte lo sfondo,
     # sopra dal colore dell'orizzonte a quello del cielo, smoothstep
     # sull'altezza fino a VM_SKY_FADE; con la nebbia tutto del suo colore;
     # senza cielo tutto sfondo. Pochi pixel, poi GDI+ li ingrandisce.
+    # ground: sotto l'orizzonte il suolo (vm_ground_rgb); allora tante righe
+    # quante l'immagine, perché l'orizzonte resti netto.
     # Ritorna [pixel BGRA, larghezza, altezza].
-    def self.vm_sky_pixels(pr, w, h, ro, horizon)
-      bw = VM_SKY_W; bh = [(bw * h / w.to_f).round, 2].max
+    def self.vm_sky_pixels(pr, w, h, ro, horizon, ground = false)
       rgb = ->(c) { c.to_a[0, 3].map(&:to_i) }
       bg = rgb.(ro['BackgroundColor'])
       flat =
         if !horizon then bg
         elsif ro['DisplayFog'] then ro['FogUseBkColor'] ? bg : rgb.(ro['FogColor'])
         end
-      return [([flat[2], flat[1], flat[0], 255].pack('C4') * (bw * bh)), bw, bh] if flat
       sky = rgb.(ro['SkyColor'])
       hz = ro['HorizonColor'] ? rgb.(ro['HorizonColor']) : sky
+      gm = ground ? vm_ground_model(ro, hz, pr[:eye][2]) : nil
+      bw = gm ? VM_GROUND_W : VM_SKY_W
+      bh = gm ? h.to_i : [(bw * h / w.to_f).round, 2].max
+      return [([flat[2], flat[1], flat[0], 255].pack('C4') * (bw * bh)), bw, bh] if flat && !gm
+      flat_px = flat && [flat[2], flat[1], flat[0], 255].pack('C4')
       out = String.new(capacity: bw * bh * 4, encoding: Encoding::BINARY)
       bh.times do |j|
         sy = (j + 0.5) * h / bh
+        # lungo una riga l'altezza del raggio cambia in modo lineare: se è
+        # sopra l'orizzonte ai due capi, con la nebbia la riga è tutta uguale
+        if flat_px && vm_ray(pr, 0.5 * w / bw, sy)[2] >= 0 && vm_ray(pr, (bw - 0.5) * w / bw, sy)[2] >= 0
+          out << flat_px * bw
+          next
+        end
         bw.times do |i|
           d = vm_ray(pr, (i + 0.5) * w / bw, sy)
-          el = Math.asin((d[2] / Math.sqrt(d[0] * d[0] + d[1] * d[1] + d[2] * d[2])).clamp(-1.0, 1.0))
-          c = if el < 0 then bg
-              else
-                x = (el / VM_SKY_FADE).clamp(0.0, 1.0); s = x * x * (3 - 2 * x)
-                [0, 1, 2].map { |q| (hz[q] + (sky[q] - hz[q]) * s).round }
-              end
+          len = Math.sqrt(d[0] * d[0] + d[1] * d[1] + d[2] * d[2])
+          if d[2] < 0 && gm
+            c = vm_ground_rgb(gm, len / -d[2])
+          elsif flat_px
+            out << flat_px
+            next
+          elsif d[2] < 0
+            c = bg
+          else
+            x = (Math.asin((d[2] / len).clamp(-1.0, 1.0)) / VM_SKY_FADE).clamp(0.0, 1.0); s = x * x * (3 - 2 * x)
+            c = [0, 1, 2].map { |q| (hz[q] + (sky[q] - hz[q]) * s).round }
+          end
           out << [c[2], c[1], c[0], 255].pack('C4')
         end
       end
       [out, bw, bh]
+    end
+
+    # Il suolo lo dipingiamo noi solo dove si sa farlo come SketchUp: col
+    # cielo acceso (senza, il suo suolo sfuma verso un altro colore), suolo
+    # opaco, camera sopra il suolo, senza ombre sul piano del suolo (quelle
+    # sparirebbero col suolo spento), senza gruppi aperti né sezioni attive
+    # (vm_cut_below ne mette una sua). Altrimenti resta il suo.
+    def self.vm_own_ground?(model, horizon, eye_z)
+      ro = model.rendering_options
+      si = model.shadow_info
+      return false unless ro['DrawGround'] && horizon && eye_z > 0
+      return false if ro['GroundTransparency'].to_i > 0
+      return false if si['DisplayShadows'] && si['DisplayOnGroundPlane']
+      # senza gruppi aperti active_entities è il modello intero
+      return false if model.active_path || model.active_entities.active_section_plane
+      true
+    end
+
+    # Il suolo di SketchUp copre tutto quello che sta sotto: il fondale del
+    # mare, i piedi dell'isola. Col suolo spento si vedrebbero; e col suolo
+    # acceso, dove il fondale gli sta appena sotto, i due si contendono i
+    # pixel (una trama fine che cambia a ogni passo: lo sfarfallio del mare).
+    # Per lo scatto una sezione a quota 0 toglie quello che sta sotto, senza
+    # contorni né riempimento; poi l'operazione si annulla e il modello torna
+    # com'era (nessun osservatore guarda gli annullamenti).
+    def self.vm_cut_below(model, on)
+      return yield unless on
+      ro = model.rendering_options
+      keys = %w[SectionCutDrawEdges SectionCutFilled].select { |k| ro.keys.include?(k) }
+      was = keys.map { |k| ro[k] }
+      model.start_operation('DagaWASD Video', true)
+      begin
+        ents = model.active_entities             # il modello intero: vm_own_ground? vuole nessun gruppo aperto
+        sp = ents.add_section_plane([0, 0, 0], [0, 0, 1])   # tiene quello che sta sopra
+        ents.active_section_plane = sp
+        keys.each { |k| ro[k] = false }
+        yield
+      ensure
+        keys.each_with_index { |k, i| ro[k] = was[i] }
+        model.abort_operation
+      end
+    end
+
+    # Colori e distanze del suolo per vm_ground_rgb
+    def self.vm_ground_model(ro, hz, eye_z)
+      rgb = ->(c) { c.to_a[0, 3].map(&:to_f) }
+      fog = ro['DisplayFog'] ? (ro['FogUseBkColor'] ? rgb.(ro['BackgroundColor']) : rgb.(ro['FogColor'])) : nil
+      fs = ro['FogStartDist'].to_f; fe = [ro['FogEndDist'].to_f, fs + 1e-6].max
+      { g: rgb.(ro['GroundColor']), hz: hz.map(&:to_f), fog: fog, fs: fs, fe: fe, ez: eye_z.to_f }
+    end
+
+    # Il colore del suolo a k volte l'altezza della camera, lungo il raggio
+    # (k = |raggio| / −raggio.z). Misurato su SketchUp 2024: dal colore del
+    # suolo verso quello dell'orizzonte con la distanza, poi la nebbia,
+    # lineare fra inizio e fine sulla distanza dalla camera.
+    def self.vm_ground_rgb(gm, k)
+      dist = gm[:ez] * k
+      f = VM_GROUND_K * (1.0 - Math.exp(-dist / VM_GROUND_D))
+      g = gm[:g]; hz = gm[:hz]
+      c = [0, 1, 2].map { |q| g[q] + (hz[q] - g[q]) * f }
+      if (fog = gm[:fog])
+        a = ((dist - gm[:fs]) / (gm[:fe] - gm[:fs])).clamp(0.0, 1.0)
+        c = [0, 1, 2].map { |q| c[q] + (fog[q] - c[q]) * a }
+      end
+      c.map { |v| v.round.clamp(0, 255) }
     end
 
     # ── Orlo del suolo ────────────────────────────────────────────
@@ -291,6 +383,7 @@ module DagaWASD
     # semitrasparente ma col colore già mescolato al nero: sul cielo dipinto
     # diventava una riga scura. Lungo l'orizzonte quei pixel prendono il
     # colore del vicino pieno, verso il suolo prima, e tengono la loro opacità.
+    # Serve solo quando il suolo resta di SketchUp (vm_own_ground? falso).
     VM_EDGE_BAND = 3                  # pixel dall'orizzonte, da ogni parte
     VM_EDGE_NEAR = [-2, -1, 0, 1, 2].product([-2, -1, 0, 1, 2]) - [[0, 0]]
 

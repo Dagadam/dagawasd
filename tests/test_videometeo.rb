@@ -155,6 +155,47 @@ ok(data.bytes.each_slice(4).to_a.uniq == [[0, 255, 255, 255]], 'nebbia col suo c
 data, = F.vm_sky_pixels(pr, W, H, ro, false)
 ok(data.bytes.each_slice(4).to_a.uniq == [[0, 255, 0, 255]], 'senza cielo: tutto sfondo')
 
+puts '── Suolo dipinto (il mare senza la trama del suolo di SketchUp)'
+ro_g = ro.merge('GroundColor' => Sketchup::Color.new(34, 92, 128), 'HorizonColor' => Sketchup::Color.new(191, 230, 246),
+                'FogStartDist' => 8 * M, 'FogEndDist' => 150 * M, 'BackgroundColor' => Sketchup::Color.new(191, 191, 198))
+gm = F.vm_ground_model(ro_g, [191, 230, 246], 5 * M)
+ok(F.vm_ground_rgb(gm, 1.0) == [34, 92, 128].each_with_index.map { |c, q| (c + ([191, 230, 246][q] - c) * 0.4 * (1 - Math.exp(-5 / 255.0))).round },
+   'sotto i piedi: quasi il colore del suolo')
+c_far = F.vm_ground_rgb(gm, 1e6)
+ok(c_far == [97, 147, 175], "lontanissimo: 0,4 verso l'orizzonte, come SketchUp (#{c_far.inspect})")
+# misurati su SketchUp 2024 (Stromboli, 4–43 m d'altezza): 80–150 m → 57 112 145, 400–1500 m → 91 142 171
+c_mid = F.vm_ground_rgb(F.vm_ground_model(ro_g, [191, 230, 246], 1 * M), 110.0)
+ok(c_mid.zip([57, 112, 145]).all? { |a, b| (a - b).abs <= 3 }, "a 110 m come SketchUp (#{c_mid.inspect})")
+gmf = F.vm_ground_model(ro_g.merge('DisplayFog' => true), [191, 230, 246], 1 * M)
+ok(F.vm_ground_rgb(gmf, 5.0) == F.vm_ground_rgb(F.vm_ground_model(ro_g, [191, 230, 246], 1 * M), 5.0), 'prima dell\'inizio della nebbia: niente nebbia')
+ok(F.vm_ground_rgb(gmf, 200.0) == [191, 191, 198], 'oltre la fine della nebbia: il suo colore')
+half = F.vm_ground_rgb(gmf, 79.0)
+ok(half[0] > 100 && half[0] < 130, "a metà nebbia: a metà strada (#{half.inspect})")
+data, bw, bh = F.vm_sky_pixels(pr, W, H, ro_g, true, true)
+ok(bw == F::VM_GROUND_W && bh == H && data.bytesize == bw * bh * 4, "col suolo: #{bw}×#{bh}, righe quante l'immagine")
+hrow = (0...H).find { |j| F.vm_ray(pr, W / 2.0, j + 0.5)[2] < 0 }
+ok(px_at.(data, bw, bw / 2, hrow - 1)[0, 3] == [246, 230, 191], 'sopra l\'orizzonte: il colore dell\'orizzonte')
+ok(px_at.(data, bw, bw / 2, hrow) == [175, 147, 97, 255] || px_at.(data, bw, bw / 2, hrow)[0] > 160, 'appena sotto: il suolo lontano')
+ok(px_at.(data, bw, bw / 2, H - 1)[0] < 140, "in basso: il suolo vicino, più scuro (#{px_at.(data, bw, bw / 2, H - 1).inspect})")
+data, = F.vm_sky_pixels(pr, W, H, ro_g.merge('DisplayFog' => true), true, true)
+ok(px_at.(data, bw, bw / 2, 0) == [198, 191, 191, 255] && px_at.(data, bw, bw / 2, hrow) == [198, 191, 191, 255],
+   'nebbia: cielo e suolo lontano del suo colore')
+ok(px_at.(data, bw, bw / 2, H - 1) != [198, 191, 191, 255], 'nebbia: il suolo vicino resta suo')
+
+GModel = Struct.new(:rendering_options, :shadow_info, :active_path, :active_entities)
+GEnts = Struct.new(:active_section_plane)
+gmod = ->(ro_x = {}, si = {}, path = nil, sec = nil) {
+  GModel.new({ 'DrawGround' => true, 'GroundTransparency' => 0 }.merge(ro_x), { 'DisplayShadows' => true, 'DisplayOnGroundPlane' => false }.merge(si), path, GEnts.new(sec))
+}
+ok(F.vm_own_ground?(gmod.(), true, 10.0), 'suolo opaco, camera sopra: lo dipinge il video')
+ok(!F.vm_own_ground?(gmod.(), false, 10.0), 'senza cielo: resta quello di SketchUp')
+ok(!F.vm_own_ground?(gmod.(), true, -1.0), 'camera sotto il suolo: resta quello di SketchUp')
+ok(!F.vm_own_ground?(gmod.('DrawGround' => false), true, 10.0), 'suolo spento: niente suolo')
+ok(!F.vm_own_ground?(gmod.('GroundTransparency' => 40), true, 10.0), 'suolo trasparente: resta quello di SketchUp')
+ok(!F.vm_own_ground?(gmod.({}, 'DisplayOnGroundPlane' => true), true, 10.0), 'ombre sul suolo: resta quello di SketchUp')
+ok(!F.vm_own_ground?(gmod.({}, {}, [:gruppo]), true, 10.0), 'gruppo aperto: resta quello di SketchUp')
+ok(!F.vm_own_ground?(gmod.({}, {}, nil, :sezione), true, 10.0), 'sezione attiva: resta quello di SketchUp')
+
 puts '── Profondità'
 dg = { w: 2, h: 1, kx: 2 / 100.0, ky: 1 / 50.0, d: [10.0, Float::INFINITY] }
 ok(F.vm_visible?(nil, 0, 0, 1e9), 'senza mappa tutto visibile')

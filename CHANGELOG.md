@@ -72,6 +72,15 @@ Il numero sta in un posto solo, `VERSION` in `dagawasd.rb`;
   e nebbia nella pioggia: il giro completo dura quattro minuti e mezzo.
 
 ### Corretto
+- Video dei percorsi col meteo: il mare non sfarfalla più. Dove il modello
+  continua sotto il suolo di SketchUp (il fondale, i piedi di un'isola)
+  appena sotto la quota 0, suolo e fondale si contendevano i pixel e il
+  mare usciva con una trama fine che cambiava a ogni passo della camera. Ora
+  nei fotogrammi il suolo lo dipinge DagaWASD, con gli stessi colori e la
+  stessa nebbia di SketchUp, e quello che sta sotto la quota 0 resta
+  nascosto come prima. Il suolo resta quello di SketchUp se è trasparente,
+  se ci sono ombre sul suolo, senza cielo, con una sezione attiva o un
+  gruppo aperto.
 - Pannello: **Avvia** riduce a icona il pannello delle impostazioni, così si
   cammina subito senza il pannello davanti alla vista (anche a schermo
   intero). *Impostazioni* dal menu lo riporta su.
