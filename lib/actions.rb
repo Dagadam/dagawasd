@@ -12,6 +12,7 @@ module DagaWASD
       return unless result
       e = result[1]&.first
       return unless e&.valid?
+      return if dyn_use(result[1])          # lib/dyn_link.rb: un oggetto di DagaDyn che parte se lo si aziona
       name   = entity_label(e)
       dist_m = (Geom::Point3d.new(@eye_x, @eye_y, @eye_z).distance(result[0]) / M_TO_IN).round(2)
       extra  = ''

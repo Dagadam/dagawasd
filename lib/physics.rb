@@ -383,7 +383,9 @@ module DagaWASD
     end
 
     def self.foreign_op
-      @phys_op_named = false unless @in_phys_op
+      # le operazioni dei fotogrammi di DagaDyn (colori, visibilità) non sono
+      # dell'utente: la fisica può continuare ad accodarsi alla sua voce
+      @phys_op_named = false unless @in_phys_op || (dyn? && ::DagaDyn.own_op?)
     end
 
     # Osserva le operazioni del modello (uno alla volta: aperto un altro

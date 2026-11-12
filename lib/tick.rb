@@ -14,6 +14,8 @@ module DagaWASD
       now  = Time.now.to_f
       dt   = (now - @last_tick).clamp(0.001, 0.1)
       @last_tick = now
+      dyn_tick                          # lib/dyn_link.rb: oggetti animati di DagaDyn…
+      dyn_carry                         # …e la piattaforma sotto i piedi ci porta con sé
 
       # ── Mouse look ──────────────────────────────────────────────
       # Solo con la finestra principale in primo piano: altrimenti il mouse

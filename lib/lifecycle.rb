@@ -148,6 +148,7 @@ module DagaWASD
 
       @active    = true
       @last_tick = Time.now.to_f
+      dyn_begin(:walk)                  # lib/dyn_link.rb: gli oggetti animati di DagaDyn si muovono
       restart_timer
 
       Sketchup.status_text = hud_text
@@ -164,6 +165,7 @@ module DagaWASD
       @active = false
       UI.stop_timer(@timer_id) if @timer_id
       @timer_id = nil
+      dyn_end(:walk)                    # lib/dyn_link.rb: gli oggetti animati tornano a riposo
       remove_hook
       fs_leave                          # la finestra torna com'era
       show_cursor

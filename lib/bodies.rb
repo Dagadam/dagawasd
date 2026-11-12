@@ -83,6 +83,7 @@ module DagaWASD
       return nil unless result
       e = result[1]&.first
       return nil unless e&.valid?
+      return nil if dyn_kinematic?(result[1])   # animato da DagaDyn: si muove da solo (lib/dyn_link.rb)
       return e if e.is_a?(Sketchup::ComponentInstance) || e.is_a?(Sketchup::Group)
       nil
     end

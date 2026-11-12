@@ -310,6 +310,7 @@ module DagaWASD
       model.select_tool(PathTool.new)
       # prima dell'animazione: SketchUp chiede il primo fotogramma già qui
       vm_begin(@path_job) if kind == :frames  # lib/videometeo.rb: il meteo col tempo del video (e dipinto)
+      dyn_begin(kind == :play ? :path : :video)   # lib/dyn_link.rb: oggetti animati di DagaDyn
       view.animation = PathAnimation.new(@path_job)
       nil
     end
@@ -320,6 +321,7 @@ module DagaWASD
         now = Process.clock_gettime(Process::CLOCK_MONOTONIC)
         job[:t0] ||= now
         t = job[:from].to_f + (now - job[:t0]) * job[:speed]
+        dyn_tick(now - job[:t0])
         path_set_camera(view, path_frame_at(job[:frames], [t, job[:dur]].min))
         path_mark(job, t)
         if job[:k] == 0
@@ -361,6 +363,7 @@ module DagaWASD
       return if job[:done]
       job[:done] = true
       @path_job = nil if @path_job.equal?(job)
+      dyn_end(job[:kind] == :play ? :path : :video)   # lib/dyn_link.rb: tutto torna a riposo
       view = job[:view]
       view.animation = nil if view && !anim_gone
       Sketchup.active_model&.select_tool(nil) unless job[:tool_gone]
@@ -473,6 +476,7 @@ module DagaWASD
       t = k * job[:speed] / job[:fps].to_f
       path_set_camera(view, path_frame_at(job[:frames], [t, job[:dur]].min))
       vm_step(job, view, k / job[:fps].to_f, k.zero? ? 0.0 : 1.0 / job[:fps]) if job[:vm]   # meteo all'istante del video
+      dyn_tick(k / job[:fps].to_f)                # lib/dyn_link.rb: oggetti animati all'istante del video
       path_mark(job, t)
       if (avi = job[:avi])
         ok = path_shot(view, job, job[:jpg], :jpg)

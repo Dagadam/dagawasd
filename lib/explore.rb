@@ -377,6 +377,7 @@ module DagaWASD
       model.select_tool(nil)
       @ex = ex
       model.select_tool(ExploreTool.new)
+      dyn_begin(:explore)                # lib/dyn_link.rb: oggetti animati di DagaDyn
       explore_attach(ex)
       Sketchup.status_text = explore_status_line(ex)
       xp_refresh                         # lib/exprofiles.rb: Esplora diventa Ferma
@@ -385,6 +386,7 @@ module DagaWASD
       log_error(__method__, fps_err)
       key_unhide(model, ex[:keys_hidden]) if ex
       @ex = nil
+      dyn_end(:explore)
       fps_err.message
     end
 
@@ -422,6 +424,7 @@ module DagaWASD
       ex = @ex or return nil
       @ex = nil
       explore_detach(ex)
+      dyn_end(:explore)
       ex[:model].select_tool(nil) unless tool_gone
       key_unhide(ex[:model], ex[:keys_hidden])
       explore_unzoom(ex)
@@ -586,6 +589,7 @@ module DagaWASD
       dt = (now - ex[:last]).clamp(0.0, 0.1)
       ex[:last] = now
       ex[:t] += dt
+      dyn_tick(ex[:t])                               # lib/dyn_link.rb: al tempo del giro
       explore_frame_time(ex)
       explore_scan_tick(view, ex, now)
       return false unless ex[:anim]                  # l'analisi può averlo fermato (niente da vedere)

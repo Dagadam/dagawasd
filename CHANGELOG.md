@@ -11,6 +11,13 @@ Il numero sta in un posto solo, `VERSION` in `dagawasd.rb`;
 ## [Non ancora uscito]
 
 ### Aggiunto
+- **Oggetti animati di DagaDyn** (se è installata, dalla 0.2.0): si muovono
+  anche camminando, esplorando, nei percorsi e nei video (al tempo del
+  video, fotogramma per fotogramma). Le piattaforme animate portano il
+  giocatore con sé, anche girandolo; gli oggetti animati non si prendono e
+  non si calciano; il tasto *Aziona* fa partire quelli che in DagaDyn
+  partono «quando li si aziona». Tutto in `lib/dyn_link.rb`; senza DagaDyn
+  non cambia nulla.
 - Pannello della sfera (*Posizione*): tasto **▶** a sinistra di *Prendi dalla
   vista*. Riproduce il percorso partendo da quella sfera, dall'istante in
   cui la camera la raggiunge, fino alla fine; si ferma con Esc o un clic,
