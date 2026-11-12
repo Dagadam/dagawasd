@@ -11,7 +11,8 @@ rem       test_clouds, test_gamepad, test_path, test_explore, test_pilota_ia: pi
 rem    5. completezza delle traduzioni (tests\test_i18n.rb)
 rem    6. pacchetti .rbz: si creano, si estraggono e si caricano (tests\test_rbz.rb),
 rem       e regole SketchUp sul pacchetto per l'Extension Warehouse (se c'e' rubocop)
-rem    7. test del pannello, della finestra del video e della galleria delle foto in un browser simulato (tests\panel)
+rem    7. test del pannello, delle finestre (video, Esporta video, sfera, esploratore) e della galleria delle foto
+rem       in un browser simulato (tests\panel)
 rem  Serve Ruby 3.2 (C:\Ruby32-x64) e, per il pannello, Node.js.
 rem  Questa cartella NON viene copiata in SketchUp da installa.bat.
 rem ==================================================================
@@ -107,6 +108,7 @@ if errorlevel 1 (
   node "%ROOT%\tests\panel\test_keyedit.js" || set "FAIL=1"
   node "%ROOT%\tests\panel\test_exprofiles.js" || set "FAIL=1"
   node "%ROOT%\tests\panel\test_exstart.js" || set "FAIL=1"
+  node "%ROOT%\tests\panel\test_videoexport.js" || set "FAIL=1"
   node "%ROOT%\tests\panel\test_galleria.js" || set "FAIL=1"
 )
 

@@ -11,6 +11,28 @@ Il numero sta in un posto solo, `VERSION` in `dagawasd.rb`;
 ## [Non ancora uscito]
 
 ### Aggiunto
+- Percorsi › **Video** apre la finestra **Esporta video** invece di partire
+  subito. Dentro: formato, misure, fps, velocità e *Meteo nel video* (le
+  stesse impostazioni del pannello, con il numero di fotogrammi e la durata
+  che ne vengono), dove salvare con **Sfoglia…**, e **quali fotogrammi**:
+  dal x al y, contati da 1 come i nomi delle immagini. Si esporta col
+  tasto **Esporta**.
+- Video a pezzi: un AVI di DagaWASD si allunga **in coda** (*Aggiungi in
+  coda al video esistente*): un video lungo si fa un pezzo alla volta e
+  resta un file solo, senza programmi di montaggio. Si riprende anche un
+  video rimasto a metà perché SketchUp si è chiuso (prima restava
+  illeggibile): l'indice si rifà e il fotogramma scritto a metà si scarta.
+  Se il video o la cartella hanno già dei fotogrammi la finestra lo dice e
+  propone **Riprendi dal …**. Un pezzo che parte a metà ha lo stesso meteo
+  di un'esportazione da capo (il meteo va avanti fino lì, qualche
+  millesimo di secondo a fotogramma, senza scrivere niente) e i
+  sottotitoli spostati; per le immagini `crea_video.bat` parte dalla
+  prima che c'è.
+- **Registro dell'esportazione** accanto al video (stesso nome, `.log`; per
+  le immagini nella loro cartella): data e ora di ogni inizio e di ogni
+  fine, i fotogrammi e i loro istanti nel video, l'ultimo fotogramma
+  scritto e da quale riprendere. Durante l'esportazione l'ultima riga si
+  aggiorna ogni 5 s, così si sa dove si era anche se SketchUp si chiude.
 - **Oggetti animati di DagaDyn** (se è installata, dalla 0.2.0): si muovono
   anche camminando, esplorando, nei percorsi e nei video (al tempo del
   video, fotogramma per fotogramma). Le piattaforme animate portano il

@@ -16,6 +16,7 @@
 #   dagawasd/keyedit.html                         il pannello di una sfera dei percorsi
 #   dagawasd/exprofiles.html                      i profili dell'esploratore autonomo
 #   dagawasd/exstart.html                         la sua finestra di avvio
+#   dagawasd/videoexport.html                     la finestra Esporta video dei percorsi
 #   dagawasd/galleria.html                        lo stampo della galleria delle foto (lib/gallery.rb)
 # Niente test, strumenti, artefatti né settings.json: le impostazioni
 # dell'utente stanno in %APPDATA%\DagaWASD e un aggiornamento non le tocca.
@@ -55,7 +56,7 @@ module CreaRbz
   def contenuto(warehouse = false)
     ext = ->(rel) { ["dagawasd/#{rel}", File.join(ROOT, rel)] }
     lista = [['dagawasd.rb', File.join(ROOT, 'dagawasd.rb')], ext.('main.rb'), ext.('panel.html'), ext.('attesa.html'),
-             ext.('keyedit.html'), ext.('exprofiles.html'), ext.('exstart.html'), ext.('galleria.html'),
+             ext.('keyedit.html'), ext.('exprofiles.html'), ext.('exstart.html'), ext.('videoexport.html'), ext.('galleria.html'),
              ext.('LICENSE')]
     %w[lib/*.rb lang/*.json icons/*.png attesa/*.{webp,gif,png}].each do |g|
       Dir.glob(g, base: ROOT).sort.each { |rel| lista << ext.(rel) unless warehouse && SOLO_COMPLETO.include?(rel) }

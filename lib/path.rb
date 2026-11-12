@@ -93,10 +93,12 @@ module DagaWASD
 
     # Sottotitoli SRT: ogni commento dal suo istante (diviso per la velocità)
     # finché non arriva il successivo, al più 4 s più un po' per i lunghi;
-    # nil se non ce ne sono nel tratto girato (end in s di video).
-    def self.path_srt(notes, speed, end_s)
+    # nil se non ce ne sono nel tratto girato (from_s…end_s, s di video: un
+    # video che parte da un fotogramma dopo il primo li ha spostati indietro).
+    def self.path_srt(notes, speed, end_s, from_s = 0.0)
       tc = ->(s) { ms = (s * 1000).round; format('%02d:%02d:%02d,%03d', ms / 3_600_000, ms / 60_000 % 60, ms / 1000 % 60, ms % 1000) }
-      list = notes.map { |t, txt| [t / speed, txt] }.select { |a, _| a < end_s }
+      end_s -= from_s
+      list = notes.map { |t, txt| [t / speed - from_s, txt] }.select { |a, _| a >= 0 && a < end_s }
       return nil if list.empty?
       body = list.each_with_index.map do |(a, txt), i|
         b = [a + 4.0 + txt.size * 0.04, a + 8.0, end_s].min
@@ -108,8 +110,9 @@ module DagaWASD
     end
 
     # Senza commenti nel tratto girato si toglie quello di una volta.
-    def self.path_srt_write(job, file)
-      srt = path_srt(job[:notes].to_a, job[:speed], job[:k].to_f / job[:fps])
+    # first…last: i fotogrammi (da 1) che il video o le immagini contengono.
+    def self.path_srt_write(job, file, first = 1, last = job[:k])
+      srt = path_srt(job[:notes].to_a, job[:speed], last.to_f / job[:fps], (first - 1).to_f / job[:fps])
       return (File.delete(file) if File.exist?(file)) && nil unless srt
       File.write(file, srt, mode: 'wb')
       file
@@ -402,28 +405,44 @@ module DagaWASD
     # disegna da sé). Il video dura quanto la registrazione / path_speed.
     # AVI: ogni fotogramma JPEG in un file temporaneo e da lì nel video
     # (lib/avi.rb); PNG: una cartella di immagini più crea_video.bat.
-    def self.path_export_frames(name)
+    # o: le scelte della finestra Esporta video (lib/videoexport.rb):
+    #   target (file .avi o cartella delle immagini), from e to (fotogrammi
+    #   da 1, compresi), append (AVI: in coda al video che c'è).
+    # Senza o: tutto il percorso, file o cartella chiesti qui (il ponte, i test).
+    def self.path_export_frames(name, o = nil)
       return t('path.busy') if @path_job
       tr = path_track(name) or return path_track_err(name)
-      fps = cf('path_video_fps').to_i.clamp(10, 60)
-      speed = cf('path_speed').to_f.clamp(0.1, 10.0)
-      total = (tr[:dur] / speed * fps).floor + 1
-      view = Sketchup.active_model.active_view
-      w, h = PATH_VIDEO_SIZES[cf('path_video_size')] || [view.vpwidth, view.vpheight]
-      extra = { fps: fps, total: total, w: w, h: h }
+      fps, total, w, h = path_video_numbers(tr)
+      from = (o && o[:from] || 1).to_i.clamp(1, total)
+      to = (o && o[:to] || total).to_i.clamp(from, total)
+      extra = { fps: fps, total: total, w: w, h: h, k: from - 1, k0: from - 1, stop: to }
+      extra[:ff] = 0 if from > 1               # il meteo va portato avanti fin lì (path_ff_step)
+      fresh = true
       if cf('path_video_format') == 'png'
-        base = UI.select_directory(title: t('path.choose_dir'), directory: path_default_dir)
-        return nil unless base
-        dir = File.join(base.tr('\\', '/'), path_safe(name))
-        Dir.mkdir(dir) unless Dir.exist?(dir)
-        Dir.glob(File.join(dir, 'frame_*.png')).each { |f| File.delete(f) rescue nil }   # niente avanzi di prima
+        dir = o ? o[:target].to_s : UI.select_directory(title: t('path.choose_dir'), directory: path_default_dir)
+        return nil if dir.nil? || dir.empty?
+        dir = dir.tr('\\', '/')
+        dir = File.join(dir, path_safe(name)) unless o
+        FileUtils.mkdir_p(dir)
+        if from == 1                           # da capo: niente avanzi di prima
+          Dir.glob(File.join(dir, 'frame_*.png')).each { |f| File.delete(f) rescue nil }
+        else
+          fresh = false                        # un altro pezzo: le immagini fatte restano
+        end
         extra[:dir] = dir
       else
-        file = UI.savepanel(t('path.save_video'), path_default_dir, "#{path_safe(name)}.avi")
-        return nil unless file
+        file = o ? o[:target].to_s : UI.savepanel(t('path.save_video'), path_default_dir, "#{path_safe(name)}.avi")
+        return nil if file.nil? || file.empty?
         file = "#{file}.avi" unless file.downcase.end_with?('.avi')
+        if o && o[:append] && File.exist?(file)
+          extra[:avi] = MjpegAvi.append(file, w, h, fps) or return t('ve.append_bad')
+          fresh = false
+          extra[:first] = vx_file_first(vx_log_file(file)) || 1
+        else
+          extra[:avi] = MjpegAvi.new(file, w, h, fps)
+          extra[:first] = from
+        end
         require 'tmpdir'
-        extra[:avi] = MjpegAvi.new(file, w, h, fps)
         extra[:jpg] = File.join(Dir.tmpdir, "dagawasd_fotogramma_#{Process.pid}.jpg")
       end
       err = begin
@@ -435,15 +454,26 @@ module DagaWASD
         raise
       end
       return path_avi_discard(extra) && err if err
+      vx_log_begin(@path_job, fresh)         # lib/videoexport.rb: il registro accanto al video
       attesa_open(@path_job)                 # lib/attesa.rb: personaggio, avanzamento, battute
       nil
+    end
+
+    # fps, fotogrammi del percorso intero, larghezza e altezza: con le
+    # impostazioni di adesso (la finestra Esporta video li mostra prima)
+    def self.path_video_numbers(tr)
+      fps = cf('path_video_fps').to_i.clamp(10, 60)
+      speed = cf('path_speed').to_f.clamp(0.1, 10.0)
+      view = Sketchup.active_model.active_view
+      w, h = PATH_VIDEO_SIZES[cf('path_video_size')] || [view.vpwidth, view.vpheight]
+      [fps, (tr[:dur] / speed * fps).floor + 1, w, h]
     end
 
     # Il video appena aperto da path_export_frames, mai partito: chiuso e tolto.
     def self.path_avi_discard(extra)
       avi = extra[:avi] or return true
       avi.close
-      File.delete(avi.path) if File.exist?(avi.path)
+      File.delete(avi.path) if avi.before.zero? && File.exist?(avi.path)   # uno in coda resta com'era
       true
     rescue SystemCallError, IOError => fps_err
       log_error(__method__, fps_err)
@@ -458,24 +488,53 @@ module DagaWASD
 
     def self.path_frames_step(view, job)
       t0 = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      return true if job[:ff] && path_ff_step(view, job, t0)   # ancora meteo da portare avanti
       loop do
         go = path_frame_write(view, job)
         return go unless go
         next if Process.clock_gettime(Process::CLOCK_MONOTONIC) - t0 < PATH_BATCH
         attesa_progress(job)
+        vx_log_progress(job)                     # lib/videoexport.rb: l'ultimo fotogramma scritto
         return true
       end
     end
 
+    # Si parte da un fotogramma dopo il primo: il meteo (nuvole, pioggia,
+    # lampi) deve essere quello di un'esportazione da capo, quindi va avanti
+    # fotogramma per fotogramma fin lì, senza scrivere niente (qualche ms
+    # l'uno). Gli oggetti di DagaDyn vanno col tempo e non serve.
+    # Vero finché non è arrivato; finito, nello stesso giro si scrive.
+    def self.path_ff_step(view, job, t0)
+      k = job[:k]
+      fps = job[:fps].to_f
+      if job[:vm]
+        while job[:ff] < k
+          f = job[:ff]
+          path_set_camera(view, path_frame_at(job[:frames], [f * job[:speed] / fps, job[:dur]].min))
+          vm_step(job, view, f / fps, f.zero? ? 0.0 : 1.0 / fps)
+          job[:ff] = f + 1
+          break if Process.clock_gettime(Process::CLOCK_MONOTONIC) - t0 >= PATH_BATCH
+        end
+      else
+        job[:ff] = k
+      end
+      if job[:ff] >= k
+        job[:ff] = nil
+        return false
+      end
+      Sketchup.status_text = format(t('rt.path_ff'), n: k + 1, p: "#{(100.0 * job[:ff] / k).floor}%")
+      true
+    end
+
     def self.path_frame_write(view, job)
       k = job[:k]
-      if k >= job[:total]
+      if k >= (job[:stop] || job[:total])
         path_finish(job, :fine)
         return false
       end
       t = k * job[:speed] / job[:fps].to_f
       path_set_camera(view, path_frame_at(job[:frames], [t, job[:dur]].min))
-      vm_step(job, view, k / job[:fps].to_f, k.zero? ? 0.0 : 1.0 / job[:fps]) if job[:vm]   # meteo all'istante del video
+      vm_step(job, view, k / job[:fps].to_f, k.zero? ? 0.0 : 1.0 / job[:fps]) if job[:vm]   # meteo all'istante del video (fino a k − 1: path_ff_step)
       dyn_tick(k / job[:fps].to_f)                # lib/dyn_link.rb: oggetti animati all'istante del video
       path_mark(job, t)
       if (avi = job[:avi])
@@ -495,7 +554,7 @@ module DagaWASD
         path_finish(job, :pieno)
         return false
       end
-      Sketchup.status_text = format(t('rt.path_frames'), n: k + 1, total: job[:total])
+      Sketchup.status_text = format(t('rt.path_frames'), n: k + 1, total: job[:stop] || job[:total])
       true
     end
 
@@ -513,19 +572,24 @@ module DagaWASD
     end
 
     def self.path_frames_done(job, why)
+      vx_log_end(job, why)                       # lib/videoexport.rb: dove si è fermato
       return path_video_done(job, why) if job[:avi]
-      n = job[:k]
+      n = job[:k] - job[:k0].to_i               # immagini fatte in questo giro
       Sketchup.status_text = ''
       unless n.zero?
         base = path_safe(job[:name])
-        srt = path_srt_write(job, File.join(job[:dir], "#{base}.srt"))   # i commenti dell'IA, nel video come sottotitoli
+        # le immagini nella cartella, anche di giri di prima: da lì partono video e sottotitoli
+        nums = Dir.glob(File.join(job[:dir], 'frame_*.png')).map { |f| File.basename(f)[/\d+/].to_i }
+        first = nums.min || job[:k0].to_i + 1
+        srt = path_srt_write(job, File.join(job[:dir], "#{base}.srt"), first, nums.max || job[:k])   # i commenti dell'IA, nel video come sottotitoli
+        start = first > 1 ? "-start_number #{first} " : ''
         bat = File.join(job[:dir], 'crea_video.bat')
         # in un .bat un % del nome aprirebbe una variabile: «Sconto 50%» perdeva mezza riga.
         # Il file è UTF-8 e cmd lo leggerebbe nella codepage OEM (850…): un nome
         # con lettere non ASCII («Маршрут 1», «è») non si troverebbe. chcp 65001.
         b = base.gsub('%', '%%')
         File.write(bat, "@echo off\r\nchcp 65001 >nul\r\ncd /d \"%~dp0\"\r\n" \
-                        "ffmpeg -y -framerate #{job[:fps]} -i frame_%%05d.png #{srt ? "-i \"#{b}.srt\" -c:s mov_text " : ''}" \
+                        "ffmpeg -y -framerate #{job[:fps]} #{start}-i frame_%%05d.png #{srt ? "-i \"#{b}.srt\" -c:s mov_text " : ''}" \
                         "-c:v libx264 -pix_fmt yuv420p -crf 18 \"#{b}.mp4\"\r\npause\r\n", mode: 'wb')   # wb: \r\n e non \r\r\n
       end
       info = { 'n' => n, 'time' => path_clock(n.to_f / job[:fps]), 'mb' => (job[:bytes].to_i / 1_048_576.0).round(1),
@@ -542,9 +606,10 @@ module DagaWASD
       avi.close
       File.delete(job[:jpg]) if File.exist?(job[:jpg])
       Sketchup.status_text = ''
-      n = avi.frames
+      n = avi.frames                             # tutto il video, anche quelli che c'erano già
       File.delete(avi.path) if n.zero? && File.exist?(avi.path)
-      path_srt_write(job, avi.path.sub(/\.avi\z/i, '') + '.srt') unless n.zero?   # accanto: i lettori lo aprono da soli
+      first = job[:first] || 1
+      path_srt_write(job, avi.path.sub(/\.avi\z/i, '') + '.srt', first, first + n - 1) unless n.zero?   # accanto: i lettori lo aprono da soli
       file = avi.path.tr('/', '\\')
       time = path_clock(n.to_f / job[:fps])
       mb = n.zero? ? 0.0 : (File.size(avi.path) / 1_048_576.0).round(1)
@@ -633,7 +698,7 @@ module DagaWASD
       err = case cmd
             when 'play'   then path_start(:play, name)
             when 'scenes' then path_make_scenes(name)
-            when 'frames' then path_export_frames(name)
+            when 'frames' then vx_open(name)         # lib/videoexport.rb: prima la finestra Esporta video
             when 'stop'   then path_abort
             when 'rename' then path_rename(name)
             when 'delete' then path_delete(name)

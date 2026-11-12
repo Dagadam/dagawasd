@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>DagaWASD</title>
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   ESPORTA VIDEO — la apre lib/videoexport.rb (vx_open) da «Video» di un
+   percorso. Ruby manda init (testi ve.* e i nomi delle impostazioni del
+   pannello, lingua, aspetto) e show (numeri del video, file o cartella,
+   cosa c'è già, registro). La pagina rimanda set {impostazione: valore},
+   browse, target (il percorso scritto a mano), go {from, to, append},
+   log (apre il registro) e cancel.
+   Fotogrammi contati da 1 come i nomi delle immagini (frame_00001.png).
+   Tastiera: Invio esporta, Esc chiude.
+═══════════════════════════════════════════════════════════════ */
+:root{
+  --bg:#151515;--fg:#dcdcdc;--mut:#8a8a8a;--line:#2c2c2c;--in:#1f1f1f;
+  --acc:#00c9a7;--acc-ink:#0d0d0d;--btn:#353535;--warn:#e0a030;--bad:#e05050;
+  --font:'Segoe UI',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font:14px/1.4 var(--font);display:flex;flex-direction:column}
+body.attende{visibility:hidden}
+header{padding:12px 16px 6px}
+header h1{font-size:15px;font-weight:600}
+header p{color:var(--mut);font-size:12.5px;margin-top:2px;overflow-wrap:anywhere}
+main{flex:1 1 auto;overflow:auto;padding:2px 16px 8px}
+section{border-top:1px solid var(--line);padding:9px 0 10px}
+section h2{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--mut);margin-bottom:6px}
+.row{display:flex;align-items:center;gap:8px;margin:5px 0;flex-wrap:wrap}
+.row > label.k{flex:0 0 150px;color:var(--fg)}
+select,input[type=text],input[type=number]{background:var(--in);color:var(--fg);border:1px solid var(--line);border-radius:6px;
+  font:inherit;padding:4px 7px;min-width:0}
+select:focus,input:focus{outline:0;border-color:var(--acc)}
+input[type=number]{width:96px}
+input[type=checkbox]{width:16px;height:16px;accent-color:var(--acc);flex:0 0 auto}
+#target{flex:1 1 220px}
+.chk{display:flex;gap:9px;align-items:flex-start;margin:6px 0;cursor:pointer}
+.chk small{display:block;color:var(--mut);font-size:12px}
+.note{color:var(--mut);font-size:12.5px;margin:4px 0;overflow-wrap:anywhere}
+.note.warn{color:var(--warn)}
+.note.bad{color:var(--bad)}
+.box{display:none;margin:7px 0;padding:7px 10px;border-radius:7px;background:var(--in);border-inline-start:3px solid var(--acc);font-size:13px}
+.box.si{display:block}
+.box .row{margin:5px 0 0}
+.t{color:var(--mut);font-size:12px;min-width:64px}
+footer{display:flex;gap:7px;flex-wrap:wrap;padding:10px 16px 12px;border-top:1px solid var(--line)}
+footer .sp{flex:1 1 auto}
+.btn{border:0;border-radius:7px;background:var(--btn);color:var(--fg);font:inherit;padding:6px 12px;cursor:pointer}
+.btn:hover{filter:brightness(1.15)}
+.btn:disabled{opacity:.35;cursor:default;filter:none}
+.btn:focus-visible{box-shadow:0 0 0 2px var(--acc);outline:0}
+.btn.go{background:var(--acc);color:var(--acc-ink);font-weight:600}
+.btn.small{padding:4px 10px;font-size:13px}
+.occ{display:none;margin:0 16px 8px;padding:6px 9px;border-radius:7px;background:var(--in);border-inline-start:3px solid var(--warn);font-size:12.5px}
+.occ.si{display:block}
+</style>
+</head>
+<body class="attende">
+<header>
+  <h1 id="titolo"></h1>
+  <p id="sub"></p>
+</header>
+<main>
+  <section>
+    <h2 id="h-format"></h2>
+    <div class="row"><label class="k" for="fmt" id="l-fmt"></label><select id="fmt"></select></div>
+    <div class="row"><label class="k" for="size" id="l-size"></label><select id="size"></select></div>
+    <div class="row"><label class="k" for="fps" id="l-fps"></label><input type="number" id="fps" min="10" max="60" step="1"></div>
+    <div class="row"><label class="k" for="speed" id="l-speed"></label><input type="number" id="speed" min="0.25" max="4" step="0.05"> <span class="t">×</span></div>
+    <label class="chk"><input type="checkbox" id="weather"><span id="l-weather"></span></label>
+  </section>
+  <section>
+    <h2 id="h-where"></h2>
+    <div class="row"><input type="text" id="target" spellcheck="false"><button class="btn small" id="b-browse"></button></div>
+    <p class="note" id="tnote"></p>
+  </section>
+  <section>
+    <h2 id="h-frames"></h2>
+    <div class="row">
+      <label for="from" id="l-from"></label><input type="number" id="from" min="1" step="1">
+      <label for="to" id="l-to"></label><input type="number" id="to" min="1" step="1">
+      <span class="t" id="of"></span>
+      <button class="btn small" id="b-all"></button>
+    </div>
+    <p class="note" id="rinfo"></p>
+    <div class="box" id="resume">
+      <span id="has"></span>
+      <div class="row"><button class="btn small" id="b-resume"></button></div>
+    </div>
+    <label class="chk" id="r-append"><input type="checkbox" id="append"><span><span id="l-append"></span><small id="h-append"></small></span></label>
+    <p class="note" id="warn"></p>
+    <p class="note" id="split"></p>
+  </section>
+  <section>
+    <h2 id="h-log"></h2>
+    <p class="note" id="logpath"></p>
+    <p class="note" id="loglast"></p>
+    <div class="row"><button class="btn small" id="b-log"></button></div>
+  </section>
+</main>
+<div class="occ" id="occ"></div>
+<footer>
+  <span class="sp"></span>
+  <button class="btn" id="b-cancel"></button>
+  <button class="btn go" id="b-go"></button>
+</footer>
+<script>
+let L = {}, S = null;
+const $ = id => document.getElementById(id);
+const T = k => L[k] || k;
+const fill = (s, v) => String(s).replace(/%\{(\w+)\}/g, (m, k) => v[k] !== undefined ? v[k] : m);
+const rb = (n, a) => { try { sketchup[n](a); } catch(e){} };
+const nf = n => Number(n).toLocaleString(document.documentElement.lang || undefined);
+// Istante nel video del fotogramma n (da 1): 4:38.80
+function clock(n, fps){
+  const s = Math.max(0, n - 1) / fps;
+  return Math.floor(s / 60) + ':' + (s % 60).toFixed(2).padStart(5, '0');
+}
+function dur(sec){ sec = Math.round(sec); return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0'); }
+const num = id => Math.round(Number($(id).value));
+
+// ── Fotogrammi scelti: controlli e note ─────────────────────────
+function range(){
+  if(!S || S.missing) return { ok: false };
+  const a = num('from'), b = num('to');
+  return { a, b, ok: Number.isFinite(a) && Number.isFinite(b) && a >= 1 && b >= a && b <= S.total };
+}
+function notes(){
+  if(!S) return;
+  const r = range(), avi = S.format === 'avi', app = avi && S.avi && $('append').checked;
+  $('rinfo').textContent = r.ok ? fill(T('ve.range_info'), { n: nf(r.b - r.a + 1), d: clock(r.b - r.a + 2, S.fps), t1: clock(r.a, S.fps), t2: clock(r.b, S.fps) }) : '';
+  // file o cartella: cosa c'è e cosa succederà
+  let tn = '', tc = 'note';
+  if(avi && S.avi){ tn = fill(T('ve.avi_has'), { n: nf(S.avi.n), a: S.avi.a, b: S.avi.b }) + (app ? '' : ' ' + T('ve.replace')); if(!app) tc = 'note warn'; }
+  else if(avi && S.avi_other){ tn = T('ve.avi_other'); tc = 'note warn'; }
+  else if(!avi && S.png){ tn = fill(T('ve.png_has'), { n: nf(S.png.n), a: S.png.a, b: S.png.b }) + ' ' + T(r.a === 1 ? 've.png_clear' : 've.png_keep'); if(r.a === 1) tc = 'note warn'; }
+  $('tnote').textContent = tn; $('tnote').className = tc;
+  $('r-append').style.display = avi && S.avi ? '' : 'none';
+  let w = '', wc = 'note';
+  if(!r.ok){ w = fill(T('ve.bad_range'), { n: S.total }); wc = 'note bad'; }
+  else if(app && S.avi.b + 1 !== r.a){ w = fill(T('ve.gap'), { b: S.avi.b, n: S.avi.b + 1 }); wc = 'note warn'; }
+  $('warn').textContent = w; $('warn').className = wc;
+  $('b-go').disabled = !r.ok || !!S.busy || !!S.missing;
+}
+function go(){
+  const r = range();
+  if($('b-go').disabled || !r.ok) return;
+  rb('go', JSON.stringify({ from: r.a, to: r.b, append: !!(S.avi && $('append').checked) }));
+}
+
+// ── Eventi ───────────────────────────────────────────────────────
+const set = (k, v) => rb('set', JSON.stringify({ [k]: v }));
+$('fmt').addEventListener('change', () => set('path_video_format', $('fmt').value));
+$('size').addEventListener('change', () => set('path_video_size', $('size').value));
+$('fps').addEventListener('change', () => set('path_video_fps', num('fps')));
+$('speed').addEventListener('change', () => set('path_speed', Number($('speed').value)));
+$('weather').addEventListener('change', () => set('path_video_weather', $('weather').checked));
+$('target').addEventListener('change', () => rb('target', $('target').value));
+$('b-browse').addEventListener('click', () => rb('browse'));
+['from', 'to'].forEach(id => $(id).addEventListener('input', notes));
+$('append').addEventListener('change', notes);
+$('b-all').addEventListener('click', () => { if(!S) return; $('from').value = 1; $('to').value = S.total; notes(); });
+$('b-resume').addEventListener('click', () => {
+  if(!S || !S.next) return;
+  $('from').value = S.next; $('to').value = S.total;
+  if(S.avi) $('append').checked = true;
+  notes();
+});
+$('b-log').addEventListener('click', () => rb('log'));
+$('b-cancel').addEventListener('click', () => rb('cancel'));
+$('b-go').addEventListener('click', go);
+document.addEventListener('keydown', ev => {
+  if(ev.key === 'Escape'){ ev.preventDefault(); rb('cancel'); return; }
+  if(ev.key === 'Enter' && !(ev.target.closest && ev.target.closest('button, select'))){
+    if(ev.target.id === 'target'){ ev.preventDefault(); rb('target', $('target').value); return; }
+    ev.preventDefault(); go();
+  }
+});
+// Mai il menu del browser (in inglese, con Ricarica, Ispeziona…)
+document.addEventListener('contextmenu', ev => { if(!(ev.target.matches && ev.target.matches('input'))) ev.preventDefault(); });
+
+// ── Chiamate da Ruby ─────────────────────────────────────────────
+const rgb = h => { const m = /^#?([0-9a-f]{6})$/i.exec(h || ''); if(!m) return null; const n = parseInt(m[1], 16); return [n >> 16, n >> 8 & 255, n & 255]; };
+const mix = (a, b, t) => '#' + a.map((x, i) => Math.round(x + (b[i] - x) * t).toString(16).padStart(2, '0')).join('');
+const lum = c => (0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]) / 255;
+function applyLook(o){
+  const r = document.documentElement.style, put = (n, v) => r.setProperty('--' + n, v);
+  const light = o.theme === 'light' || (o.theme === 'auto' && matchMedia('(prefers-color-scheme: light)').matches);
+  const B = rgb(o.bg) || (light ? [240, 240, 239] : [21, 21, 21]);
+  const F = rgb(o.text) || (light ? [30, 30, 30] : [220, 220, 220]);
+  const A = rgb(o.accent) || [0, 201, 167];
+  put('bg', mix(B, B, 0)); put('fg', mix(F, F, 0)); put('mut', mix(B, F, .55));
+  put('line', mix(B, F, light ? .14 : .12)); put('in', mix(B, F, light ? .04 : .05));
+  put('btn', mix(B, F, light ? .1 : .14));
+  put('acc', mix(A, A, 0)); put('acc-ink', lum(A) > .5 ? '#0d0d0d' : '#ffffff');
+  if(light) put('warn', '#9a6200');
+  const D = rgb(o.danger); if(D) put('bad', mix(D, D, 0));
+}
+
+function init(d){
+  L = d.strings || {};
+  document.documentElement.lang = d.lang || 'en';
+  document.documentElement.dir = d.rtl ? 'rtl' : 'ltr';
+  applyLook(d.look || {});
+  document.title = T('ve.title');
+  $('titolo').textContent = T('ve.title');
+  $('h-format').textContent = T('ve.sec_format');
+  $('l-fmt').textContent = T('f.path_video_format');
+  $('l-size').textContent = T('f.path_video_size');
+  $('l-fps').textContent = T('f.path_video_fps');
+  $('l-speed').textContent = T('f.path_speed');
+  $('l-weather').textContent = T('f.path_video_weather');
+  $('fmt').innerHTML = ['avi', 'png'].map(v => `<option value="${v}"></option>`).join('');
+  $('fmt').querySelectorAll('option').forEach(o => { o.textContent = T('o.path_video_format.' + o.value); });
+  $('size').innerHTML = ['view', 'hd', 'fhd', 'uhd'].map(v => `<option value="${v}"></option>`).join('');
+  $('size').querySelectorAll('option').forEach(o => { o.textContent = T('o.path_video_size.' + o.value); });
+  $('h-where').textContent = T('ve.sec_where');
+  $('b-browse').textContent = T('ve.browse');
+  $('h-frames').textContent = T('ve.sec_frames');
+  $('l-from').textContent = T('ve.from');
+  $('l-to').textContent = T('ve.to');
+  $('b-all').textContent = T('ve.all');
+  $('l-append').textContent = T('ve.append');
+  $('h-append').textContent = T('ve.append.h');
+  $('split').textContent = T('ve.split.h');
+  $('h-log').textContent = T('ve.sec_log');
+  $('b-log').textContent = T('ve.log_open');
+  $('b-cancel').textContent = T('ve.cancel');
+  $('b-go').textContent = T('ve.go');
+  $('occ').textContent = T('ve.busy');
+  if(S) show(S);
+}
+
+// I fotogrammi scelti restano a ogni show; se cambia il totale (fps,
+// velocità) l'ultimo segue, e nessuno resta oltre la fine.
+function show(s){
+  if(!s) return;
+  const prima = S;
+  S = s;
+  $('sub').textContent = s.missing ? '«' + s.name + '»' : fill(T('ve.sub'), { name: s.name, dur: dur(s.dur), n: nf(s.total) });
+  if(!s.missing){
+    $('fmt').value = s.format;
+    $('size').value = s.size;
+    if(document.activeElement !== $('fps')) $('fps').value = s.fps;
+    if(document.activeElement !== $('speed')) $('speed').value = s.speed;
+    $('weather').checked = !!s.weather;
+    if(document.activeElement !== $('target')) $('target').value = s.target;
+    $('from').max = $('to').max = s.total;
+    $('of').textContent = fill(T('ve.of'), { n: nf(s.total) });
+    if(!prima || prima.missing){ $('from').value = 1; $('to').value = s.total; }
+    else {
+      if(num('to') === prima.total || num('to') > s.total) $('to').value = s.total;
+      if(num('from') > s.total) $('from').value = s.total;
+    }
+    if(!prima || prima.format !== s.format || prima.target !== s.target || !s.avi) $('append').checked = false;
+    const has = s.avi ? fill(T('ve.avi_has'), { n: nf(s.avi.n), a: s.avi.a, b: s.avi.b })
+              : s.png ? fill(T('ve.png_has'), { n: nf(s.png.n), a: s.png.a, b: s.png.b }) : '';
+    $('resume').classList.toggle('si', !!s.next);
+    $('has').textContent = has;
+    $('b-resume').textContent = fill(T('ve.resume'), { n: s.next || '' });
+    $('logpath').textContent = fill(T('ve.log_here'), { file: s.log });
+    $('loglast').textContent = s.log_last ? fill(T('ve.log_last'), { line: s.log_last }) : '';
+    $('b-log').disabled = !s.log_exists;
+  }
+  $('occ').classList.toggle('si', !!s.busy);
+  notes();
+  if(!prima) $('b-go').focus();
+  document.body.classList.remove('attende');
+}
+
+window.addEventListener('load', () => rb('ready'));
+</script>
+</body>
+</html>

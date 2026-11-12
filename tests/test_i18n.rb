@@ -64,6 +64,10 @@ used += xp
 xs = [read(File.join(ROOT, 'exstart.html')), read(File.join(ROOT, 'lib', 'exprofiles.rb'))]
      .flat_map { |s| s.scan(/'(xs\.[\w.]+)'/).flatten }.uniq
 used += xs
+# Finestra Esporta video (videoexport.html, lib/videoexport.rb, lib/path.rb): ogni 've.…' fra apici
+ve = [read(File.join(ROOT, 'videoexport.html')), read(File.join(ROOT, 'lib', 'videoexport.rb')), read(File.join(ROOT, 'lib', 'path.rb'))]
+     .flat_map { |s| s.scan(/'(ve\.[\w.]+)'/).flatten }.uniq
+used += ve
 used.uniq!
 missing_en = used.reject { |k| en.key?(k) }
 ok(missing_en.empty?, "i #{used.size} testi usati da codice e pannello esistono in en.json#{missing_en.empty? ? '' : ": mancano #{missing_en.join(', ')}"}")
@@ -76,6 +80,8 @@ morti = en.keys.select { |k| k.start_with?('xp.') } - xp
 ok(morti.empty?, "ogni testo xp. di en.json è usato dai profili dell'esploratore (#{xp.size})#{morti.empty? ? '' : ": inutili #{morti.join(', ')}"}")
 morti = en.keys.select { |k| k.start_with?('xs.') } - xs
 ok(morti.empty?, "ogni testo xs. di en.json è usato dalla finestra di avvio (#{xs.size})#{morti.empty? ? '' : ": inutili #{morti.join(', ')}"}")
+morti = en.keys.select { |k| k.start_with?('ve.') } - ve
+ok(morti.empty?, "ogni testo ve. di en.json è usato dalla finestra Esporta video (#{ve.size})#{morti.empty? ? '' : ": inutili #{morti.join(', ')}"}")
 
 (files - ['en']).sort.each do |c|
   d = parsed[c] || {}

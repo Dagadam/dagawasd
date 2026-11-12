@@ -97,8 +97,12 @@ module DagaWASD
       log_error(__method__, fps_err)
     end
 
+    # Fotogrammi di questo giro: con un pezzo (Esporta video, dal fotogramma
+    # x al y) contano da x, non dall'inizio del percorso.
+    def self.attesa_count(job); (job[:stop] || job[:total]) - job[:k0].to_i; end
+
     def self.attesa_progress_data(job)
-      { 'k' => job[:k], 'total' => job[:total], 'bytes' => job[:bytes].to_i,
+      { 'k' => job[:k] - job[:k0].to_i, 'total' => attesa_count(job), 'bytes' => job[:bytes].to_i,
         'el' => (Process.clock_gettime(Process::CLOCK_MONOTONIC) - job[:att][:t0]).round(2) }
     end
 
@@ -164,8 +168,8 @@ module DagaWASD
         'kmh'     => dur > 0 ? (m / dur * 3.6).round(1) : 0,
         'speed'   => job[:speed].to_f,
         'fps'     => job[:fps],
-        'total'   => job[:total],
-        'vid'     => (job[:total].to_f / job[:fps]).round(1),
+        'total'   => attesa_count(job),
+        'vid'     => (attesa_count(job).to_f / job[:fps]).round(1),
         'w'       => job[:w], 'h' => job[:h],
         'format'  => job[:avi] ? 'avi' : 'png',
         'weather' => attesa_weather(job)

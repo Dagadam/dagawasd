@@ -328,6 +328,105 @@ end
 small.close
 ok(File.size(File.join(tmp, 'vuoto.avi')) == 224 + 8, 'video senza fotogrammi: solo intestazione e indice vuoto')
 
+# ── Esporta video: dal fotogramma x al y, in coda, registro ──────────
+# (lib/videoexport.rb; qui senza la finestra: le scelte arrivano dirette)
+corri = -> { n = 0; n += 1 while view.anim&.nextFrame(view) && n < 5000 }
+# dove stava la camera in ogni fotogramma scritto (il finto write_image non la mette nel JPEG)
+camere = -> { view.images.map(&:last) }
+cfg.merge!('path_video_format' => 'avi', 'path_video_fps' => 10, 'path_video_size' => 'hd', 'path_speed' => 1.0)
+intero = File.join(tmp, 'intero.avi')
+view.images.clear
+F.path_export_frames('Percorso 2', target: intero)
+corri.()
+cam_intero = camere.()
+view.images.clear
+pezzi = File.join(tmp, 'pezzi.avi')
+ok(F.path_export_frames('Percorso 2', target: pezzi, from: 1, to: 8).nil?, 'dal fotogramma 1 all\'8: parte')
+corri.()
+info = F::MjpegAvi.probe(pezzi)
+ok(info && info[:index].size == 8 && info[:w] == 1280 && info[:h] == 720 && info[:fps] == 10, 'primo pezzo: 8 fotogrammi, 1280×720 a 10 al secondo')
+reg = File.join(tmp, 'pezzi.log')
+ll = F.vx_log_lines(reg)
+ok(ll.size == 3 && ll[0][1].empty? && ll[0][0].include?('Percorso 2') &&
+   ll[1][1].values_at('ev', 'from', 'to', 'first', 'total') == %w[start 1 8 1 21] && ll[2][1].values_at('ev', 'last') == %w[end 8],
+   'registro accanto al video: titolo, inizio 1–8 di 21, fine all\'8')
+ok(ll[1][0] =~ /\A\d{4}-\d\d-\d\d \d\d:\d\d:\d\d  / && ll[1][0].include?('0:00.70'), 'ogni riga con data e ora; l\'istante dell\'ottavo fotogramma nel video (0:00.70)')
+ok(F.path_export_frames('Percorso 2', target: pezzi, from: 9, to: 21, append: true).nil?, 'dal 9 al 21, in coda: parte')
+corri.()
+b = File.binread(pezzi)
+ok(b.byteslice(48, 4).unpack1('V') == 21 && b.byteslice(4, 4).unpack1('V') == b.bytesize - 8, 'in coda: un video solo, di 21 fotogrammi, intestazione giusta')
+ok(cam_intero.size == 21 && camere.() == cam_intero, 'i due pezzi uniti sono il video fatto in una volta, fotogramma per fotogramma')
+ll = F.vx_log_lines(reg)
+ok(ll.size == 5 && ll[3][1].values_at('ev', 'from', 'to', 'first') == %w[start 9 21 1] && ll[3][0].include?(format(F.t('ve.log.append'), n: 8)) &&
+   ll[4][1].values_at('ev', 'last') == %w[end 21], 'registro: le righe di prima restano, poi inizio dal 9 in coda (col primo fotogramma del video) e fine al 21')
+ok(File.binread(File.join(tmp, 'pezzi.srt')).include?('Primo'), 'sottotitoli di tutto il video')
+F.path_export_frames('Percorso 2', target: File.join(tmp, 'stop.avi'), from: 3, to: 21)
+4.times { view.anim.nextFrame(view) }
+F::PathTool.new.onCancel(0, view)
+ll = F.vx_log_lines(File.join(tmp, 'stop.log'))
+ok(ll.last[1].values_at('ev', 'last', 'next') == %w[stop 6 7] && ll.last[0].include?(F.t('ve.log.stop').split('%').first),
+   'interrotto con Esc: il registro dice l\'ultimo fotogramma scritto (6) e da dove riprendere (7)')
+ok(F.vx_file_first(File.join(tmp, 'stop.log')) == 3 && F::MjpegAvi.probe(File.join(tmp, 'stop.avi'))[:index].size == 4,
+   'il video comincia dal fotogramma 3 e ne ha 4')
+# Prima: interrotto a metà da SketchUp chiuso, il video restava senza indice né
+# numeri (illeggibile) e un fotogramma a metà. Si riprende in coda e torna buono.
+jpeg = "\xFF\xD8".b + ('x' * 101).b + "\xFF\xD9".b
+mezzo = File.join(tmp, 'mai_chiuso.avi')
+av = F::MjpegAvi.new(mezzo, 64, 48, 10)
+3.times { av.add(jpeg) }
+io = av.instance_variable_get(:@io)
+io.write(['00dc', 500].pack('a4V'), 'y' * 20)        # l'ultimo, scritto a metà
+io.close
+ok(File.binread(mezzo).byteslice(48, 4).unpack1('V').zero?, 'video mai chiuso: intestazione a zero')
+pr = F::MjpegAvi.probe(mezzo)
+ok(pr && pr[:index].size == 3 && pr[:w] == 64 && pr[:fps] == 10, 'riletto lo stesso: 3 fotogrammi interi, quello a metà no')
+ok(F::MjpegAvi.append(mezzo, 64, 48, 25).nil? && F::MjpegAvi.append(mezzo, 32, 48, 10).nil?, 'altri fps o altre misure: niente coda')
+ok(F::MjpegAvi.probe(File.join(tmp, 'pezzi.log')).nil?, 'un file che non è un nostro AVI: nil')
+ap = F::MjpegAvi.append(mezzo, 64, 48, 10)
+ok(ap.before == 3, 'in coda dopo 3')
+ap.add(jpeg)
+ap.close
+b = File.binread(mezzo)
+top = chunks.(b, 12, b.bytesize)
+idx = b.byteslice(top[2][2], top[2][1]).unpack('a4VVV' * 4).each_slice(4).to_a
+ok(top.map(&:first) == %w[LIST LIST idx1] && b.byteslice(48, 4).unpack1('V') == 4 && idx.size == 4 &&
+   idx.all? { |id, _f, off, n| id == '00dc' && n == jpeg.bytesize && b.byteslice(top[1][2] + off + 8, 2) == "\xFF\xD8".b },
+   'dopo la coda: 4 fotogrammi, indice giusto, il pezzo a metà sparito')
+# Il meteo a metà video è quello di un'esportazione da capo: va avanti
+# fotogramma per fotogramma dal primo (senza scrivere), poi si scrive.
+passi = []
+vmb = F.method(:vm_begin); vms = F.method(:vm_step); vme = F.method(:vm_end)
+F.define_singleton_method(:vm_begin) { |job| job[:vm] = { paint: false } }
+F.define_singleton_method(:vm_step) { |_job, _v, tv, dt| passi << [(tv * 10).round, dt] }
+F.define_singleton_method(:vm_end) { |job| job[:vm] = nil }
+view.images.clear
+ffile = File.join(tmp, 'ff.avi')
+F.path_export_frames('Percorso 2', target: ffile, from: 6, to: 8)
+corri.()
+F.define_singleton_method(:vm_begin, vmb); F.define_singleton_method(:vm_step, vms); F.define_singleton_method(:vm_end, vme)
+ok(passi.map(&:first) == (0..7).to_a && passi[0][1].zero? && passi[1..].all? { |_, dt| (dt - 0.1).abs < 1e-9 },
+   'dal fotogramma 6: il meteo passa per ogni fotogramma dal primo, un decimo di secondo l\'uno')
+ok(camere.() == cam_intero[5, 3], 'e si scrivono solo 6, 7 e 8, con la camera dove stava nel video intero')
+cfg['path_video_format'] = 'png'
+pdir = File.join(tmp, 'pezzi_png')
+F.path_export_frames('Percorso 2', target: pdir, from: 1, to: 10)
+corri.()
+F.path_export_frames('Percorso 2', target: pdir, from: 11, to: 21)
+corri.()
+nomi = Dir.children(pdir).grep(/\Aframe_/).sort
+ok(nomi.size == 21 && nomi.first == 'frame_00001.png' && nomi.last == 'frame_00021.png', 'immagini in due pezzi: 21, numerate come da capo')
+ok(!File.read(File.join(pdir, 'crea_video.bat')).include?('-start_number') && F.vx_log_lines(File.join(pdir, 'Percorso 2.log')).count { |_, kv| kv['ev'] == 'start' } == 2,
+   'crea_video.bat da frame_00001; registro nella cartella con i due inizi')
+qdir = File.join(tmp, 'coda_png')
+F.path_export_frames('Percorso 2', target: qdir, from: 8, to: 21)
+corri.()
+srt = File.binread(File.join(qdir, 'Percorso 2.srt')).force_encoding('UTF-8')
+ok(File.read(File.join(qdir, 'crea_video.bat')).include?('-start_number 8 -i frame_%%05d.png') && Dir.children(qdir).grep(/\Aframe_/).size == 14,
+   'solo dall\'8: 14 immagini e crea_video.bat comincia da frame_00008')
+ok(!srt.include?('Primo') && srt.include?("00:00:00,300 --> ") && srt.include?('Secondo'),
+   'sottotitoli spostati: il commento di 1 s, nel video che parte da 0,7 s, arriva a 0,3 s')
+cfg['path_video_format'] = 'avi'
+
 # Più fotogrammi per giro: un write_image da 0,1 s, giro da 0,35 s → 4 per giro
 # (3 quando sleep di Windows sfora di qualche millisecondo: conta che siano più d'uno)
 F.send(:remove_const, :PATH_BATCH); F.const_set(:PATH_BATCH, 0.35)
@@ -496,6 +595,70 @@ F.instance_variable_set(:@cloud_model, nil)
 ok(st['weather'] == false && w_video == 'video' && w_out == 'out' && w_fail == false && F.attesa_weather(vm: { paint: {} }) == false,
    "meteo: senza #{st['weather'].inspect}, dipinto #{w_video.inspect}, opzione spenta #{w_out.inspect}, dipinto non partito #{w_fail.inspect}")
 F.send(:remove_const, :PATH_BATCH); F.const_set(:PATH_BATCH, batch)
+
+# ── Finestra Esporta video (lib/videoexport.rb) ──────────────────────
+UI::HtmlDialog.all.clear
+cfg.merge!('path_video_format' => 'avi', 'path_video_fps' => 10, 'path_video_size' => 'hd', 'path_speed' => 1.0)
+F.path_command('frames', 'Percorso 2')
+vd = UI::HtmlDialog.all.last
+ok(vd && vd.file == F::VX_FILE && File.exist?(vd.file) && !F.path_busy?, '«Video» apre la finestra Esporta video e non parte')
+vd.call('ready')
+ini = vd.last('init')
+st = vd.last('show')
+ok(ini['strings'].keys.all? { |k| k.start_with?('ve.') || F::VX_PANEL.include?(k) } && ini['strings']['ve.go'] == F.t('ve.go') &&
+   ini['strings']['o.path_video_size.hd'] == F.t('o.path_video_size.hd'), 'init: i testi ve. e i nomi delle impostazioni del pannello')
+ok(st['total'] == 21 && st['fps'] == 10 && st['w'] == 1280 && st['format'] == 'avi' && st['target'].end_with?('\\Percorso 2.avi') && !st['busy'],
+   'stato: 21 fotogrammi, un AVI col nome del percorso')
+vd.call('target', pezzi.tr('/', '\\'))
+st = vd.last('show')
+ok(st['avi'] == { 'n' => 21, 'a' => 1, 'b' => 21 } && st['next'].nil? && st['log_exists'] && st['log_last'].include?('21'),
+   'un video intero già fatto: lo dice, niente da riprendere, ultima riga del registro')
+vd.call('target', ffile)
+st = vd.last('show')
+ok(st['avi'] == { 'n' => 3, 'a' => 6, 'b' => 8 } && st['next'] == 9, 'un pezzo dal 6 all\'8: si riprende dal 9 (il primo lo sa il registro)')
+vd.call('target', File.join(tmp, 'senza_estensione'))
+ok(vd.last('show')['target'].end_with?('senza_estensione.avi') && !vd.last('show')['exists'], 'scritto a mano senza .avi: lo aggiunge')
+vd.call('target', ffile)
+vd.call('set', JSON.generate('path_video_fps' => 20))
+st = vd.last('show')
+ok(cfg['path_video_fps'] == 20 && st['total'] == 41 && st['avi_other'] && !st['avi'], 'cambiati gli fps: salvati, 41 fotogrammi, quel video non va più in coda')
+vd.call('set', JSON.generate('path_video_fps' => 999, 'path_video_size' => 'enorme', 'altro' => 1))
+ok(cfg['path_video_fps'] == 60 && cfg['path_video_size'] == 'hd' && !cfg.key?('altro'), 'valori fuori misura: tagliati o ignorati')
+vd.call('set', JSON.generate('path_video_fps' => 10, 'path_video_format' => 'png'))
+vd.call('target', pdir)
+st = vd.last('show')
+ok(st['format'] == 'png' && st['png'] == { 'n' => 21, 'a' => 1, 'b' => 21 } && st['next'].nil?, 'immagini: la cartella ne ha 21')
+vd.call('target', qdir)
+ok(vd.last('show')['png'] == { 'n' => 14, 'a' => 8, 'b' => 21 }, 'una cartella dall\'8 al 21')
+UI.define_singleton_method(:select_directory) { |**_o| tmp }
+vd.call('browse')
+ok(vd.last('show')['target'].end_with?('\\Percorso 2'), 'Sfoglia: dentro la cartella scelta, una col nome del percorso')
+UI.define_singleton_method(:select_directory) { |**_o| qdir }
+vd.call('browse')
+ok(vd.last('show')['target'] == qdir.tr('/', '\\'), 'Sfoglia su una cartella che ha già le immagini: proprio quella')
+vd.call('set', JSON.generate('path_video_format' => 'avi'))
+UI.define_singleton_method(:savepanel) { |*_a| File.join(tmp, 'scelto') }
+vd.call('browse')
+ok(vd.last('show')['target'] == File.join(tmp, 'scelto.avi').tr('/', '\\'), 'Sfoglia per il video: il file scelto, con .avi')
+UI.define_singleton_method(:savepanel) { |*_a| nil }
+vd.call('target', File.join(tmp, 'non_c_e', 'x.avi'))
+nb = boxes.size
+vd.call('go', JSON.generate('from' => 1, 'to' => 21))
+ok(boxes.size == nb + 1 && boxes.last.include?('non_c_e') && !F.path_busy? && vd.visible?, 'cartella che non c\'è: lo dice e la finestra resta')
+vd.call('target', File.join(tmp, 'dalla_finestra.avi'))
+vd.call('go', JSON.generate('from' => 3, 'to' => 5))
+ok(F.path_busy? && !vd.visible?, 'Esporta: parte e la finestra si chiude')
+k = 0
+k += 1 while view.anim&.nextFrame(view) && k < 1000
+ok(F::MjpegAvi.probe(File.join(tmp, 'dalla_finestra.avi'))[:index].size == 3, 'dal 3 al 5: 3 fotogrammi')
+F.path_command('frames', 'Percorso 2')
+vd = UI::HtmlDialog.all.last
+vd.call('target', pezzi)
+vd.call('go', JSON.generate('from' => 1, 'to' => 3, 'append' => true))
+k = 0
+k += 1 while view.anim&.nextFrame(view) && k < 1000
+ok(F::MjpegAvi.probe(pezzi)[:index].size == 24, 'in coda dalla finestra: il video passa da 21 a 24 fotogrammi')
+vd.close if vd.visible?
 
 # ── Rinomina ed elimina dal pannello ─────────────────────────────────
 UI.define_singleton_method(:inputbox) { |*_a| ['Giro del faro'] }

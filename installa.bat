@@ -22,7 +22,7 @@ echo  Sorgente: %SRC%
 
 rem --- i file sorgente ci sono tutti? ---------------------------------
 set "MISSING="
-for %%F in (main.rb panel.html attesa.html keyedit.html exprofiles.html exstart.html galleria.html dagawasd.rb icons lang lib\config.rb) do (
+for %%F in (main.rb panel.html attesa.html keyedit.html exprofiles.html exstart.html videoexport.html galleria.html dagawasd.rb icons lang lib\config.rb) do (
   if not exist "%SRC%\%%F" (
     echo  [X] Manca nella sorgente: %%F
     set "MISSING=1"
@@ -84,6 +84,7 @@ copy /Y "%SRC%\attesa.html"    "%EXT%\" >nul && echo      attesa.html      aggio
 copy /Y "%SRC%\keyedit.html"   "%EXT%\" >nul && echo      keyedit.html     aggiornato ^(pannello della sfera^)
 copy /Y "%SRC%\exprofiles.html" "%EXT%\" >nul && echo      exprofiles.html  aggiornato ^(profili dell'esploratore^)
 copy /Y "%SRC%\exstart.html"   "%EXT%\" >nul && echo      exstart.html     aggiornato ^(avvio dell'esploratore^)
+copy /Y "%SRC%\videoexport.html" "%EXT%\" >nul && echo      videoexport.html aggiornato ^(Esporta video^)
 copy /Y "%SRC%\galleria.html"  "%EXT%\" >nul && echo      galleria.html    aggiornato ^(galleria delle foto^)
 rem attesa\ (il personaggio) si ricopia da zero, se c'e'
 if exist "%EXT%\attesa" rmdir /S /Q "%EXT%\attesa"

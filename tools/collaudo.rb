@@ -219,7 +219,9 @@ if parti.include?('video')
   a_icona = fin('mostra', 'principale')[1].include?('era a icona')
   nota 'SketchUp era a icona: rimostrato senza fuoco per il video' if a_icona
   begin
-    comando_percorso('frames', nome)
+    # «Video» del pannello apre la finestra Esporta video (lib/videoexport.rb); qui
+    # si prova il resto senza: tutto il percorso, file o cartella chiesti da Windows
+    su("UI.start_timer(0, false) { DagaWASD::FPSWalk.path_export_frames(#{nome.inspect}) }; nil")
     if STATO['formato'] == 'png'
       raise StopIteration unless ok(aspetta_finestra(STATO['cartella'], 10), 'PNG: compare la scelta della cartella')
       fin('scrivi', STATO['cartella'], '=1152', win)          # casella «Cartella:»

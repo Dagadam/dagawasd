@@ -16,21 +16,73 @@ module DagaWASD
     # Numero di fotogrammi e lunghezze si riscrivono alla chiusura: anche un
     # video interrotto a metà resta valido. RIFF ha dimensioni a 32 bit:
     # oltre AVI_MAX si rifiutano altri fotogrammi (full? = vero).
+    #
+    # In coda (MjpegAvi.append): un video già scritto da qui si riapre e i
+    # fotogrammi nuovi vanno dopo i suoi. L'indice si rifà leggendo i
+    # '00dc' di fila, quindi va bene anche un video rimasto senza chiusura
+    # (SketchUp chiuso a metà: niente idx1, intestazione a zero); un
+    # fotogramma scritto a metà si scarta. Alla chiusura il video è uno solo.
     # ══════════════════════════════════════════════════════════════
     class MjpegAvi
       HEADER  = 224
       AVI_MAX = 3_900_000_000
 
-      attr_reader :frames, :path
+      attr_reader :frames, :path, :before
 
-      def initialize(path, width, height, fps)
+      # Un video di questa classe con le stesse misure e gli stessi fps,
+      # riaperto per aggiungere in coda; nil se non lo è.
+      def self.append(path, width, height, fps)
+        info = probe(path) or return nil
+        return nil unless info[:w] == width.to_i && info[:h] == height.to_i && info[:fps] == fps.to_i
+        new(path, width, height, fps, info)
+      end
+
+      # Misure, fps e fotogrammi di un AVI scritto da questa classe (anche
+      # mai chiuso); nil se non lo è o non si legge.
+      def self.probe(path)
+        File.open(path, 'rb') do |io|
+          head = io.read(HEADER)
+          return nil unless head && head.bytesize == HEADER
+          return nil unless head[0, 4] == 'RIFF' && head[8, 4] == 'AVI ' && head[12, 4] == 'LIST' &&
+                            head[112, 4] == 'MJPG' && head[HEADER - 12, 4] == 'LIST' && head[HEADER - 4, 4] == 'movi'
+          w, h = head[64, 8].unpack('VV')
+          fps = head[132, 4].unpack1('V')
+          size = io.size
+          pos = HEADER
+          index = []
+          biggest = 0
+          while pos + 8 <= size
+            io.seek(pos)
+            id, n = io.read(8).unpack('a4V')
+            break unless id == '00dc' && pos + 8 + n <= size
+            index << [pos - (HEADER - 4), n]
+            biggest = n if n > biggest
+            pos += 8 + n + (n & 1)
+          end
+          { w: w, h: h, fps: fps, index: index, biggest: biggest, end: pos }
+        end
+      rescue SystemCallError, IOError
+        nil
+      end
+
+      def initialize(path, width, height, fps, resume = nil)
         @path = path; @w = width.to_i; @h = height.to_i; @fps = fps.to_i
-        @io = File.open(path, 'wb')
-        @io.write(header(0, 0, 0))
-        @index = []
-        @frames = 0
-        @biggest = 0
-        @pos = 4                       # scostamenti dell'indice: dal 'movi' del LIST
+        if resume
+          @io = File.open(path, 'r+b')
+          @io.truncate(resume[:end])     # via idx1 e un fotogramma a metà
+          @io.seek(resume[:end])
+          @index = resume[:index].dup
+          @biggest = resume[:biggest]
+          @pos = resume[:end] - (HEADER - 4)
+        else
+          @io = File.open(path, 'wb')
+          @io.write(header(0, 0, 0))
+          @index = []
+          @biggest = 0
+          @pos = 4                       # scostamenti dell'indice: dal 'movi' del LIST
+        end
+        @frames = @index.size
+        @before = @frames                # quelli che c'erano già
       end
 
       def full?; @io.nil? || @io.pos > AVI_MAX; end
