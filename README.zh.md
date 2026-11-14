@@ -24,7 +24,7 @@ SketchUp 扩展程序（Windows）：用 WASD 和鼠标，或用游戏手柄，�
 
 ## 安装
 
-- 通过 SketchUp 的 **Extension Warehouse**（已签名版本），或
+- 通过 SketchUp 的 **Extension Warehouse**（已签名版本）：**尚未上架**，稍后推出。目前请：
 - 从 [最新版本](https://github.com/Dagadam/dagawasd/releases/latest) 的 *Assets* 中下载 **`dagawasd-<版本>-warehouse.rbz`**，然后在 *扩展程序 › 扩展程序管理器 › 安装扩展程序* 中安装。另一个文件 `dagawasd-<版本>.rbz` 还包含 Claude Code 桥接（见 *两个安装包*）。
 
 设置保存在 `%APPDATA%\DagaWASD\settings.json`：更新不会删除它们。

@@ -48,7 +48,7 @@ extensie wel, maar start niet, en meldt dat.
 
 ## Installatie
 
-- Via het **Extension Warehouse** van SketchUp (ondertekende versie), of
+- Via het **Extension Warehouse** van SketchUp (ondertekende versie): **nog niet beschikbaar**, volgt later. Voorlopig:
 - download **`dagawasd-<versie>-warehouse.rbz`** uit de
   [nieuwste versie](https://github.com/Dagadam/dagawasd/releases/latest) (onder *Assets*) en installeer
   het via *Extensies › Extension Manager › Extensie installeren*. Het

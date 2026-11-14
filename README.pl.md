@@ -46,7 +46,7 @@ rozszerzenie się instaluje, ale nie uruchamia, i o tym informuje.
 
 ## Instalacja
 
-- Z **Extension Warehouse** SketchUpa (wersja podpisana) albo
+- Z **Extension Warehouse** SketchUpa (wersja podpisana): **jeszcze niedostępne**, pojawi się później. Na razie:
 - pobierz **`dagawasd-<wersja>-warehouse.rbz`** z
   [najnowszej wersji](https://github.com/Dagadam/dagawasd/releases/latest) (w sekcji *Assets*) i zainstaluj
   przez *Rozszerzenia › Extension Manager › Zainstaluj rozszerzenie*. Drugi

@@ -48,7 +48,7 @@
 
 ## Установка
 
-- Из **Extension Warehouse** SketchUp (подписанная версия), или
+- Из **Extension Warehouse** SketchUp (подписанная версия): **ещё недоступно**, появится позже. Пока что:
 - скачайте **`dagawasd-<версия>-warehouse.rbz`** из
   [последней версии](https://github.com/Dagadam/dagawasd/releases/latest) (в разделе *Assets*) и установите
   его через *Расширения › Extension Manager › Установить расширение*.

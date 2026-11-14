@@ -24,7 +24,7 @@ SketchUp 확장 프로그램(Windows): WASD와 마우스, 또는 게임패드로
 
 ## 설치
 
-- SketchUp의 **Extension Warehouse**(서명된 버전)에서, 또는
+- SketchUp의 **Extension Warehouse**(서명된 버전): **아직 등록되지 않았습니다**(추후 공개 예정). 지금은:
 - [최신 버전](https://github.com/Dagadam/dagawasd/releases/latest)의 *Assets*에서 **`dagawasd-<버전>-warehouse.rbz`**를 내려받아 *확장 프로그램 › Extension Manager › 확장 프로그램 설치*에서 설치합니다. 다른 파일 `dagawasd-<버전>.rbz`에는 Claude Code용 브리지도 들어 있습니다(*두 가지 패키지* 참조).
 
 설정은 `%APPDATA%\DagaWASD\settings.json`에 저장되므로 업데이트해도 지워지지 않습니다.

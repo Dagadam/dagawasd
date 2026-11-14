@@ -24,7 +24,7 @@ SketchUp 用の拡張機能（Windows）：WASD とマウス、またはゲー�
 
 ## インストール
 
-- SketchUp の **Extension Warehouse**（署名済み版）から、または
+- SketchUp の **Extension Warehouse**（署名済み版）：**まだ公開されていません**（今後公開予定）。現時点では：
 - [最新リリース](https://github.com/Dagadam/dagawasd/releases/latest) の *Assets* から **`dagawasd-<バージョン>-warehouse.rbz`** をダウンロードし、*拡張機能 › Extension Manager › 拡張機能をインストール* からインストールします。もう一つのファイル `dagawasd-<バージョン>.rbz` には Claude Code 用ブリッジも含まれます（*2 つのパッケージ* を参照）。
 
 設定は `%APPDATA%\DagaWASD\settings.json` に保存されるので、アップデートしても消えません。

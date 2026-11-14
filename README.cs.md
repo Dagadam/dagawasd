@@ -45,7 +45,7 @@ nainstaluje, ale nespustí se, a oznámí to.
 
 ## Instalace
 
-- Z **Extension Warehouse** SketchUpu (podepsaná verze), nebo
+- Z **Extension Warehouse** SketchUpu (podepsaná verze): **zatím není k dispozici**, přijde později. Prozatím:
 - stáhněte **`dagawasd-<verze>-warehouse.rbz`** z
   [nejnovější verze](https://github.com/Dagadam/dagawasd/releases/latest) (v části *Assets*) a nainstalujte
   jej přes *Rozšíření › Extension Manager › Instalovat rozšíření*. Druhý

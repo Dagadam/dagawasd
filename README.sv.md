@@ -49,7 +49,7 @@ men startar inte, och säger det.
 
 ## Installation
 
-- Från SketchUps **Extension Warehouse** (signerad version), eller
+- Från SketchUps **Extension Warehouse** (signerad version): **inte tillgänglig än**, kommer senare. Tills vidare:
 - ladda ner **`dagawasd-<version>-warehouse.rbz`** från den
   [senaste versionen](https://github.com/Dagadam/dagawasd/releases/latest) (under *Assets*) och installera
   den från *Tillägg › Extension Manager › Installera tillägg*. Den andra

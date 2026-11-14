@@ -47,7 +47,7 @@ instala-se mas não arranca, e avisa.
 
 ## Instalação
 
-- A partir do **Extension Warehouse** do SketchUp (versão assinada), ou
+- A partir do **Extension Warehouse** do SketchUp (versão assinada): **ainda não está disponível**, chegará mais tarde. Por agora:
 - descarregue **`dagawasd-<versão>-warehouse.rbz`** da
   [versão mais recente](https://github.com/Dagadam/dagawasd/releases/latest) (em *Assets*) e instale-o em
   *Extensões › Extension Manager › Instalar extensão*. O outro ficheiro,

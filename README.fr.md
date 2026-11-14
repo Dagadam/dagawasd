@@ -50,7 +50,7 @@ l'extension s'installe mais ne démarre pas, et le dit.
 
 ## Installation
 
-- Depuis l'**Extension Warehouse** de SketchUp (version signée), ou
+- Depuis l'**Extension Warehouse** de SketchUp (version signée) : **pas encore disponible**, ce sera pour plus tard. Pour l'instant :
 - téléchargez **`dagawasd-<version>-warehouse.rbz`** depuis la
   [dernière version](https://github.com/Dagadam/dagawasd/releases/latest) (sous *Assets*) et installez-le depuis
   *Extensions › Gestionnaire d'extensions › Installer l'extension*.

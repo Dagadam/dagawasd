@@ -49,7 +49,7 @@ sich die Erweiterung installieren, startet aber nicht, und sagt das auch.
 
 ## Installation
 
-- Über das **Extension Warehouse** von SketchUp (signierte Version), oder
+- Über das **Extension Warehouse** von SketchUp (signierte Version): **noch nicht verfügbar**, kommt später. Vorerst:
 - lade **`dagawasd-<Version>-warehouse.rbz`** aus der
   [neuesten Version](https://github.com/Dagadam/dagawasd/releases/latest) herunter (unter *Assets*) und installiere
   sie über *Erweiterungen › Extension Manager › Erweiterung installieren*.
