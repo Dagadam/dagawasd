@@ -4,6 +4,8 @@
 
 SketchUp 확장 프로그램(Windows): WASD와 마우스, 또는 게임패드로 모델 안을 1인칭 시점으로 걸어 다닐 수 있습니다.
 
+▶ 공식 소개 영상: https://youtu.be/8eBvtl7DiKU
+
 ▶ 데모 영상: https://youtu.be/w6xE86y7iEw?is=7Gh12tF7atE_N9_K
 
 ⬇ **다운로드**: [최신 버전](https://github.com/Dagadam/dagawasd/releases/latest) (모든 버전: [Releases](https://github.com/Dagadam/dagawasd/releases))

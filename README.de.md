@@ -5,6 +5,8 @@
 Erweiterung für SketchUp (Windows): Gehe in der Ich-Perspektive durch dein
 Modell, mit WASD und Maus oder mit einem Gamepad.
 
+▶ Offizielle Präsentation: https://youtu.be/8eBvtl7DiKU
+
 ▶ Demo-Video: https://youtu.be/w6xE86y7iEw?is=7Gh12tF7atE_N9_K
 
 ⬇ **Download**: [neueste Version](https://github.com/Dagadam/dagawasd/releases/latest) (alle Versionen: [Releases](https://github.com/Dagadam/dagawasd/releases))

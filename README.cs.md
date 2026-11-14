@@ -5,6 +5,8 @@
 Rozšíření pro SketchUp (Windows): procházejte svůj model z pohledu první
 osoby pomocí WASD a myši, nebo s herním ovladačem.
 
+▶ Oficiální představení: https://youtu.be/8eBvtl7DiKU
+
 ▶ Ukázkové video: https://youtu.be/w6xE86y7iEw?is=7Gh12tF7atE_N9_K
 
 ⬇ **Stáhnout**: [nejnovější verze](https://github.com/Dagadam/dagawasd/releases/latest) (všechny verze: [Releases](https://github.com/Dagadam/dagawasd/releases))

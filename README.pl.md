@@ -5,6 +5,8 @@
 Rozszerzenie do SketchUp (Windows): chodź po swoim modelu w widoku
 pierwszoosobowym za pomocą WASD i myszy albo pada.
 
+▶ Oficjalna prezentacja: https://youtu.be/8eBvtl7DiKU
+
 ▶ Film demonstracyjny: https://youtu.be/w6xE86y7iEw?is=7Gh12tF7atE_N9_K
 
 ⬇ **Pobierz**: [najnowsza wersja](https://github.com/Dagadam/dagawasd/releases/latest) (wszystkie wersje: [Releases](https://github.com/Dagadam/dagawasd/releases))

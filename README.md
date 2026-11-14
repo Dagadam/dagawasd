@@ -5,6 +5,8 @@
 A SketchUp extension (Windows): walk through your model in first person with
 WASD and the mouse, or with a gamepad.
 
+▶ Official presentation: https://youtu.be/8eBvtl7DiKU
+
 ▶ Demo video: https://youtu.be/w6xE86y7iEw?is=7Gh12tF7atE_N9_K
 
 ⬇ **Download**: [latest release](https://github.com/Dagadam/dagawasd/releases/latest) (all versions: [Releases](https://github.com/Dagadam/dagawasd/releases))

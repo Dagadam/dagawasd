@@ -5,6 +5,8 @@
 Extension pour SketchUp (Windows) : parcourez votre modèle à la première
 personne avec WASD et la souris, ou avec une manette.
 
+▶ Présentation officielle : https://youtu.be/8eBvtl7DiKU
+
 ▶ Vidéo de démonstration : https://youtu.be/w6xE86y7iEw?is=7Gh12tF7atE_N9_K
 
 ⬇ **Télécharger** : [dernière version](https://github.com/Dagadam/dagawasd/releases/latest) (toutes les versions : [Releases](https://github.com/Dagadam/dagawasd/releases))
