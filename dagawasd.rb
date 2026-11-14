@@ -12,7 +12,7 @@ require 'extensions.rb'
 module DagaWASD
   module FPSWalkLoader
 
-    VERSION = '1.2.1' unless defined?(VERSION)
+    VERSION = '1.3.0' unless defined?(VERSION)
 
     unless defined?(EXTENSION)
 

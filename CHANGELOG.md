@@ -10,6 +10,8 @@ Il numero sta in un posto solo, `VERSION` in `dagawasd.rb`;
 
 ## [Non ancora uscito]
 
+## [1.3.0] — 2026-11-14
+
 ### Aggiunto
 - Percorsi › **Video** apre la finestra **Esporta video** invece di partire
   subito. Dentro: formato, misure, fps, velocità e *Meteo nel video* (le
@@ -23,16 +25,55 @@ Il numero sta in un posto solo, `VERSION` in `dagawasd.rb`;
   video rimasto a metà perché SketchUp si è chiuso (prima restava
   illeggibile): l'indice si rifà e il fotogramma scritto a metà si scarta.
   Se il video o la cartella hanno già dei fotogrammi la finestra lo dice e
-  propone **Riprendi dal …**. Un pezzo che parte a metà ha lo stesso meteo
-  di un'esportazione da capo (il meteo va avanti fino lì, qualche
-  millesimo di secondo a fotogramma, senza scrivere niente) e i
+  propone **Riprendi dal …**; scelto un video lasciato a metà, i
+  fotogrammi partono già da lì. *In coda* con fotogrammi che il video ha
+  già non parte (rifarebbe il film una seconda volta in fondo): scelto
+  *In coda*, il «dal» passa da solo al seguente. Un pezzo che parte a metà
+  ha lo stesso meteo di un'esportazione da capo (il meteo va avanti fino
+  lì senza disegnare, alcuni centesimi di secondo a fotogramma: per
+  Stromboli circa 9 minuti fino alla fine; la finestra dell'attesa lo dice
+  con la percentuale, e quel tempo non conta nei secondi a fotogramma) e i
   sottotitoli spostati; per le immagini `crea_video.bat` parte dalla
   prima che c'è.
 - **Registro dell'esportazione** accanto al video (stesso nome, `.log`; per
-  le immagini nella loro cartella): data e ora di ogni inizio e di ogni
-  fine, i fotogrammi e i loro istanti nel video, l'ultimo fotogramma
-  scritto e da quale riprendere. Durante l'esportazione l'ultima riga si
-  aggiorna ogni 5 s, così si sa dove si era anche se SketchUp si chiude.
+  le immagini nella loro cartella), nella lingua di DagaWASD e impaginato
+  in testo semplice: il modello (file, salvato o no, versioni, facce,
+  componenti, materiali), il percorso (sfere, durata, velocità), il video
+  (file, formato, qualità JPEG, misure, fps, fotogrammi, audio,
+  sottotitoli, foglio di controllo), il meteo (cielo all'inizio, nuvole,
+  pioggia e neve, oggetti animati), una tabella con **ogni pezzo
+  esportato** (tipo, inizio, fine, fotogrammi, tempo, secondi a
+  fotogramma, esito), un riepilogo (fatti, quanto manca e a che ora
+  finisce, ritmo, fotogrammi più lenti, dimensione, spazio libero sul
+  disco, da dove riprendere) e gli avvisi (modello non salvato, pezzo non
+  chiuso, impostazioni cambiate fra un pezzo e l'altro, salti nel video,
+  audio non messo, errori). Durante l'esportazione si aggiorna ogni 5 s,
+  così si sa dove si era anche se SketchUp si chiude. I registri della
+  versione di prima si leggono ancora e si riscrivono nel formato nuovo.
+- Esporta video, finestra riordinata nell'ordine in cui si decide
+  (**fotogrammi → video → audio → dove salvare → alla fine → registro**) e
+  con il selettore **Base | Avanzate**: in Base solo l'essenziale; un
+  pallino su *Avanzate* avvisa se una scelta nascosta non è quella di
+  sempre.
+- **Fotogrammi anche come tempi del video**: *dal* e *al* accettano
+  `3:43` o `1:02:05.5` oltre ai numeri.
+- **Rifai un tratto dentro un video**: si riesportano solo i fotogrammi
+  scelti e il video resta uno, con gli altri identici byte per byte (per
+  correggere un pezzo senza rifare ore di esportazione). Per le immagini:
+  *Tieni le altre immagini*. La finestra sceglie da sé *Nuovo video*, *In
+  coda* o *Rifai* secondo i fotogrammi scelti; si può cambiare.
+- **Audio nel video**: un file `.wav` (PCM) che parte col fotogramma 1 del
+  percorso; un pezzo che parte a metà prende l'audio da lì. Per le
+  immagini lo mette nell'MP4 `crea_video.bat`.
+- **Prova veloce (bozza)**: tutto il percorso a metà misura e 5 fotogrammi
+  al secondo, in un file a parte, per controllarlo prima del video vero.
+- **Foglio di controllo**: un PNG accanto al video con un fotogramma ogni
+  pochi secondi e il suo istante, per controllare tutto a colpo d'occhio.
+- **Qualità JPEG** del video regolabile (50–100, di solito 90).
+- **Alla fine**: un suono, e se si vuole **sospendi** o **spegni** il PC
+  dopo 2 minuti, con il conto alla rovescia e *Annulla* nella finestra
+  d'attesa (non se l'esportazione la interrompi tu). Durante
+  l'esportazione il PC non va in sospensione (lo schermo sì).
 - **Oggetti animati di DagaDyn** (se è installata, dalla 0.2.0): si muovono
   anche camminando, esplorando, nei percorsi e nei video (al tempo del
   video, fotogramma per fotogramma). Le piattaforme animate portano il

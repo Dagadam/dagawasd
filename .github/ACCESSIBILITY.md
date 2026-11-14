@@ -16,7 +16,7 @@ Two things make the view flash. If you are sensitive to flashing light,
 read this first.
 
 **One switch turns both off:** *Accessibility › No flashes* in the settings
-panel (from the next release, after 1.2.1). Photos are still taken and the
+panel (since 1.3.0). Photos are still taken and the
 status bar confirms each one; thunderstorms stay rain or snow, with no
 lightning and no brightening of the sky.
 
@@ -109,7 +109,7 @@ lightning and no brightening of the sky.
 ## Known limitations
 
 - **In 1.2.1 and earlier the photo flash cannot be turned off**: the
-  *No flashes* switch arrives with the next release.
+  *No flashes* switch arrives with 1.3.0. Update if you need it.
 - **The 3D view cannot be read by a screen reader.** The settings panel is
   a web page inside SketchUp, but it has not been tested with screen
   readers (NVDA, JAWS, Narrator) and some controls, such as the two-handle
@@ -127,4 +127,4 @@ treated as bugs. Open an [issue](https://github.com/Dagadam/dagawasd/issues/new/
 and describe what you use (screen reader, magnifier, switch, gamepad only…)
 and what happened. You can write in English or Italian.
 
-This statement was last reviewed for DagaWASD 1.2.1 (November 2026).
+This statement was last reviewed for DagaWASD 1.3.0 (November 2026).
