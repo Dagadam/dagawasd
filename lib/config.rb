@@ -183,6 +183,13 @@ module DagaWASD
       'path_video_size'     => 'fhd',  # view (come la vista), hd, fhd, uhd
       'path_video_format'   => 'avi',  # avi (video Motion JPEG, lib/avi.rb) o png (immagini)
       'path_video_weather'  => true,   # sole, luna, nuvole, pioggia e lampi dipinti nei fotogrammi (lib/videometeo.rb)
+      # Finestra Esporta video (lib/videoexport.rb): solo lì, non nel pannello
+      'path_video_quality'  => 90,     # qualità dei JPEG dell'AVI, 50–100
+      'path_video_audio'    => '',     # .wav da mettere nel video ('' = niente)
+      'path_video_sheet'    => true,   # foglio di controllo: un PNG con un fotogramma ogni pochi secondi
+      'path_video_awake'    => true,   # il PC non va in sospensione mentre si esporta
+      'path_video_notify'   => true,   # un suono alla fine
+      'path_video_level'    => 1,      # la finestra mostra le impostazioni: 1 base, 2 avanzate
       # ── Esploratore autonomo (lib/explore.rb, lib/exprofiles.rb) ──
       'explore_profile'     => 'balanced',   # profilo in uso
       'explore_profiles'    => {},           # i tuoi profili e le modifiche a quelli già pronti

@@ -27,7 +27,7 @@ require 'set'
 #   explore    esploratore autonomo           exprofiles profili dell'esploratore
 #   expilot    l'IA guida l'esploratore       gallery    foto e galleria
 #   attesa     finestra durante il video      videometeo meteo nei fotogrammi del video
-#   videoexport finestra Esporta video, registro
+#   videoexport finestra Esporta video       videolog   registro del video (ASCII)
 #   gamepad    controller XInput              ui         menu e barra
 # ══════════════════════════════════════════════════════════════════
 
@@ -46,7 +46,7 @@ if Sketchup.platform != :platform_win
 elsif !defined?(DagaWASD::FPSWalk::PLUGIN_DIR)
   %w[
     config i18n settings input fullscreen camera raycast player materials geometry support
-    bodies collisions held physics actions dyn_link lifecycle tick tool panel bridge sky precip clouds snowcover avi videometeo path videoexport pathkeys keyedit
+    bodies collisions held physics actions dyn_link lifecycle tick tool panel bridge sky precip clouds snowcover avi videometeo path videoexport videolog pathkeys keyedit
     explore exprofiles expilot gallery attesa gamepad ui
   ].each do |f|
     path = File.join(__dir__.dup.force_encoding('UTF-8'), 'lib', f)   # percorsi con lettere accentate

@@ -64,8 +64,9 @@ used += xp
 xs = [read(File.join(ROOT, 'exstart.html')), read(File.join(ROOT, 'lib', 'exprofiles.rb'))]
      .flat_map { |s| s.scan(/'(xs\.[\w.]+)'/).flatten }.uniq
 used += xs
-# Finestra Esporta video (videoexport.html, lib/videoexport.rb, lib/path.rb): ogni 've.…' fra apici
-ve = [read(File.join(ROOT, 'videoexport.html')), read(File.join(ROOT, 'lib', 'videoexport.rb')), read(File.join(ROOT, 'lib', 'path.rb'))]
+# Finestra Esporta video e suo registro (videoexport.html, lib/videoexport.rb, lib/path.rb, lib/videolog.rb): ogni 've.…' fra apici
+ve = [read(File.join(ROOT, 'videoexport.html')), read(File.join(ROOT, 'lib', 'videoexport.rb')), read(File.join(ROOT, 'lib', 'path.rb')),
+      read(File.join(ROOT, 'lib', 'videolog.rb'))]
      .flat_map { |s| s.scan(/'(ve\.[\w.]+)'/).flatten }.uniq
 used += ve
 used.uniq!

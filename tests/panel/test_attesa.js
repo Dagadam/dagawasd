@@ -23,7 +23,7 @@ const dom = new JSDOM(html, {
   url: 'http://localhost/',          // un'origine vera: localStorage (vestito precedente) funziona
   beforeParse(w){
     w.sketchup = {};
-    for(const n of ['ready', 'stop', 'close', 'open']) w.sketchup[n] = a => calls.push([n, a]);
+    for(const n of ['ready', 'stop', 'close', 'open', 'after_cancel']) w.sketchup[n] = a => calls.push([n, a]);
     w.matchMedia = () => ({ matches: false });
   }
 });
@@ -106,6 +106,13 @@ w.addEventListener('load', async () => {
     ok(JSON.parse(w.localStorage.getItem('dagawasd_attesa_look')).accent === '#00c9a7',
        'aspetto ricordato: la prossima finestra parte già coi colori giusti');
 
+    // Partendo più avanti, prima il meteo va portato fin lì
+    w.eval(`progress({ k: 0, total: 7800, bytes: 0, el: 30, ff_s: 30, ff: { n: 8367, p: 35 } })`);
+    ok($('nota').textContent.includes('8367') && $('nota').textContent.includes('35%') && !$('nota').innerHTML.includes('%{'),
+       `meteo da portare avanti: «${$('nota').textContent}»`);
+    w.eval(`progress({ k: 10, total: 7800, bytes: 0, el: 530, ff_s: 500 })`);
+    ok($('nota').textContent === langs.it['att.hint'] && $('stat').textContent.includes('Per fotogramma3 s'),
+       'arrivato il meteo: torna il suggerimento, e i s a fotogramma non contano il tempo del meteo (30 s / 10)');
     w.eval('lastSay = -1e9');      // la battuta di prima è stata letta: il traguardo non aspetta
     w.eval(`progress({ k: 2000, total: 7800, bytes: 52428800, el: 1300 })`);
     ok($('pct').textContent === '25%' && $('riemp').style.width.startsWith('25.6'), `barra al ${$('pct').textContent}`);
@@ -133,6 +140,21 @@ w.addEventListener('load', async () => {
     w.eval('nextJoke()');
     await sleep(450);
     ok($('battuta').textContent === before, 'finito: le battute non cambiano più il finale');
+    ok($('dopo').hidden, 'senza «poi spegni/sospendi»: nessun conto alla rovescia');
+
+    // ── Alla fine il PC si spegne: conto alla rovescia, annullabile ──
+    w.eval(`FIN = null; finish({ why: 'fine', n: 10, time: '0:01', mb: 1, file: 'C:\\\\x.avi', el: 3, after: { what: 'shutdown', s: 120 } })`);
+    await sleep(50);
+    ok(!$('dopo').hidden && $('dopo-t').textContent.startsWith(langs.it['att.after_shutdown'].split('%')[0]) && $('dopo-t').textContent.includes('2:00') &&
+       $('b-after').textContent === langs.it['att.after_cancel'], `conto alla rovescia: «${$('dopo-t').textContent}»`);
+    calls.length = 0;
+    $('b-after').click();
+    ok(JSON.stringify(calls) === JSON.stringify([['after_cancel', '']]) && $('dopo-t').textContent === langs.it['att.after_off'] && $('b-after').disabled,
+       'Annulla: lo dice a Ruby (after_cancel), il PC resta acceso');
+    w.eval(`FIN = null; finish({ why: 'fine', n: 10, time: '0:01', mb: 1, file: 'C:\\\\x.avi', el: 3, after: { what: 'sleep', s: 120 } })`);
+    await sleep(50);
+    ok($('dopo-t').textContent.startsWith(langs.it['att.after_sleep'].split('%')[0]) && !$('b-after').disabled, 'sospensione: il suo testo');
+    $('b-after').click();
 
     // ── Interrotta subito, PNG ───────────────────────────────────────
     w.eval(`FIN = null; init(${JSON.stringify({ strings: langs.it, lang: 'it', rtl: false, look, stats: Object.assign({}, STATS, { format: 'png' }) })}); finish({ why: 'interrotto', n: 0, time: '0:00', mb: 0, dir: 'C:\\\\x', el: 1 })`);

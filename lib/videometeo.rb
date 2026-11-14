@@ -213,7 +213,7 @@ module DagaWASD
       end
       dg = front.ops.any? { |o| o[0] == :d3 } ? vm_depth(pr, w, h) : nil
       vm_paint(vm, front.ops, pr, dg)
-      VmGdi.save(vm[:canvas], file, fmt)
+      VmGdi.save(vm[:canvas], file, fmt, job[:quality] || 90)
       true
     rescue => fps_err
       log_error(__method__, fps_err)
@@ -695,7 +695,14 @@ module DagaWASD
         'int GdipDeletePath(void*)',
         'int GdipSaveImageToFile(void*, void*, void*, void*)',
         'int GdipBitmapLockBits(void*, void*, unsigned int, int, void*)',
-        'int GdipBitmapUnlockBits(void*, void*)'
+        'int GdipBitmapUnlockBits(void*, void*)',
+        'int GdipCreateFontFamilyFromName(void*, void*, void*)',
+        'int GdipDeleteFontFamily(void*)',
+        'int GdipCreateFont(void*, float, int, int, void*)',
+        'int GdipDeleteFont(void*)',
+        'int GdipDrawString(void*, void*, int, void*, void*, void*, void*)',
+        'int GdipSetTextRenderingHint(void*, int)',
+        'int GdipFillRectangle(void*, void*, float, float, float, float)'
       ].freeze
       ARGB32       = 0x26200A     # PixelFormat32bppARGB: byte B, G, R, A
       LOCK_RW      = 3            # ImageLockModeRead | ImageLockModeWrite
@@ -885,17 +892,61 @@ module DagaWASD
 
       def guid(p); [p[0].hex, p[1].hex, p[2].hex].pack('LSS') + [p[3] + p[4]].pack('H*'); end
 
-      # JPEG (qualità 90) per l'AVI, PNG per la cartella di immagini
-      def save(bmp, file, fmt)
+      # JPEG (qualità 50–100, path_video_quality) per l'AVI, PNG per la cartella di immagini
+      def save(bmp, file, fmt, quality = 90)
         if fmt == :png
           ok!('salva', api.GdipSaveImageToFile(bmp, wstr(file), guid(PNG), nil))
           return
         end
         q = Fiddle::Pointer.malloc(4, Fiddle::RUBY_FREE)
-        q[0, 4] = [90].pack('L')
+        q[0, 4] = [quality.to_i.clamp(1, 100)].pack('L')
         # EncoderParameters: Count, poi un EncoderParameter (GUID, NumberOfValues, Type = Long, Value*)
         params = [1].pack('L') + "\0" * 4 + guid(QUALITY) + [1, 4].pack('LL') + [q.to_i].pack('J')
         ok!('salva', api.GdipSaveImageToFile(bmp, wstr(file), guid(JPEG), params))
+      end
+
+      # ── Per il foglio di controllo (lib/videoexport.rb) ──
+      # Un'immagine (JPEG o PNG) rimpicciolita nel rettangolo x, y, w, h
+      def draw_scaled(g, file, x, y, w, h)
+        ok!('carica', api.GdipLoadImageFromFile(wstr(file), out))
+        img = got
+        begin
+          ok!('miniatura', api.GdipDrawImageRectI(g, img, x, y, w, h))
+        ensure
+          api.GdipDisposeImage(img)
+        end
+      end
+
+      def rect(g, argb, x, y, w, h); api.GdipFillRectangle(g, brush(argb), x.to_f, y.to_f, w.to_f, h.to_f); end
+
+      # Testo in Segoe UI (px), dall'angolo in alto a sinistra
+      def text(g, s, x, y, px, argb, bold = false)
+        @fonts ||= {}
+        font = @fonts[[px, bold]] ||= begin
+          @family ||= begin
+            ok!('font', api.GdipCreateFontFamilyFromName(wstr('Segoe UI'), nil, out))
+            got
+          end
+          ok!('font', api.GdipCreateFont(@family, px.to_f, bold ? 1 : 0, UNIT_PIXEL, out))
+          got
+        end
+        api.GdipSetTextRenderingHint(g, 4)          # TextRenderingHintAntiAlias: niente ClearType sulla bitmap
+        w = wstr(s)
+        api.GdipDrawString(g, w, -1, font, [x.to_f, y.to_f, 0.0, 0.0].pack('e4'), nil, brush(argb))
+      end
+
+      # Il pezzo in alto a sinistra (w × h) di bmp, salvato in PNG
+      def save_crop(bmp, w, h, file)
+        out_b = bitmap(w, h)
+        g = graphics(out_b)
+        begin
+          api.GdipSetInterpolationMode(g, NEAREST)
+          ok!('ritaglio', api.GdipDrawImageRectRect(g, bmp, 0.0, 0.0, w.to_f, h.to_f, 0.0, 0.0, w.to_f, h.to_f, UNIT_PIXEL, nil, nil, nil))
+          save(out_b, file, :png)
+        ensure
+          delete_graphics(g)
+          dispose_image(out_b)
+        end
       end
     end
   end

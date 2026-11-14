@@ -6,12 +6,25 @@
 <style>
 /* ═══════════════════════════════════════════════════════════════
    ESPORTA VIDEO — la apre lib/videoexport.rb (vx_open) da «Video» di un
-   percorso. Ruby manda init (testi ve.* e i nomi delle impostazioni del
-   pannello, lingua, aspetto) e show (numeri del video, file o cartella,
-   cosa c'è già, registro). La pagina rimanda set {impostazione: valore},
-   browse, target (il percorso scritto a mano), go {from, to, append},
-   log (apre il registro) e cancel.
-   Fotogrammi contati da 1 come i nomi delle immagini (frame_00001.png).
+   percorso. Ruby manda init (testi ve.*, i nomi delle impostazioni del
+   pannello e dei livelli, lingua, aspetto) e show (numeri del video e della
+   bozza, file o cartella, cosa c'è già, audio, registro, impostazioni).
+   La pagina rimanda set {impostazione: valore}, browse, target (il
+   percorso scritto a mano), audio ('pick' | 'clear'),
+   go {from, to, mode, draft, after}, log (apre il registro) e cancel.
+
+   Dall'alto, nell'ordine in cui si decide: quali fotogrammi → com'è il
+   video → l'audio → dove salvarlo → cosa fare alla fine → il registro.
+   Due livelli (path_video_level): Base mostra l'essenziale, Avanzate
+   anche le righe .adv (segnate da un filo a sinistra). Un pallino su
+   «Avanzate» dice che una scelta nascosta non è quella di sempre.
+
+   Fotogrammi contati da 1 come i nomi delle immagini (frame_00001.png);
+   si scrivono come numeri o come tempi del video (3:43, 1:02:05.5).
+   Se il video o la cartella hanno già fotogrammi, cosa farne (mode):
+   new (da capo), append (AVI: in coda), patch (rifai questi dentro il
+   video; immagini: le altre restano). Scelto da sé finché non lo si
+   tocca: in coda se si parte dal seguente, rifai se il pezzo sta dentro.
    Tastiera: Invio esporta, Esc chiude.
 ═══════════════════════════════════════════════════════════════ */
 :root{
@@ -23,29 +36,47 @@
 html,body{height:100%}
 body{background:var(--bg);color:var(--fg);font:14px/1.4 var(--font);display:flex;flex-direction:column}
 body.attende{visibility:hidden}
-header{padding:12px 16px 6px}
+header{display:flex;align-items:flex-start;gap:12px;padding:12px 16px 8px}
+header .tit{flex:1 1 auto;min-width:0}
 header h1{font-size:15px;font-weight:600}
 header p{color:var(--mut);font-size:12.5px;margin-top:2px;overflow-wrap:anywhere}
-main{flex:1 1 auto;overflow:auto;padding:2px 16px 8px}
+/* Base | Avanzate */
+.lvsw{flex:0 0 auto;display:flex;background:var(--in);border:1px solid var(--line);border-radius:16px;padding:2px;gap:2px}
+.lvsw button{background:transparent;border:0;color:var(--mut);font:inherit;font-size:12.5px;padding:3px 11px;border-radius:13px;cursor:pointer}
+.lvsw button:hover{color:var(--fg)}
+.lvsw button.act{background:var(--acc);color:var(--acc-ink);font-weight:600}
+.lvsw button:focus-visible{outline:0;box-shadow:0 0 0 2px var(--acc)}
+.lvsw button.mod::after{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--acc);margin-inline-start:6px;vertical-align:2px}
+body[data-lv="1"] .adv{display:none!important}
+main{flex:1 1 auto;overflow:auto;padding:0 16px 8px}
 section{border-top:1px solid var(--line);padding:9px 0 10px}
-section h2{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--mut);margin-bottom:6px}
+section h2{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--mut);margin-bottom:6px}
+section h2 .n{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;background:var(--in);border:1px solid var(--line);font-size:11px;letter-spacing:0;color:var(--fg)}
+body[data-lv="2"] .adv{border-inline-start:2px solid var(--line);padding-inline-start:8px;margin-inline-start:-10px}
 .row{display:flex;align-items:center;gap:8px;margin:5px 0;flex-wrap:wrap}
 .row > label.k{flex:0 0 150px;color:var(--fg)}
 select,input[type=text],input[type=number]{background:var(--in);color:var(--fg);border:1px solid var(--line);border-radius:6px;
   font:inherit;padding:4px 7px;min-width:0}
 select:focus,input:focus{outline:0;border-color:var(--acc)}
 input[type=number]{width:96px}
-input[type=checkbox]{width:16px;height:16px;accent-color:var(--acc);flex:0 0 auto}
+input.fr{width:104px;font-variant-numeric:tabular-nums}
+input[type=checkbox],input[type=radio]{width:16px;height:16px;accent-color:var(--acc);flex:0 0 auto;margin-top:2px}
 #target{flex:1 1 220px}
 .chk{display:flex;gap:9px;align-items:flex-start;margin:6px 0;cursor:pointer}
 .chk small{display:block;color:var(--mut);font-size:12px}
 .note{color:var(--mut);font-size:12.5px;margin:4px 0;overflow-wrap:anywhere}
+.note:empty{display:none}
 .note.warn{color:var(--warn)}
 .note.bad{color:var(--bad)}
 .box{display:none;margin:7px 0;padding:7px 10px;border-radius:7px;background:var(--in);border-inline-start:3px solid var(--acc);font-size:13px}
 .box.si{display:block}
 .box .row{margin:5px 0 0}
-.t{color:var(--mut);font-size:12px;min-width:64px}
+.modes{margin:6px 0;padding:4px 10px;border-radius:7px;background:var(--in)}
+.modes[hidden]{display:none}
+.modes .chk{margin:5px 0}
+.t{color:var(--mut);font-size:12px;min-width:20px}
+.file{flex:1 1 220px;font-size:13px;overflow-wrap:anywhere;color:var(--fg)}
+.file.none{color:var(--mut)}
 footer{display:flex;gap:7px;flex-wrap:wrap;padding:10px 16px 12px;border-top:1px solid var(--line)}
 footer .sp{flex:1 1 auto}
 .btn{border:0;border-radius:7px;background:var(--btn);color:var(--fg);font:inherit;padding:6px 12px;cursor:pointer}
@@ -58,44 +89,77 @@ footer .sp{flex:1 1 auto}
 .occ.si{display:block}
 </style>
 </head>
-<body class="attende">
+<body class="attende" data-lv="1">
 <header>
-  <h1 id="titolo"></h1>
-  <p id="sub"></p>
+  <div class="tit">
+    <h1 id="titolo"></h1>
+    <p id="sub"></p>
+  </div>
+  <div class="lvsw" id="lvsw" role="group">
+    <button data-lvl="1" id="lv1"></button><button data-lvl="2" id="lv2"></button>
+  </div>
 </header>
 <main>
+  <!-- 1. Quali fotogrammi -->
   <section>
-    <h2 id="h-format"></h2>
-    <div class="row"><label class="k" for="fmt" id="l-fmt"></label><select id="fmt"></select></div>
-    <div class="row"><label class="k" for="size" id="l-size"></label><select id="size"></select></div>
-    <div class="row"><label class="k" for="fps" id="l-fps"></label><input type="number" id="fps" min="10" max="60" step="1"></div>
-    <div class="row"><label class="k" for="speed" id="l-speed"></label><input type="number" id="speed" min="0.25" max="4" step="0.05"> <span class="t">×</span></div>
-    <label class="chk"><input type="checkbox" id="weather"><span id="l-weather"></span></label>
-  </section>
-  <section>
-    <h2 id="h-where"></h2>
-    <div class="row"><input type="text" id="target" spellcheck="false"><button class="btn small" id="b-browse"></button></div>
-    <p class="note" id="tnote"></p>
-  </section>
-  <section>
-    <h2 id="h-frames"></h2>
+    <h2><span class="n">1</span><span id="h-frames"></span></h2>
     <div class="row">
-      <label for="from" id="l-from"></label><input type="number" id="from" min="1" step="1">
-      <label for="to" id="l-to"></label><input type="number" id="to" min="1" step="1">
+      <label for="from" id="l-from"></label><input type="text" class="fr" id="from" spellcheck="false" inputmode="decimal">
+      <label for="to" id="l-to"></label><input type="text" class="fr" id="to" spellcheck="false" inputmode="decimal">
       <span class="t" id="of"></span>
       <button class="btn small" id="b-all"></button>
     </div>
+    <p class="note" id="fhelp"></p>
     <p class="note" id="rinfo"></p>
     <div class="box" id="resume">
       <span id="has"></span>
       <div class="row"><button class="btn small" id="b-resume"></button></div>
     </div>
-    <label class="chk" id="r-append"><input type="checkbox" id="append"><span><span id="l-append"></span><small id="h-append"></small></span></label>
+    <div class="modes" id="modes" role="radiogroup" hidden>
+      <label class="chk" id="r-new"><input type="radio" name="mode" value="new" id="m-new"><span><span id="l-new"></span><small id="h-new"></small></span></label>
+      <label class="chk" id="r-append"><input type="radio" name="mode" value="append" id="m-append"><span><span id="l-append"></span><small id="h-append"></small></span></label>
+      <label class="chk" id="r-patch"><input type="radio" name="mode" value="patch" id="m-patch"><span><span id="l-patch"></span><small id="h-patch"></small></span></label>
+    </div>
+    <p class="note" id="tnote"></p>
     <p class="note" id="warn"></p>
-    <p class="note" id="split"></p>
+    <label class="chk"><input type="checkbox" id="draft"><span><span id="l-draft"></span><small id="h-draft"></small></span></label>
+    <p class="note adv" id="split"></p>
   </section>
+  <!-- 2. Com'è il video -->
   <section>
-    <h2 id="h-log"></h2>
+    <h2><span class="n">2</span><span id="h-format"></span></h2>
+    <div class="row"><label class="k" for="fmt" id="l-fmt"></label><select id="fmt"></select></div>
+    <div class="row"><label class="k" for="size" id="l-size"></label><select id="size"></select></div>
+    <label class="chk"><input type="checkbox" id="weather"><span id="l-weather"></span></label>
+    <div class="row adv"><label class="k" for="fps" id="l-fps"></label><input type="number" id="fps" min="10" max="60" step="1"></div>
+    <div class="row adv"><label class="k" for="speed" id="l-speed"></label><input type="number" id="speed" min="0.25" max="4" step="0.05"> <span class="t">×</span></div>
+    <div class="row adv" id="r-quality"><label class="k" for="quality" id="l-quality"></label><input type="number" id="quality" min="50" max="100" step="1"> <span class="t">%</span></div>
+  </section>
+  <!-- 3. Audio -->
+  <section class="adv">
+    <h2><span class="n">3</span><span id="h-audio"></span></h2>
+    <div class="row"><span class="file" id="afile"></span><button class="btn small" id="b-audio"></button><button class="btn small" id="b-noaudio"></button></div>
+    <p class="note" id="ainfo"></p>
+    <p class="note" id="awarn"></p>
+  </section>
+  <!-- 4. Dove salvare -->
+  <section>
+    <h2><span class="n" id="n-where">4</span><span id="h-where"></span></h2>
+    <div class="row"><input type="text" id="target" spellcheck="false"><button class="btn small" id="b-browse"></button></div>
+  </section>
+  <!-- 5. Alla fine -->
+  <section>
+    <h2><span class="n" id="n-after">5</span><span id="h-after"></span></h2>
+    <div class="row"><label class="k" for="after" id="l-after"></label><select id="after"></select></div>
+    <p class="note" id="afterh"></p>
+    <p class="note warn" id="afterw"></p>
+    <label class="chk adv"><input type="checkbox" id="notify"><span id="l-notify"></span></label>
+    <label class="chk adv"><input type="checkbox" id="sheet"><span><span id="l-sheet"></span><small id="h-sheet"></small></span></label>
+    <label class="chk adv"><input type="checkbox" id="awake"><span><span id="l-awake"></span><small id="h-awake"></small></span></label>
+  </section>
+  <!-- 6. Registro -->
+  <section class="adv">
+    <h2><span class="n">6</span><span id="h-log"></span></h2>
     <p class="note" id="logpath"></p>
     <p class="note" id="loglast"></p>
     <div class="row"><button class="btn small" id="b-log"></button></div>
@@ -109,6 +173,8 @@ footer .sp{flex:1 1 auto}
 </footer>
 <script>
 let L = {}, S = null;
+let MODE = null;          // scelta a mano (radio); null = la sceglie la pagina
+let LV = 1;
 const $ = id => document.getElementById(id);
 const T = k => L[k] || k;
 const fill = (s, v) => String(s).replace(/%\{(\w+)\}/g, (m, k) => v[k] !== undefined ? v[k] : m);
@@ -122,33 +188,115 @@ function clock(n, fps){
 function dur(sec){ sec = Math.round(sec); return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0'); }
 const num = id => Math.round(Number($(id).value));
 
+// Un fotogramma scritto come numero (6691) o come tempo del video (3:43,
+// 3:43.5, 1:02:05): il fotogramma di quell'istante. NaN se non si capisce.
+function frameOf(v){
+  v = String(v).trim().replace(',', '.');
+  if(/^\d+$/.test(v)) return Number(v);
+  const m = /^(?:(\d+):)?(\d+):(\d+(?:\.\d+)?)$/.exec(v);
+  if(!m || !S) return NaN;
+  const sec = Number(m[1] || 0) * 3600 + Number(m[2]) * 60 + Number(m[3]);
+  return Math.floor(sec * S.fps + 1e-6) + 1;
+}
+const isTime = id => /:/.test($(id).value);
+
 // ── Fotogrammi scelti: controlli e note ─────────────────────────
 function range(){
   if(!S || S.missing) return { ok: false };
-  const a = num('from'), b = num('to');
+  const a = frameOf($('from').value), b = frameOf($('to').value);
   return { a, b, ok: Number.isFinite(a) && Number.isFinite(b) && a >= 1 && b >= a && b <= S.total };
 }
+// Cosa fare di quello che c'è: scelto a mano, o il più sensato per i fotogrammi scelti
+function modeNow(r){
+  const avi = S.format === 'avi', has = avi ? S.avi : S.png;
+  if(!has || $('draft').checked) return 'new';
+  if(MODE && (avi || MODE !== 'append')) return MODE;
+  if(!r.ok) return 'new';
+  if(avi){
+    if(r.a === has.b + 1) return 'append';
+    if(r.a >= has.a && r.b <= has.b) return 'patch';
+    return 'new';
+  }
+  return r.a === 1 && r.b === S.total ? 'new' : 'patch';
+}
 function notes(){
-  if(!S) return;
-  const r = range(), avi = S.format === 'avi', app = avi && S.avi && $('append').checked;
-  $('rinfo').textContent = r.ok ? fill(T('ve.range_info'), { n: nf(r.b - r.a + 1), d: clock(r.b - r.a + 2, S.fps), t1: clock(r.a, S.fps), t2: clock(r.b, S.fps) }) : '';
-  // file o cartella: cosa c'è e cosa succederà
+  if(!S || S.missing){ $('b-go').disabled = true; return; }
+  const r = range(), avi = S.format === 'avi', has = avi ? S.avi : S.png, draft = $('draft').checked;
+  const mode = modeNow(r);
+  let info = r.ok ? fill(T('ve.range_info'), { n: nf(r.b - r.a + 1), d: clock(r.b - r.a + 2, S.fps), t1: clock(r.a, S.fps), t2: clock(r.b, S.fps) }) : '';
+  if(r.ok && (isTime('from') || isTime('to'))) info = fill(T('ve.range_at'), { a: r.a, b: r.b }) + ' · ' + info;
+  $('rinfo').textContent = info;
+  // cosa farne: i tre modi (le immagini: due)
+  $('modes').hidden = !has || draft;
+  $('r-append').style.display = avi ? '' : 'none';
+  $('m-' + mode).checked = true;
+  $('l-new').textContent = T(avi ? 've.mode_new' : 've.mode_png_new');
+  $('h-new').textContent = avi ? T('ve.replace') : T('ve.png_clear');
+  $('l-patch').textContent = T(avi ? 've.mode_patch' : 've.mode_png_keep');
+  $('h-patch').textContent = T(avi ? 've.mode_patch.h' : 've.png_keep');
   let tn = '', tc = 'note';
-  if(avi && S.avi){ tn = fill(T('ve.avi_has'), { n: nf(S.avi.n), a: S.avi.a, b: S.avi.b }) + (app ? '' : ' ' + T('ve.replace')); if(!app) tc = 'note warn'; }
+  if(avi && S.avi) tn = fill(T('ve.avi_has'), { n: nf(S.avi.n), a: S.avi.a, b: S.avi.b });
   else if(avi && S.avi_other){ tn = T('ve.avi_other'); tc = 'note warn'; }
-  else if(!avi && S.png){ tn = fill(T('ve.png_has'), { n: nf(S.png.n), a: S.png.a, b: S.png.b }) + ' ' + T(r.a === 1 ? 've.png_clear' : 've.png_keep'); if(r.a === 1) tc = 'note warn'; }
-  $('tnote').textContent = tn; $('tnote').className = tc;
-  $('r-append').style.display = avi && S.avi ? '' : 'none';
-  let w = '', wc = 'note';
-  if(!r.ok){ w = fill(T('ve.bad_range'), { n: S.total }); wc = 'note bad'; }
-  else if(app && S.avi.b + 1 !== r.a){ w = fill(T('ve.gap'), { b: S.avi.b, n: S.avi.b + 1 }); wc = 'note warn'; }
+  else if(!avi && S.png) tn = fill(T('ve.png_has'), { n: nf(S.png.n), a: S.png.a, b: S.png.b });
+  if(has && mode === 'new' && !draft){ tn += ' ' + T(avi ? 've.replace' : 've.png_clear'); tc = 'note warn'; }
+  $('tnote').textContent = draft ? '' : tn; $('tnote').className = tc;
+  let w = '', wc = 'note', bad = false;
+  if(!r.ok){ w = fill(T('ve.bad_range'), { n: S.total }); wc = 'note bad'; bad = true; }
+  // in coda: dal seguente; più avanti si può (un salto), da uno che il video ha già no (lo ripeterebbe)
+  else if(!draft && avi && S.avi && mode === 'append' && S.avi.b + 1 !== r.a){
+    w = fill(T('ve.gap'), { b: S.avi.b, n: S.avi.b + 1 });
+    if(r.a <= S.avi.b){ wc = 'note bad'; bad = true; } else wc = 'note warn';
+  }
+  else if(!draft && avi && S.avi && mode === 'patch' && (r.a < S.avi.a || r.b > S.avi.b)){ w = fill(T('ve.patch_range'), { a: S.avi.a, b: S.avi.b }); wc = 'note bad'; bad = true; }
   $('warn').textContent = w; $('warn').className = wc;
-  $('b-go').disabled = !r.ok || !!S.busy || !!S.missing;
+  const d = S.draft || {};
+  $('h-draft').textContent = fill(T('ve.draft.h'), { w: d.w, h: d.h, fps: d.fps, file: d.target || '' });
+  $('target').disabled = draft;
+  $('b-browse').disabled = draft;
+  // alla fine
+  const after = $('after').value;
+  $('afterh').textContent = after === 'none' ? '' : T('ve.after.h');
+  $('afterw').textContent = after === 'shutdown' && S.modified ? T('ve.after_unsaved') : '';
+  audioNotes();
+  $('b-go').disabled = bad || !!S.busy || !!S.missing || (S.audio && !S.audio.ok);
+}
+function audioNotes(){
+  const a = S.audio, png = S.format === 'png';
+  $('afile').textContent = a ? a.file : T('ve.audio_none');
+  $('afile').className = a ? 'file' : 'file none';
+  $('b-noaudio').disabled = !a;
+  let i = '', w = '', wc = 'note warn';
+  if(a && a.ok){
+    i = fill(T('ve.audio_info'), { d: dur(a.s), rate: nf(a.rate), ch: a.ch });
+    const v = S.total / S.fps;
+    if(a.s + 0.05 < v) w = fill(T('ve.audio_short'), { a: dur(a.s), v: dur(v) });
+    if(png) i += ' ' + T('ve.audio_png');
+  } else if(a){ w = fill(T('ve.audio_bad'), { file: a.file }); wc = 'note bad'; }
+  $('ainfo').textContent = i;
+  $('awarn').textContent = w; $('awarn').className = wc;
 }
 function go(){
   const r = range();
   if($('b-go').disabled || !r.ok) return;
-  rb('go', JSON.stringify({ from: r.a, to: r.b, append: !!(S.avi && $('append').checked) }));
+  rb('go', JSON.stringify({ from: r.a, to: r.b, mode: modeNow(r), draft: $('draft').checked, after: $('after').value }));
+}
+
+// ── Livello: Base | Avanzate ─────────────────────────────────────
+function setLevel(n, save){
+  LV = n === 2 ? 2 : 1;
+  document.body.dataset.lv = LV;
+  $('lv1').classList.toggle('act', LV === 1);
+  $('lv2').classList.toggle('act', LV === 2);
+  // numeri delle sezioni: in Base mancano Audio e Registro
+  $('n-where').textContent = LV === 2 ? '4' : '3';
+  $('n-after').textContent = LV === 2 ? '5' : '4';
+  markHidden();
+  if(save) rb('set', JSON.stringify({ path_video_level: LV }));
+}
+// Un pallino su «Avanzate» se in Base una scelta nascosta non è quella di sempre
+function markHidden(){
+  const mod = !!S && !S.missing && (S.fps !== 30 || S.speed !== 1 || S.quality !== 90 || !!S.audio || !S.sheet || !S.awake || !S.notify);
+  $('lv2').classList.toggle('mod', LV === 1 && mod);
 }
 
 // ── Eventi ───────────────────────────────────────────────────────
@@ -157,18 +305,32 @@ $('fmt').addEventListener('change', () => set('path_video_format', $('fmt').valu
 $('size').addEventListener('change', () => set('path_video_size', $('size').value));
 $('fps').addEventListener('change', () => set('path_video_fps', num('fps')));
 $('speed').addEventListener('change', () => set('path_speed', Number($('speed').value)));
-$('weather').addEventListener('change', () => set('path_video_weather', $('weather').checked));
+$('quality').addEventListener('change', () => set('path_video_quality', num('quality')));
+['weather', 'notify', 'sheet', 'awake'].forEach(id => $(id).addEventListener('change', () => set('path_video_' + id, $(id).checked)));
 $('target').addEventListener('change', () => rb('target', $('target').value));
 $('b-browse').addEventListener('click', () => rb('browse'));
+$('b-audio').addEventListener('click', () => rb('audio', 'pick'));
+$('b-noaudio').addEventListener('click', () => rb('audio', 'clear'));
 ['from', 'to'].forEach(id => $(id).addEventListener('input', notes));
-$('append').addEventListener('change', notes);
+document.querySelectorAll('input[name=mode]').forEach(x => x.addEventListener('change', () => {
+  MODE = x.value;
+  // «In coda» con fotogrammi che il video ha già: si parte dal seguente
+  if(MODE === 'append' && S && S.avi && frameOf($('from').value) <= S.avi.b){
+    $('from').value = S.avi.b + 1;
+    if(!(frameOf($('to').value) > S.avi.b)) $('to').value = S.total;
+  }
+  notes();
+}));
+['draft', 'after'].forEach(id => $(id).addEventListener('change', notes));
 $('b-all').addEventListener('click', () => { if(!S) return; $('from').value = 1; $('to').value = S.total; notes(); });
 $('b-resume').addEventListener('click', () => {
   if(!S || !S.next) return;
   $('from').value = S.next; $('to').value = S.total;
-  if(S.avi) $('append').checked = true;
+  MODE = S.avi ? 'append' : 'patch';
   notes();
 });
+$('lv1').addEventListener('click', () => setLevel(1, true));
+$('lv2').addEventListener('click', () => setLevel(2, true));
 $('b-log').addEventListener('click', () => rb('log'));
 $('b-cancel').addEventListener('click', () => rb('cancel'));
 $('b-go').addEventListener('click', go);
@@ -206,31 +368,25 @@ function init(d){
   document.documentElement.dir = d.rtl ? 'rtl' : 'ltr';
   applyLook(d.look || {});
   document.title = T('ve.title');
-  $('titolo').textContent = T('ve.title');
-  $('h-format').textContent = T('ve.sec_format');
-  $('l-fmt').textContent = T('f.path_video_format');
-  $('l-size').textContent = T('f.path_video_size');
-  $('l-fps').textContent = T('f.path_video_fps');
-  $('l-speed').textContent = T('f.path_speed');
-  $('l-weather').textContent = T('f.path_video_weather');
+  const txt = { titolo: 've.title', 'h-frames': 've.sec_frames', 'l-from': 've.from', 'l-to': 've.to', 'b-all': 've.all',
+    fhelp: 've.from.h', 'l-append': 've.append', 'h-append': 've.append.h', 'l-draft': 've.draft', split: 've.split.h',
+    'h-format': 've.sec_format', 'l-fmt': 'f.path_video_format', 'l-size': 'f.path_video_size', 'l-fps': 'f.path_video_fps',
+    'l-speed': 'f.path_speed', 'l-weather': 'f.path_video_weather', 'l-quality': 've.quality',
+    'h-audio': 've.sec_audio', 'b-audio': 've.browse', 'b-noaudio': 've.audio_clear',
+    'h-where': 've.sec_where', 'b-browse': 've.browse',
+    'h-after': 've.sec_after', 'l-after': 've.after', 'l-notify': 've.notify', 'l-sheet': 've.sheet', 'h-sheet': 've.sheet.h',
+    'l-awake': 've.awake', 'h-awake': 've.awake.h',
+    'h-log': 've.sec_log', 'b-log': 've.log_open', 'b-cancel': 've.cancel', 'b-go': 've.go', occ: 've.busy',
+    lv1: 'lvl.1', lv2: 'lvl.2' };
+  for(const id in txt) $(id).textContent = T(txt[id]);
   $('fmt').innerHTML = ['avi', 'png'].map(v => `<option value="${v}"></option>`).join('');
   $('fmt').querySelectorAll('option').forEach(o => { o.textContent = T('o.path_video_format.' + o.value); });
   $('size').innerHTML = ['view', 'hd', 'fhd', 'uhd'].map(v => `<option value="${v}"></option>`).join('');
   $('size').querySelectorAll('option').forEach(o => { o.textContent = T('o.path_video_size.' + o.value); });
-  $('h-where').textContent = T('ve.sec_where');
-  $('b-browse').textContent = T('ve.browse');
-  $('h-frames').textContent = T('ve.sec_frames');
-  $('l-from').textContent = T('ve.from');
-  $('l-to').textContent = T('ve.to');
-  $('b-all').textContent = T('ve.all');
-  $('l-append').textContent = T('ve.append');
-  $('h-append').textContent = T('ve.append.h');
-  $('split').textContent = T('ve.split.h');
-  $('h-log').textContent = T('ve.sec_log');
-  $('b-log').textContent = T('ve.log_open');
-  $('b-cancel').textContent = T('ve.cancel');
-  $('b-go').textContent = T('ve.go');
-  $('occ').textContent = T('ve.busy');
+  const keep = $('after').value || 'none';
+  $('after').innerHTML = ['none', 'sleep', 'shutdown'].map(v => `<option value="${v}"></option>`).join('');
+  $('after').querySelectorAll('option').forEach(o => { o.textContent = T({ none: 've.after.none', sleep: 've.after.sleep', shutdown: 've.after.shutdown' }[o.value]); });
+  $('after').value = keep;
   if(S) show(S);
 }
 
@@ -246,16 +402,21 @@ function show(s){
     $('size').value = s.size;
     if(document.activeElement !== $('fps')) $('fps').value = s.fps;
     if(document.activeElement !== $('speed')) $('speed').value = s.speed;
+    if(document.activeElement !== $('quality')) $('quality').value = s.quality;
     $('weather').checked = !!s.weather;
+    $('notify').checked = !!s.notify;
+    $('sheet').checked = !!s.sheet;
+    $('awake').checked = !!s.awake;
+    $('r-quality').style.display = s.format === 'avi' ? '' : 'none';
     if(document.activeElement !== $('target')) $('target').value = s.target;
-    $('from').max = $('to').max = s.total;
     $('of').textContent = fill(T('ve.of'), { n: nf(s.total) });
-    if(!prima || prima.missing){ $('from').value = 1; $('to').value = s.total; }
+    // un video lasciato a metà: si propone di riprendere da dove è arrivato
+    if(!prima || prima.missing || prima.target !== s.target || prima.format !== s.format){ $('from').value = s.next || 1; $('to').value = s.total; }
     else {
-      if(num('to') === prima.total || num('to') > s.total) $('to').value = s.total;
-      if(num('from') > s.total) $('from').value = s.total;
+      if(frameOf($('to').value) === prima.total || frameOf($('to').value) > s.total) $('to').value = s.total;
+      if(frameOf($('from').value) > s.total) $('from').value = s.total;
     }
-    if(!prima || prima.format !== s.format || prima.target !== s.target || !s.avi) $('append').checked = false;
+    if(!prima || prima.format !== s.format || prima.target !== s.target) MODE = null;
     const has = s.avi ? fill(T('ve.avi_has'), { n: nf(s.avi.n), a: s.avi.a, b: s.avi.b })
               : s.png ? fill(T('ve.png_has'), { n: nf(s.png.n), a: s.png.a, b: s.png.b }) : '';
     $('resume').classList.toggle('si', !!s.next);
@@ -264,8 +425,10 @@ function show(s){
     $('logpath').textContent = fill(T('ve.log_here'), { file: s.log });
     $('loglast').textContent = s.log_last ? fill(T('ve.log_last'), { line: s.log_last }) : '';
     $('b-log').disabled = !s.log_exists;
+    if(!prima || prima.missing) setLevel(s.level, false);
   }
   $('occ').classList.toggle('si', !!s.busy);
+  markHidden();
   notes();
   if(!prima) $('b-go').focus();
   document.body.classList.remove('attende');

@@ -314,6 +314,11 @@ module DagaWASD
       # prima dell'animazione: SketchUp chiede il primo fotogramma già qui
       vm_begin(@path_job) if kind == :frames  # lib/videometeo.rb: il meteo col tempo del video (e dipinto)
       dyn_begin(kind == :play ? :path : :video)   # lib/dyn_link.rb: oggetti animati di DagaDyn
+      if kind == :frames
+        vx_log_begin(@path_job, @path_job.delete(:fresh))   # lib/videolog.rb: il registro accanto al video
+        vx_sheet_begin(@path_job)            # lib/videoexport.rb: il foglio di controllo (il fotogramma 1 compreso)
+        vx_awake(true)                       # il PC non va in sospensione
+      end
       view.animation = PathAnimation.new(@path_job)
       nil
     end
@@ -339,6 +344,7 @@ module DagaWASD
       end
     rescue => fps_err
       log_error(__method__, fps_err)
+      job[:err] = "#{fps_err.class}: #{fps_err.message}"[0, 200]   # per il registro del video
       path_finish(job, :errore)
       false
     end
@@ -375,6 +381,7 @@ module DagaWASD
       ke_push                                  # lib/keyedit.rb: il pannello della sfera torna libero
       if job[:kind] == :frames
         vm_end(job) if job[:vm]                # il meteo riprende il suo orologio
+        vx_awake(false)                        # lib/videoexport.rb: il PC può di nuovo sospendersi
         path_frames_done(job, why)
       else
         # arrivata in fondo si torna alla vista di partenza (se no resterebbe
@@ -407,16 +414,33 @@ module DagaWASD
     # (lib/avi.rb); PNG: una cartella di immagini più crea_video.bat.
     # o: le scelte della finestra Esporta video (lib/videoexport.rb):
     #   target (file .avi o cartella delle immagini), from e to (fotogrammi
-    #   da 1, compresi), append (AVI: in coda al video che c'è).
+    #   da 1, compresi), mode:
+    #     'new'    video nuovo (immagini: la cartella si svuota);
+    #     'append' AVI: in coda al video che c'è (anche append: true);
+    #     'patch'  rifà i fotogrammi from…to dentro il video che c'è: si
+    #              scrivono in un video a parte, che alla fine prende il loro
+    #              posto (immagini: si riscrivono solo quelle, le altre restano);
+    #   draft (bozza: metà misure, VX_DRAFT_FPS al secondo; target è già il
+    #   file della bozza), after ('sleep', 'shutdown': alla fine il PC).
+    # Senza mode, per le immagini: da capo se from è 1, se no le altre restano.
     # Senza o: tutto il percorso, file o cartella chiesti qui (il ponte, i test).
     def self.path_export_frames(name, o = nil)
       return t('path.busy') if @path_job
       tr = path_track(name) or return path_track_err(name)
-      fps, total, w, h = path_video_numbers(tr)
+      draft = o && o[:draft] ? true : false
+      fps, total, w, h = path_video_numbers(tr, draft)
       from = (o && o[:from] || 1).to_i.clamp(1, total)
       to = (o && o[:to] || total).to_i.clamp(from, total)
-      extra = { fps: fps, total: total, w: w, h: h, k: from - 1, k0: from - 1, stop: to }
+      mode = o && (o[:mode] || (o[:append] ? 'append' : nil))
+      mode = nil unless %w[new append patch].include?(mode)
+      extra = { fps: fps, total: total, w: w, h: h, k: from - 1, k0: from - 1, stop: to, draft: draft, keys: tr[:keys],
+                after: o && %w[sleep shutdown].include?(o[:after]) ? o[:after] : nil,
+                quality: cf('path_video_quality').to_i.clamp(50, 100) }
       extra[:ff] = 0 if from > 1               # il meteo va portato avanti fin lì (path_ff_step)
+      wav = cf('path_video_audio').to_s
+      unless wav.empty?
+        extra[:audio] = MjpegAvi.wav(wav) or return format(t('ve.audio_bad'), file: wav.tr('/', '\\'))
+      end
       fresh = true
       if cf('path_video_format') == 'png'
         dir = o ? o[:target].to_s : UI.select_directory(title: t('path.choose_dir'), directory: path_default_dir)
@@ -424,7 +448,8 @@ module DagaWASD
         dir = dir.tr('\\', '/')
         dir = File.join(dir, path_safe(name)) unless o
         FileUtils.mkdir_p(dir)
-        if from == 1                           # da capo: niente avanzi di prima
+        mode ||= from == 1 ? 'new' : 'patch'
+        if mode == 'new'                       # da capo: niente avanzi di prima
           Dir.glob(File.join(dir, 'frame_*.png')).each { |f| File.delete(f) rescue nil }
         else
           fresh = false                        # un altro pezzo: le immagini fatte restano
@@ -434,19 +459,37 @@ module DagaWASD
         file = o ? o[:target].to_s : UI.savepanel(t('path.save_video'), path_default_dir, "#{path_safe(name)}.avi")
         return nil if file.nil? || file.empty?
         file = "#{file}.avi" unless file.downcase.end_with?('.avi')
-        if o && o[:append] && File.exist?(file)
+        mode ||= 'new'
+        if mode == 'patch'
+          info = File.exist?(file) && MjpegAvi.probe(file)
+          first = vx_file_first(vx_log_file(file)) || 1
+          n = info ? info[:index].size : 0
+          unless info && info[:w] == w && info[:h] == h && info[:fps] == fps && from >= first && to <= first + n - 1
+            return format(t('ve.patch_bad'), a: first, b: first + [n, 1].max - 1)
+          end
+          extra[:patch] = { file: file, first: first }
+          extra[:avi] = MjpegAvi.new("#{file}.tratto", w, h, fps)   # alla fine prende il posto di from…to
+          extra[:first] = first
+          fresh = false
+        elsif mode == 'append' && File.exist?(file)
+          first = vx_file_first(vx_log_file(file)) || 1
+          have = (MjpegAvi.probe(file) || { index: [] })[:index].size
+          # in coda fotogrammi che il video ha già: li ripeterebbe (dal 1, il film una seconda volta)
+          return vx_f(t('ve.gap'), b: first + have - 1, n: first + have) if have.positive? && from < first + have
           extra[:avi] = MjpegAvi.append(file, w, h, fps) or return t('ve.append_bad')
           fresh = false
-          extra[:first] = vx_file_first(vx_log_file(file)) || 1
+          extra[:first] = first
         else
+          mode = 'new'
           extra[:avi] = MjpegAvi.new(file, w, h, fps)
           extra[:first] = from
         end
         require 'tmpdir'
         extra[:jpg] = File.join(Dir.tmpdir, "dagawasd_fotogramma_#{Process.pid}.jpg")
       end
+      extra[:mode] = mode
       err = begin
-        path_start(:frames, name, extra.merge(bytes: 0), tr)
+        path_start(:frames, name, extra.merge(bytes: 0, fresh: fresh), tr)
       rescue StandardError
         # il lavoro era già nato: lo si chiude (e con lui il video); se no il
         # video aperto qui resterebbe un file vuoto e bloccato
@@ -454,18 +497,23 @@ module DagaWASD
         raise
       end
       return path_avi_discard(extra) && err if err
-      vx_log_begin(@path_job, fresh)         # lib/videoexport.rb: il registro accanto al video
       attesa_open(@path_job)                 # lib/attesa.rb: personaggio, avanzamento, battute
       nil
     end
 
     # fps, fotogrammi del percorso intero, larghezza e altezza: con le
-    # impostazioni di adesso (la finestra Esporta video li mostra prima)
-    def self.path_video_numbers(tr)
+    # impostazioni di adesso (la finestra Esporta video li mostra prima).
+    # La bozza: metà misure (pari) e VX_DRAFT_FPS fotogrammi al secondo.
+    def self.path_video_numbers(tr, draft = false)
       fps = cf('path_video_fps').to_i.clamp(10, 60)
       speed = cf('path_speed').to_f.clamp(0.1, 10.0)
       view = Sketchup.active_model.active_view
       w, h = PATH_VIDEO_SIZES[cf('path_video_size')] || [view.vpwidth, view.vpheight]
+      if draft
+        fps = VX_DRAFT_FPS
+        w = [(w / 4) * 2, 16].max
+        h = [(h / 4) * 2, 16].max
+      end
       [fps, (tr[:dur] / speed * fps).floor + 1, w, h]
     end
 
@@ -488,7 +536,15 @@ module DagaWASD
 
     def self.path_frames_step(view, job)
       t0 = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      return true if job[:ff] && path_ff_step(view, job, t0)   # ancora meteo da portare avanti
+      if job[:ff]                                # ancora meteo da portare avanti
+        going = path_ff_step(view, job, t0)
+        job[:ff_s] = job[:ff_s].to_f + Process.clock_gettime(Process::CLOCK_MONOTONIC) - t0
+        if going
+          attesa_progress(job)                   # lib/attesa.rb: «prima il meteo…», con la percentuale
+          vx_log_progress(job)
+          return true
+        end
+      end
       loop do
         go = path_frame_write(view, job)
         return go unless go
@@ -532,6 +588,7 @@ module DagaWASD
         path_finish(job, :fine)
         return false
       end
+      c0 = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       t = k * job[:speed] / job[:fps].to_f
       path_set_camera(view, path_frame_at(job[:frames], [t, job[:dur]].min))
       vm_step(job, view, k / job[:fps].to_f, k.zero? ? 0.0 : 1.0 / job[:fps]) if job[:vm]   # meteo all'istante del video (fino a k − 1: path_ff_step)
@@ -543,13 +600,16 @@ module DagaWASD
         jpeg = File.binread(job[:jpg])
         avi.add(jpeg)
         job[:bytes] = job[:bytes].to_i + jpeg.bytesize + 8
+        vx_sheet_add(job, k + 1, job[:jpg])      # lib/videoexport.rb: ogni tanto nel foglio di controllo
       else
         png = File.join(job[:dir], format('frame_%05d.png', k + 1))
         ok = path_shot(view, job, png, :png)
         raise IOError, job[:dir] unless ok
         job[:bytes] = job[:bytes].to_i + File.size(png)
+        vx_sheet_add(job, k + 1, png)
       end
       job[:k] = k + 1
+      vx_stat(job, k + 1, Process.clock_gettime(Process::CLOCK_MONOTONIC) - c0)   # per il registro: quanto ci ha messo
       if avi&.full?                              # al limite dei 4 GB di un AVI: si chiude qui
         path_finish(job, :pieno)
         return false
@@ -567,13 +627,36 @@ module DagaWASD
 
     def self.path_plain_shot(view, job, file, fmt)
       opts = { filename: file, width: job[:w], height: job[:h], antialias: true }
-      opts[:compression] = 0.9 if fmt == :jpg
+      opts[:compression] = (job[:quality] || 90) / 100.0 if fmt == :jpg
       view.write_image(opts)
     end
 
+    # Fine, per qualunque motivo: prima i file (video chiuso e rifatto con
+    # audio o tratto, sottotitoli, crea_video.bat, foglio), poi il registro
+    # che li racconta, il suono, il PC da sospendere o spegnere, e il finale
+    # nella finestra d'attesa (o un messagebox).
     def self.path_frames_done(job, why)
-      vx_log_end(job, why)                       # lib/videoexport.rb: dove si è fermato
-      return path_video_done(job, why) if job[:avi]
+      job[:res] ||= {}
+      info = job[:avi] ? path_video_close(job, why) : path_png_close(job)
+      vx_sheet_save(job)                         # lib/videoexport.rb
+      vx_log_end(job, why)
+      vx_notify(job, why)
+      after = vx_after_start(job, why)
+      info['after'] = after if after
+      return if attesa_finish(job, why, info) || info['n'].zero?
+      msg = if job[:avi]
+              format(t(why == :fine ? 'path.video_done' : 'path.video_stopped'), file: info['file'], time: info['time'], mb: info['mb'])
+            else
+              format(t(why == :fine ? 'path.frames_done' : 'path.frames_stopped'), n: info['n'], dir: job[:dir])
+            end
+      msg += "\n\n#{format(t("att.after_#{after['what']}"), t: path_clock(after['s']))}" if after
+      UI.messagebox(msg)
+    rescue => fps_err
+      log_error(__method__, fps_err)
+    end
+
+    # Le immagini: sottotitoli e crea_video.bat (con l'audio, se c'è)
+    def self.path_png_close(job)
       n = job[:k] - job[:k0].to_i               # immagini fatte in questo giro
       Sketchup.status_text = ''
       unless n.zero?
@@ -582,42 +665,79 @@ module DagaWASD
         nums = Dir.glob(File.join(job[:dir], 'frame_*.png')).map { |f| File.basename(f)[/\d+/].to_i }
         first = nums.min || job[:k0].to_i + 1
         srt = path_srt_write(job, File.join(job[:dir], "#{base}.srt"), first, nums.max || job[:k])   # i commenti dell'IA, nel video come sottotitoli
-        start = first > 1 ? "-start_number #{first} " : ''
-        bat = File.join(job[:dir], 'crea_video.bat')
-        # in un .bat un % del nome aprirebbe una variabile: «Sconto 50%» perdeva mezza riga.
-        # Il file è UTF-8 e cmd lo leggerebbe nella codepage OEM (850…): un nome
-        # con lettere non ASCII («Маршрут 1», «è») non si troverebbe. chcp 65001.
-        b = base.gsub('%', '%%')
-        File.write(bat, "@echo off\r\nchcp 65001 >nul\r\ncd /d \"%~dp0\"\r\n" \
-                        "ffmpeg -y -framerate #{job[:fps]} #{start}-i frame_%%05d.png #{srt ? "-i \"#{b}.srt\" -c:s mov_text " : ''}" \
-                        "-c:v libx264 -pix_fmt yuv420p -crf 18 \"#{b}.mp4\"\r\npause\r\n", mode: 'wb')   # wb: \r\n e non \r\r\n
+        job[:res][:srt] = srt && File.basename(srt)
+        File.write(File.join(job[:dir], 'crea_video.bat'), path_bat(job, base, first, srt), mode: 'wb')   # wb: \r\n e non \r\r\n
       end
-      info = { 'n' => n, 'time' => path_clock(n.to_f / job[:fps]), 'mb' => (job[:bytes].to_i / 1_048_576.0).round(1),
-               'dir' => job[:dir].tr('/', '\\') }
-      return if attesa_finish(job, why, info) || n.zero?
-      key = why == :fine ? 'path.frames_done' : 'path.frames_stopped'
-      UI.messagebox(format(t(key), n: n, dir: job[:dir]))
-    rescue => fps_err
-      log_error(__method__, fps_err)
+      { 'n' => n, 'time' => path_clock(n.to_f / job[:fps]), 'mb' => (job[:bytes].to_i / 1_048_576.0).round(1),
+        'dir' => job[:dir].tr('/', '\\') }
     end
 
-    def self.path_video_done(job, why)
+    # crea_video.bat: ffmpeg dalle immagini (da first) all'MP4, con
+    # sottotitoli e audio se ci sono. L'audio parte dall'istante del primo
+    # fotogramma: un video che comincia a metà percorso ne prende il pezzo giusto.
+    # In un .bat un % del nome aprirebbe una variabile: «Sconto 50%» perdeva mezza riga.
+    # Il file è UTF-8 e cmd lo leggerebbe nella codepage OEM (850…): un nome
+    # con lettere non ASCII («Маршрут 1», «è») non si troverebbe. chcp 65001.
+    def self.path_bat(job, base, first, srt)
+      b = base.gsub('%', '%%')
+      start = first > 1 ? "-start_number #{first} " : ''
+      cmd = "ffmpeg -y -framerate #{job[:fps]} #{start}-i frame_%%05d.png "
+      if (a = job[:audio])
+        ss = format('%.3f', (first - 1).to_f / job[:fps])
+        cmd += "-ss #{ss} " unless ss == '0.000'
+        cmd += "-i \"#{a[:path].tr('/', '\\').gsub('%', '%%')}\" "
+        cmd += "-i \"#{b}.srt\" " if srt
+        cmd += '-map 0:v -map 1:a '
+        cmd += '-map 2:s -c:s mov_text ' if srt
+        cmd += '-c:v libx264 -pix_fmt yuv420p -crf 18 -c:a aac -b:a 192k -shortest '
+      else
+        cmd += "-i \"#{b}.srt\" -c:s mov_text " if srt
+        cmd += '-c:v libx264 -pix_fmt yuv420p -crf 18 '
+      end
+      "@echo off\r\nchcp 65001 >nul\r\ncd /d \"%~dp0\"\r\n#{cmd}\"#{b}.mp4\"\r\npause\r\n"
+    end
+
+    # Il video: chiuso; il tratto rifatto al suo posto e l'audio messi
+    # rifacendo il file (MjpegAvi.rebuild); sottotitoli accanto.
+    def self.path_video_close(job, why)
       avi = job[:avi]
       avi.close
       File.delete(job[:jpg]) if File.exist?(job[:jpg])
       Sketchup.status_text = ''
-      n = avi.frames                             # tutto il video, anche quelli che c'erano già
-      File.delete(avi.path) if n.zero? && File.exist?(avi.path)
+      res = job[:res]
       first = job[:first] || 1
-      path_srt_write(job, avi.path.sub(/\.avi\z/i, '') + '.srt', first, first + n - 1) unless n.zero?   # accanto: i lettori lo aprono da soli
-      file = avi.path.tr('/', '\\')
-      time = path_clock(n.to_f / job[:fps])
-      mb = n.zero? ? 0.0 : (File.size(avi.path) / 1_048_576.0).round(1)
-      return if attesa_finish(job, why, 'n' => n, 'time' => time, 'mb' => mb, 'file' => n.zero? ? nil : file) || n.zero?
-      key = why == :fine ? 'path.video_done' : 'path.video_stopped'
-      UI.messagebox(format(t(key), file: file, time: time, mb: mb))
-    rescue => fps_err
-      log_error(__method__, fps_err)
+      skip = job[:audio] ? ((first - 1) * job[:audio][:rate] / job[:fps]) * job[:audio][:align] : 0
+      if (pt = job[:patch])
+        path = pt[:file]
+        seg = MjpegAvi.probe(avi.path)
+        if seg && !seg[:index].empty?
+          info = MjpegAvi.probe(path)
+          r = info && MjpegAvi.rebuild(path, info, seg: seg.merge(path: avi.path), at: job[:k0].to_i + 1 - pt[:first],
+                                                   audio: job[:audio], skip: skip)
+          r ? res[:patched] = seg[:index].size : res[:patch_err] = true
+          res[:audio] = r && job[:audio] ? !r[:no_audio] : nil
+        end
+        File.delete(avi.path) if File.exist?(avi.path)
+      else
+        path = avi.path
+        if avi.frames.zero?
+          File.delete(path) if File.exist?(path)
+        elsif job[:audio] && why != :pieno
+          info = MjpegAvi.probe(path)
+          r = info && MjpegAvi.rebuild(path, info, audio: job[:audio], skip: skip)
+          res[:audio] = r ? !r[:no_audio] : false
+        elsif job[:audio]
+          res[:audio] = false
+        end
+      end
+      final = File.exist?(path) ? MjpegAvi.probe(path) : nil
+      n = final ? final[:index].size : 0
+      unless n.zero?
+        srt = path_srt_write(job, path.sub(/\.avi\z/i, '') + '.srt', first, first + n - 1)   # accanto: i lettori lo aprono da soli
+        res[:srt] = srt && File.basename(srt)
+      end
+      res[:mb] = n.zero? ? 0.0 : (File.size(path) / 1_048_576.0).round(1)
+      { 'n' => n, 'time' => path_clock(n.to_f / job[:fps]), 'mb' => res[:mb], 'file' => n.zero? ? nil : path.tr('/', '\\') }
     end
 
     def self.path_default_dir

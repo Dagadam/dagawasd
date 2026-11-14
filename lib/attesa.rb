@@ -37,6 +37,7 @@ module DagaWASD
       d.add_action_callback('stop')  { |_ctx, _| path_abort if @path_job.equal?(job) }
       d.add_action_callback('open')  { |_ctx, what| attesa_open_result(job, what.to_s) }
       d.add_action_callback('close') { |_ctx, _| UI.start_timer(0, false) { attesa_close } }
+      d.add_action_callback('after_cancel') { |_ctx, _| vx_after_cancel }   # lib/videoexport.rb: niente sospensione o spegnimento
       # Chiusa con la X durante l'esportazione: si ferma anche lei
       d.set_on_closed do
         @attesa = nil if @attesa.equal?(d)
@@ -102,8 +103,12 @@ module DagaWASD
     def self.attesa_count(job); (job[:stop] || job[:total]) - job[:k0].to_i; end
 
     def self.attesa_progress_data(job)
-      { 'k' => job[:k] - job[:k0].to_i, 'total' => attesa_count(job), 'bytes' => job[:bytes].to_i,
-        'el' => (Process.clock_gettime(Process::CLOCK_MONOTONIC) - job[:att][:t0]).round(2) }
+      d = { 'k' => job[:k] - job[:k0].to_i, 'total' => attesa_count(job), 'bytes' => job[:bytes].to_i,
+            'el' => (Process.clock_gettime(Process::CLOCK_MONOTONIC) - job[:att][:t0]).round(2),
+            'ff_s' => job[:ff_s].to_f.round(2) }   # il tempo del meteo portato avanti: non è dei fotogrammi
+      # partendo più avanti, prima il meteo arriva fin lì (path_ff_step): a che punto è
+      d['ff'] = { 'n' => job[:k] + 1, 'p' => (100.0 * job[:ff] / [job[:k], 1].max).floor } if job[:ff]
+      d
     end
 
     # Fine dell'esportazione. Ritorna true se il finale lo mostra la

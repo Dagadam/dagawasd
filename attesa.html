@@ -86,6 +86,10 @@ body.errore .riemp{background-color:var(--dg)}
 .dove{font-size:.85rem;color:var(--bub-mut);word-break:break-all;user-select:text}
 .dove:empty{display:none}
 .dove bdi{direction:ltr;unicode-bidi:isolate}
+/* alla fine il PC si sospende o si spegne: conto alla rovescia e Annulla */
+.dopo{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:.9rem;font-weight:600;color:var(--bub-fg, inherit)}
+.dopo[hidden]{display:none}
+.dopo .btn{padding:4px 12px;font-size:.85rem}
 
 /* ══ PIEDE ══ */
 .piede{flex:0 0 auto;display:flex;align-items:center;gap:10px;padding:10px 22px 16px}
@@ -233,6 +237,7 @@ body.finito:not(.fermo):not(.errore) .corpo{animation:salta .7s ease-in-out 3,do
     </div>
     <dl class="stat" id="stat"></dl>
     <p class="dove" id="dove"></p>
+    <p class="dopo" id="dopo" hidden><span id="dopo-t"></span><button class="btn stop" id="b-after"></button></p>
   </section>
 </main>
 <footer class="piede">
@@ -272,8 +277,9 @@ function live(){
   if(!P) return { k: 0, total: S ? S.total : 0, frac: 0, el: 0, ok: false };
   const run = !FIN, since = run ? (performance.now() - P.at) / 1000 : 0;
   const q = { k: P.k, total: P.total, frac: P.total ? P.k / P.total : 0, el: P.el + since, ok: P.k >= 3 && P.el >= 5 };
+  if(P.ff) q.ff = P.ff;
   if(P.k > 0){
-    q.spf = P.el / P.k;
+    q.spf = Math.max(0, P.el - (P.ff_s || 0)) / P.k;   // senza il tempo del meteo portato avanti
     q.eta = Math.max(0, q.spf * (P.total - P.k) - since);
     q.mb = P.bytes / 1048576;
     q.est = q.mb / P.k * P.total;
@@ -383,6 +389,8 @@ function renderStats(){
   $('riemp').style.width = (FIN && FIN.why === 'fine' ? 100 : q.frac * 100) + '%';
   $('pct').textContent = nf(pc) + '%';
   $('barra').setAttribute('aria-valuenow', pc);
+  // partendo più avanti: prima il meteo arriva fin lì, senza disegnare
+  if(!FIN) $('nota').innerHTML = q.ff ? fill(T('att.ff'), { n: nf(q.ff.n), p: nf(q.ff.p) + '%' }) : esc(T('att.hint'));
 }
 
 // ── Chiamate da Ruby ─────────────────────────────────────────────
@@ -474,8 +482,32 @@ function finish(f){
   $('b-dir').classList.toggle('go', !f.file);
   $('nota').textContent = '';
   (n && f.file ? $('b-file') : $('b-close')).focus();
+  afterShow(f.after);
   renderStats();
 }
+
+// Il PC si sospende o si spegne fra a.s secondi (lib/videoexport.rb,
+// vx_after_start): conto alla rovescia e Annulla, che lo dice a Ruby.
+let AFTER = null;
+function afterShow(a){
+  if(!a || !a.what) return;
+  AFTER = { key: a.what === 'shutdown' ? 'att.after_shutdown' : 'att.after_sleep', end: performance.now() + a.s * 1000, timer: null };
+  $('b-after').textContent = T('att.after_cancel');
+  $('b-after').disabled = false;
+  $('dopo').hidden = false;
+  const tick = () => { if(AFTER) $('dopo-t').innerHTML = fill(T(AFTER.key), { t: clock((AFTER.end - performance.now()) / 1000) }); };
+  tick();
+  AFTER.timer = setInterval(tick, 1000);
+  $('b-after').focus();
+}
+$('b-after').onclick = () => {
+  if(!AFTER) return;
+  clearInterval(AFTER.timer);
+  AFTER = null;
+  call('after_cancel');
+  $('dopo-t').textContent = T('att.after_off');
+  $('b-after').disabled = true;
+};
 
 // ── Vestito del personaggio disegnato ────────────────────────────
 // Un accessorio a caso per posto ('' = niente), almeno tre in tutto e mai
