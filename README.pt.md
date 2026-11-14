@@ -7,8 +7,6 @@ com WASD e o rato, ou com um comando de jogos.
 
 ▶ Apresentação oficial: https://youtu.be/8eBvtl7DiKU
 
-▶ Vídeo de demonstração: https://youtu.be/w6xE86y7iEw?is=7Gh12tF7atE_N9_K
-
 ⬇ **Descarregar**: [versão mais recente](https://github.com/Dagadam/dagawasd/releases/latest) (todas as versões: [Releases](https://github.com/Dagadam/dagawasd/releases))
 
 ## O que faz

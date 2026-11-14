@@ -7,8 +7,6 @@
 
 ▶ Официальная презентация: https://youtu.be/8eBvtl7DiKU
 
-▶ Демонстрационное видео: https://youtu.be/w6xE86y7iEw?is=7Gh12tF7atE_N9_K
-
 ⬇ **Скачать**: [последняя версия](https://github.com/Dagadam/dagawasd/releases/latest) (все версии: [Releases](https://github.com/Dagadam/dagawasd/releases))
 
 ## Что оно умеет

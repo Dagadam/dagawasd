@@ -7,8 +7,6 @@ WASD e mouse, o con un gamepad.
 
 ▶ Presentazione ufficiale: https://youtu.be/8eBvtl7DiKU
 
-▶ Video dimostrativo: https://youtu.be/w6xE86y7iEw?is=7Gh12tF7atE_N9_K
-
 ⬇ **Scarica**: [ultima versione](https://github.com/Dagadam/dagawasd/releases/latest) (tutte le versioni: [Releases](https://github.com/Dagadam/dagawasd/releases))
 
 ## Che cosa fa

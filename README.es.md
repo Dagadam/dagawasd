@@ -7,8 +7,6 @@ WASD y el ratón, o con un mando.
 
 ▶ Presentación oficial: https://youtu.be/8eBvtl7DiKU
 
-▶ Vídeo de demostración: https://youtu.be/w6xE86y7iEw?is=7Gh12tF7atE_N9_K
-
 ⬇ **Descargar**: [última versión](https://github.com/Dagadam/dagawasd/releases/latest) (todas las versiones: [Releases](https://github.com/Dagadam/dagawasd/releases))
 
 ## Qué hace

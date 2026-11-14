@@ -6,8 +6,6 @@ SketchUp 扩展程序（Windows）：用 WASD 和鼠标，或用游戏手柄，�
 
 ▶ 官方介绍视频：https://youtu.be/8eBvtl7DiKU
 
-▶ 演示视频：https://youtu.be/w6xE86y7iEw?is=7Gh12tF7atE_N9_K
-
 ⬇ **下载**：[最新版本](https://github.com/Dagadam/dagawasd/releases/latest)（所有版本：[Releases](https://github.com/Dagadam/dagawasd/releases)）
 
 ## 功能

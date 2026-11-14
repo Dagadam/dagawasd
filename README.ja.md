@@ -6,8 +6,6 @@ SketchUp 用の拡張機能（Windows）：WASD とマウス、またはゲー�
 
 ▶ 公式紹介動画：https://youtu.be/8eBvtl7DiKU
 
-▶ デモ動画：https://youtu.be/w6xE86y7iEw?is=7Gh12tF7atE_N9_K
-
 ⬇ **ダウンロード**：[最新リリース](https://github.com/Dagadam/dagawasd/releases/latest)（すべてのバージョン：[Releases](https://github.com/Dagadam/dagawasd/releases)）
 
 ## できること

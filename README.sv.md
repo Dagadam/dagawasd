@@ -7,8 +7,6 @@ WASD och musen, eller med en handkontroll.
 
 ▶ Officiell presentation: https://youtu.be/8eBvtl7DiKU
 
-▶ Demovideo: https://youtu.be/w6xE86y7iEw?is=7Gh12tF7atE_N9_K
-
 ⬇ **Ladda ner**: [senaste versionen](https://github.com/Dagadam/dagawasd/releases/latest) (alla versioner: [Releases](https://github.com/Dagadam/dagawasd/releases))
 
 ## Vad det gör
